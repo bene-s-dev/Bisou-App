@@ -446,12 +446,12 @@ export default function Profile({
   };
 
   const renderServicesModal = () => (
-    <div className="fixed inset-0 z-[1000] flex items-end justify-center px-4 pb-10 pointer-events-none">
+    <div className="fixed inset-0 z-[1000] flex items-end justify-center px-4 pb-32 pointer-events-none">
       <div className="absolute inset-0 pointer-events-auto" onClick={() => setShowServices(false)} />
-      <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-[0_-20px_50px_rgba(0,0,0,0.1)] animate-entrance relative z-10 flex flex-col max-h-[80vh] pointer-events-auto border-2 border-purple-50">
+      <div className="w-full max-w-sm p-8 animate-entrance relative z-10 flex flex-col max-h-[80vh] pointer-events-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">Verwendete Dienste</h3>
-          <button onClick={() => setShowServices(false)} className="p-2 bg-purple-50 rounded-full text-[var(--muted)]"><X className="w-4 h-4" /></button>
+          <button onClick={() => setShowServices(false)} className="p-2 text-[var(--muted)]"><X className="w-4 h-4" /></button>
         </div>
         
         <div className="flex-1 overflow-y-auto pr-1">
@@ -496,7 +496,7 @@ export default function Profile({
         
         <button 
           onClick={() => setShowServices(false)}
-          className="w-full mt-6 py-4 rounded-2xl bg-white border-2 border-purple-50 text-[var(--muted)] font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+          className="w-full mt-6 py-4 text-[var(--muted)] font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
         >
           Schließen
         </button>

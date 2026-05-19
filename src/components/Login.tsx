@@ -120,23 +120,13 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 <span className="whitespace-nowrap">Jeden Tag ein&nbsp;</span>
                 
                 <span className="relative inline-flex items-center justify-center text-[var(--primary)] h-[1.2em]">
-                  <span className="invisible px-[1px] whitespace-nowrap">Küsschen</span>
-                  
-                  <span className="absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap transition-all duration-1000 ease-in-out px-[1px]" 
+                  <span className="invisible px-[1px] whitespace-nowrap">{words[0]}</span>
+                  <span className="absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap transition-all duration-500 ease-in-out px-[1px]" 
                         style={{ 
-                          opacity: isKuss ? 0 : 1, 
-                          filter: isKuss ? 'blur(8px)' : 'none',
-                          transform: isKuss ? 'translateY(-10px)' : 'translateY(0)'
+                          opacity: isFading ? 0 : 1,
+                          transform: isFading ? 'translateY(-10px)' : 'translateY(0)'
                         }}>
-                    bisschen
-                  </span>
-                  <span className="absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap transition-all duration-1000 ease-in-out px-[1px]" 
-                        style={{ 
-                          opacity: isKuss ? 1 : 0, 
-                          filter: isKuss ? 'none' : 'blur(8px)',
-                          transform: isKuss ? 'translateY(0)' : 'translateY(10px)'
-                        }}>
-                    Küsschen
+                    {words[wordIndex]}
                   </span>
                 </span>
 
@@ -165,7 +155,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
               <button type="submit" disabled={loading} className="btn-action w-full mt-2">
                 {loading ? 'Lädt...' : 'Einloggen ✨'}
               </button>
-              <button type="button" onClick={() => setMode('register')} className="btn-secondary w-full">Konto erstellen</button>
+              <button type="button" onClick={() => navigate('/signup')} className="btn-secondary w-full">Konto erstellen</button>
             </form>
           )}
 

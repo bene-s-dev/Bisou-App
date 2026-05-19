@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
 // Import modular components
+import LandingPage from './landingpage/LandingPage';
 import Login from './components/Login';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -398,8 +399,9 @@ export default function App() {
   return (
     <DialogProvider>
       <Routes>
-        <Route path="/signin" element={session && profile ? <Navigate to="/" replace /> : <div className="h-screen w-screen relative bg-[#F8F7FF] overflow-y-auto px-4"><div className="bg-aura" /><Login onLogin={() => setLoading(true)} initialMode="login" /></div>} />
-        <Route path="/signup" element={session && profile ? <Navigate to="/" replace /> : <div className="h-screen w-screen relative bg-[#F8F7FF] overflow-y-auto px-4"><div className="bg-aura" /><Login onLogin={() => setLoading(true)} initialMode="register" /></div>} />
+        <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+        <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <div className="min-h-screen bg-[#F8F7FF]"><Login onLogin={() => setLoading(true)} initialMode="login" /></div>} />
+        <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <div className="min-h-screen bg-[#F8F7FF]"><Login onLogin={() => setLoading(true)} initialMode="register" /></div>} />
         <Route path="/reset-password" element={<div className="h-screen w-screen relative bg-[#F8F7FF] overflow-y-auto pt-12 px-4"><div className="bg-aura" /><ResetPassword onComplete={() => navigate('/signin')} /></div>} />
         
         {session && profile ? (
@@ -438,7 +440,7 @@ export default function App() {
             </AppLayout>
           } />
         ) : (
-          <Route path="*" element={!loading ? <Navigate to="/signin" replace /> : <LoadingSkeleton />} />
+          <Route path="*" element={!loading ? <Navigate to="/" replace /> : <LoadingSkeleton />} />
         )}
       </Routes>
     </DialogProvider>
