@@ -134,7 +134,16 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       try {
         if (sortableInstance.current) sortableInstance.current.destroy();
         sortableInstance.current = new Sortable(sortableRef.current, {
-          animation: 250, ghostClass: 'bg-purple-50',
+          animation: 250, 
+          ghostClass: 'bg-purple-50',
+          chosenClass: 'sortable-chosen',
+          forceFallback: true,
+          fallbackClass: 'sortable-fallback',
+          fallbackOnBody: true,
+          swapThreshold: 0.65,
+          delay: 100,
+          delayOnTouchOnly: true,
+          touchStartThreshold: 5,
           onEnd: (evt) => {
             if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
             setRankingOptions(prev => {
@@ -261,7 +270,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
     const q = dailyQs[step < 3 ? step : 0] || FALLBACK_QUESTIONS.tot;
 
     return (
-      <div className="flex flex-col flex-1 h-full overflow-hidden animate-entrance">
+      <div className="flex flex-col flex-1 h-full overflow-hidden animate-entrance pt-12">
         {step < 3 ? (
           // --- QUIZ VIEW ---
           <div className="flex flex-col flex-1 h-full overflow-hidden">
@@ -302,7 +311,6 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                       value={textVal} 
                       onChange={(e) => setTextVal(e.target.value)} 
                       maxLength={MAX_TEXT_LENGTH}
-                      autoFocus 
                     />
                     <div className="flex justify-end px-4">
                       <span className={`text-[10px] font-black tracking-widest uppercase ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
@@ -315,7 +323,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             </div>
             <div className="pb-6 pt-4">
               <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-action py-5 shadow-lg disabled:opacity-40 font-black text-lg">
-                {isSubmitting ? 'Wird geteilt...' : (step === 2 ? 'Abschließen ✨' : 'Weiter 🚀')}
+                {isSubmitting ? 'Wird geteilt...' : (step === 2 ? 'Abschließen ✨' : 'Weiter')}
               </button>
             </div>
           </div>
@@ -327,8 +335,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 <RefreshCcw className="w-3 h-3" /> Antworten zurücksetzen
               </button>
             </div>
-            <div className="flex-1 pr-1">
-              <div className="space-y-10 pb-12 pt-0">
+            <div className="flex-1 pr-1 overflow-y-auto scroll-smooth">
+              <div className="space-y-10 pb-32 pt-0">
                 {dailyQs.map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];

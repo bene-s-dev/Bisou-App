@@ -39,7 +39,7 @@ function AppLayout({
     return <Navigate to="/onboarding" replace />;
   }
 
-  const showHeader = location.pathname === '/profile' || location.pathname === '/dashboard';
+  const showHeader = location.pathname === '/profile' || location.pathname === '/dashboard' || location.pathname === '/questions';
 
   return (
     <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] select-none bg-[#F8F7FF] flex flex-col">
@@ -68,13 +68,18 @@ function AppLayout({
       )}
 
       <main 
-        className="flex-1 flex flex-col relative z-10 px-4 pb-28 max-w-md mx-auto w-full overflow-hidden"
+        className="flex-1 flex flex-col relative z-10 px-4 pb-0 max-w-md mx-auto w-full overflow-hidden"
         style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
       >
         <div className="flex-1 flex flex-col overflow-hidden relative">
           {children}
         </div>
       </main>
+
+      {/* Blurry fade transition at the bottom */}
+      {profile.onboarding_completed && (
+        <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/90 to-transparent pointer-events-none z-[90] backdrop-blur-[1px]" />
+      )}
 
       {profile.onboarding_completed && (
         <nav className="nav-dock">
@@ -131,10 +136,27 @@ export default function App() {
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [showLockedModal, setShowLockedModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   const navigate = useNavigate();
   const dayKey = getDailyKey();
   const fetchLock = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setDeferredPrompt(null);
+  };
 
   const fetchProfile = useCallback(async (userId: string) => {
     // Prevent redundant parallel fetches for the same user
@@ -404,7 +426,13 @@ export default function App() {
                   dashboardData={dashboardData}
                   onComplete={refreshData} 
                 /> : <Navigate to="/dashboard" replace />} />
-                <Route path="/profile" element={<Profile profile={profile} partnerProfile={partnerProfile} onLogout={handleLogout} />} />
+                <Route path="/profile" element={<Profile 
+                  profile={profile} 
+                  partnerProfile={partnerProfile} 
+                  onLogout={handleLogout} 
+                  deferredPrompt={deferredPrompt}
+                  onInstall={handleInstallClick}
+                />} />
                 <Route path="/" element={profile.onboarding_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />} />
               </Routes>
             </AppLayout>
