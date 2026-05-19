@@ -137,11 +137,12 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           animation: 250, 
           ghostClass: 'bg-purple-50',
           chosenClass: 'sortable-chosen',
+          dragClass: 'sortable-drag',
           forceFallback: true,
           fallbackClass: 'sortable-fallback',
           fallbackOnBody: true,
           swapThreshold: 0.65,
-          delay: 100,
+          delay: 150,
           delayOnTouchOnly: true,
           touchStartThreshold: 5,
           onEnd: (evt) => {
@@ -330,11 +331,14 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         ) : (
           // --- RESULTS VIEW ---
           <div className="flex flex-col flex-1 h-full overflow-hidden">
-            <div className="flex justify-end mb-4 pr-1 shrink-0">
-              <button onClick={resetQuiz} className="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1 px-2 bg-red-50/50 rounded-full border border-red-100">
+            <header className="mb-4 flex items-center justify-between">
+              <div className="quiz-prog-dots flex-1 justify-start">
+                {[0, 1, 2].map(i => (<div key={i} className="quiz-dot done"></div>))}
+              </div>
+              <button onClick={resetQuiz} className="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/50 rounded-full border border-red-100">
                 <RefreshCcw className="w-3 h-3" /> Antworten zurücksetzen
               </button>
-            </div>
+            </header>
             <div className="flex-1 pr-1 overflow-y-auto scroll-smooth">
               <div className="space-y-10 pb-32 pt-0">
                 {dailyQs.map((question, i) => {

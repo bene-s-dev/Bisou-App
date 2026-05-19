@@ -1,27 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { Mail, ArrowRight, CheckCircle2, ShieldCheck, User, Info, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { ShieldCheck, ArrowRight, Mail, AlertCircle, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface LoginProps {
-  onLogin: (isNew?: boolean) => void;
-  initialMode?: AuthMode;
+  onLogin: () => void;
+  initialMode?: 'login' | 'register';
 }
 
-type AuthMode = 'login' | 'register' | 'forgot';
-
 export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
-  const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [regStep, setRegStep] = useState(1); 
-  
+  const navigate = useNavigate();
+  const [mode, setMode] = useState<'login' | 'register' | 'magic-link'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  
   const [loading, setLoading] = useState(false);
+  const [regStep, setRegStep] = useState(1);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   const [isKuss, setIsKuss] = useState(false);
+  const words = ['Küsschen', 'bisschen'];
+  const [wordIndex, setWordIndex] = useState(0);
+  const [isFading, setIsFading] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showImpressumModal, setShowImpressumModal] = useState(false);
 
@@ -29,97 +30,107 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     const timer = setTimeout(() => {
       setIsKuss(true);
     }, 1500);
+
+    const interval = setInterval(() => {
+      setIsFading(true);
+      setTimeout(() => {
+        setWordIndex((prev) => (prev + 1) % words.length);
+        setIsFading(false);
+      }, 600); // Smooth transition
+    }, 4000); // Distinct pause
+
     return () => {
       clearTimeout(timer);
+      clearInterval(interval);
     };
   }, []);
 
-  const translateError = (err: any) => {
-    const msg = err.message || '';
-    if (msg.includes('Invalid login credentials')) return 'E-Mail oder Passwort ist falsch.';
-    if (msg.includes('Email not confirmed')) return 'Bitte bestätige zuerst deine E-Mail-Adresse.';
-    if (msg.includes('User already registered')) return 'Diese E-Mail ist bereits registriert.';
-    if (msg.includes('Password should be')) return 'Das Passwort muss mindestens 6 Zeichen lang sein.';
-    return msg || 'Ein unerwarteter Fehler ist aufgetreten.';
-  };
-
-  const handleRegisterFinal = async () => {
-    if (!privacyAccepted) return;
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setMessage(null);
-    try {
-      const { data, error: signUpError } = await supabase.auth.signUp({ 
-        email: email.trim(), 
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: { display_name: displayName.trim() }
-        }
-      });
-      if (signUpError) throw signUpError;
-      if (data.session) {
-        onLogin(true);
-      } else {
-        setMessage({ type: 'success', text: 'Bestätigungslink wurde versendet! ✨ Bitte schau in dein Postfach.' });
-      }
-    } catch (err: any) {
-      setMessage({ type: 'error', text: translateError(err) });
-    } finally {
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMessage({ type: 'error', text: 'Login fehlgeschlagen. Prüfe deine Daten.' });
       setLoading(false);
+    } else {
+      onLogin();
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     setMessage(null);
-    if (mode === 'login') {
-      setLoading(true);
-      try {
-        const loginPromise = supabase.auth.signInWithPassword({ email: email.trim(), password });
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Zeitüberschreitung beim Login. Bitte prüfe deine Internetverbindung.")), 15000)
-        );
 
-        const { error } = await Promise.race([loginPromise, timeoutPromise]) as any;
-        if (error) throw error;
-        onLogin(false);
-      } catch (err: any) {
-        setMessage({ type: 'error', text: translateError(err) });
-      } finally {
-        setLoading(false);
-      }
-    } else if (mode === 'forgot') {
-      setLoading(true);
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (error) throw error;
-        setMessage({ type: 'success', text: 'Reset-Link wurde gesendet!' });
-      } catch (err: any) {
-        setMessage({ type: 'error', text: err.message });
-      } finally {
-        setLoading(false);
-      }
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName,
+        },
+      },
+    });
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message });
+      setLoading(false);
+    } else {
+      setMessage({ type: 'success', text: 'Registrierung erfolgreich! Du kannst dich jetzt einloggen.' });
+      setLoading(false);
+      setMode('login');
     }
   };
+
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message });
+    } else {
+      setMessage({ type: 'success', text: 'Prüfe dein Postfach für den Login-Link! ✨' });
+    }
+    setLoading(false);
+  };
+
+  const handleSubmit = mode === 'login' ? handleLogin : (mode === 'register' ? handleRegister : handleMagicLink);
 
   return (
-    <div className="flex flex-col h-[100svh] w-full max-w-md mx-auto animate-entrance px-4 relative overflow-hidden">
+    <div className="flex flex-col min-h-screen px-6 py-12 relative overflow-hidden max-w-md mx-auto">
+      <div className="bg-aura" />
       
-      {/* Main Content Area */}
+      {/* Header */}
       <div className="flex-1 flex flex-col items-center justify-center w-full relative z-10">
         {mode === 'login' && (
           <div className="text-center mb-8 select-none w-full">
-            <h1 className="text-7xl font-semibold text-[var(--text-main)] mb-6 tracking-tight" style={{ fontFamily: 'Fraunces, serif' }}>
-              Bisou
-            </h1>
+            <button 
+              onClick={() => navigate('/')}
+              className="group transition-transform active:scale-95"
+            >
+              <h1 className="text-7xl font-semibold text-[var(--text-main)] mb-6 tracking-tight group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: 'Fraunces, serif' }}>
+                Bisou
+              </h1>
+            </button>
             
             <div className="text-[var(--text)] text-xl font-bold flex items-center justify-center select-none w-full" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
               <div className="flex items-center justify-center">
-                <span className="whitespace-nowrap">Jeden Tag ein&nbsp;</span>
-                
-                <span className="relative inline-flex items-center justify-center text-[var(--primary)] h-[1.2em]">
+                Nur ein&nbsp;
+                <div className="relative inline-flex items-center justify-center text-[var(--primary)] h-[1.2em]">
                   <span className="invisible px-[1px] whitespace-nowrap">{words[0]}</span>
                   <span className="absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap transition-all duration-500 ease-in-out px-[1px]" 
                         style={{ 
@@ -128,162 +139,135 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                         }}>
                     {words[wordIndex]}
                   </span>
-                </span>
-
-                <span className="whitespace-nowrap">&nbsp;näher.</span>
+                  <div className={`absolute bottom-[-2px] left-0 h-[3px] bg-[var(--primary)] transition-all duration-700 rounded-full ${isKuss ? 'w-full opacity-30' : 'w-0 opacity-0'}`} />
+                </div>
               </div>
             </div>
           </div>
         )}
-        
+
         <div className="w-full">
           {message && (
-            <div className={`p-4 rounded-[22px] text-sm font-bold mb-6 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
-              message.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+            <div className={`p-4 rounded-2xl mb-6 text-sm font-bold text-center animate-entrance ${
+              message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
             }`}>
-              {message.type === 'error' ? <AlertCircle className="w-5 h-5 flex-shrink-0" /> : <Mail className="w-5 h-5 flex-shrink-0" />}
-              <p>{message.text}</p>
+              {message.text}
             </div>
           )}
 
           {mode === 'login' && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-3">
-                <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                <input type="password" className="input-base" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input type="password" className="input-base" placeholder="Passwort" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <div className="flex justify-end pr-2">
+                <button type="button" onClick={() => setMode('magic-link')} className="text-xs font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Passwort vergessen?</button>
               </div>
               <button type="submit" disabled={loading} className="btn-action w-full mt-2">
                 {loading ? 'Lädt...' : 'Einloggen ✨'}
               </button>
               <button type="button" onClick={() => navigate('/signup')} className="btn-secondary w-full">Konto erstellen</button>
+              <button type="button" onClick={() => navigate('/')} className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] mt-4 hover:text-[var(--text-main)] transition-colors">← Zurück</button>
             </form>
           )}
 
-          {mode === 'forgot' && (
+          {mode === 'magic-link' && (
             <form onSubmit={handleSubmit} className="space-y-6">
               {message?.type === 'success' ? (
                 <div className="text-center py-4">
-                  <button type="button" onClick={() => { setMode('login'); setMessage(null); }} className="btn-action">Zum Login</button>
+                  <button type="button" onClick={() => { navigate('/signin'); setMode('login'); setMessage(null); }} className="btn-action">Zum Login</button>
                 </div>
               ) : (
                 <>
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-[var(--text-main)] mb-2">Passwort vergessen</h2>
-                    <p className="text-sm text-[var(--text)] opacity-70">Wir senden dir einen Link zum Zurücksetzen.</p>
+                  <div className="text-center mb-4">
+                    <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
+                    <p className="text-sm text-[#4A4468]">Wir senden dir einen Link zum Einloggen.</p>
                   </div>
                   <input type="email" className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
                   <button type="submit" disabled={loading} className="btn-action">{loading ? 'Sende...' : 'Link senden ✨'}</button>
-                  <button type="button" onClick={() => setMode('login')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Zurück zum Login</button>
+                  <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Zurück zum Login</button>
                 </>
               )}
             </form>
           )}
 
           {mode === 'register' && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="space-y-6">
               {regStep === 1 && (
                 <div className="space-y-4">
-                  <div className="text-center mb-6">
-                    <h2 className="text-3xl font-bold text-[var(--text-main)] mb-2">Willkommen bei Bisou! ✨</h2>
+                  <div className="text-center mb-4">
+                    <h2 className="text-2xl font-black text-[#1F1939] mb-2">Registrierung</h2>
+                    <p className="text-sm text-[#4A4468]">Schön, dass du dabei bist! ❤️</p>
                   </div>
-                  <div className="space-y-3">
-                    <input type="text" className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-                    <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <input type="text" className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+                  <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <div className="relative">
                     <input type="password" className="input-base" placeholder="Passwort (min. 6 Zeichen)" value={password} onChange={(e) => setPassword(e.target.value)} required />
                   </div>
                   <button disabled={!email || password.length < 6 || !displayName} onClick={() => setRegStep(2)} className="btn-action w-full mt-2">Weiter <ArrowRight className="w-5 h-5" /></button>
-                  <button type="button" onClick={() => setMode('login')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors mt-2">Bereits ein Konto? Login</button>
+                  <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors mt-2">Bereits ein Konto? Login</button>
+                  <button type="button" onClick={() => navigate('/')} className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] mt-6 hover:text-[var(--text-main)] transition-colors">← Zurück</button>
                 </div>
               )}
               {regStep === 2 && (
-                <div className="space-y-6 text-center">
-                  {message?.type === 'success' ? (
-                    <div className="space-y-6">
-                      <div className="w-20 h-20 bg-green-50 rounded-[2.5rem] flex items-center justify-center mx-auto"><Mail className="w-10 h-10 text-green-500" /></div>
-                      <div><h2 className="text-2xl font-bold mb-2">Fast geschafft!</h2><p className="text-sm text-[var(--text)] leading-relaxed">Bestätige bitte deine E-Mail <b>{email}</b>.</p></div>
-                      <button onClick={() => { setMode('login'); setMessage(null); }} className="btn-action">Zum Login</button>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="w-16 h-16 bg-purple-50 rounded-3xl flex items-center justify-center mx-auto"><ShieldCheck className="w-8 h-8 text-[var(--secondary)]" /></div>
+                <form onSubmit={handleRegister} className="space-y-6 animate-entrance">
+                  <div className="text-center mb-4">
+                    <h2 className="text-2xl font-black text-[#1F1939] mb-2">Fast fertig!</h2>
+                    <p className="text-sm text-[#4A4468]">Bestätige deine Angaben und starte los.</p>
+                  </div>
+                  
+                  <div className="bg-purple-50/50 rounded-[2rem] p-6 border border-purple-100 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[var(--secondary)] shadow-sm">
+                        <User className="w-5 h-5" />
+                      </div>
                       <div>
-                        <h2 className="text-2xl font-bold text-[var(--text-main)] mb-2">Datenschutz</h2>
-                        <p className="text-xs text-[var(--text)] leading-relaxed opacity-70 px-2">
-                          Die Verarbeitung von Daten durch diese Anwendung erfolgt ausschließlich für persönliche oder familiäre Zwecke. Sie fällt daher gemäß Art. 2 Abs. 2 lit. c DSGVO unter das sogenannte Haushaltsprivileg, weshalb die Bestimmungen der DSGVO keine Anwendung finden.
-                        </p>
+                        <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-wider">Name</p>
+                        <p className="font-bold text-[#1F1939]">{displayName}</p>
                       </div>
-                      <label className="flex items-center gap-3 p-4 rounded-2xl border-2 border-purple-50 bg-white cursor-pointer hover:border-[var(--secondary)] transition-all">
-                        <input type="checkbox" className="w-5 h-5 rounded-md accent-[var(--secondary)]" checked={privacyAccepted} onChange={(e) => setPrivacyAccepted(e.target.checked)} />
-                        <span className="text-xs font-bold text-[var(--text)] text-left">Bene gibt sich Mühe meine Daten zu schützen.</span>
-                      </label>
-                      <div className="space-y-3">
-                        <button disabled={!privacyAccepted || loading} onClick={handleRegisterFinal} className="btn-action">{loading ? 'Wird erstellt...' : 'Konto erstellen ✨'}</button>
-                        <button onClick={() => setRegStep(1)} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)]">Zurück</button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[var(--secondary)] shadow-sm">
+                        <Mail className="w-5 h-5" />
                       </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                      <div>
+                        <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-wider">E-Mail</p>
+                        <p className="font-bold text-[#1F1939] truncate max-w-[200px]">{email}</p>
+                      </div>
+                    </div>
+                  </div>
 
-          {mode !== 'forgot' && !(mode === 'register' && regStep === 2 && message?.type === 'success') && (
-            <div className="text-center pt-6">
-              <button 
-                type="button" 
-                onClick={() => {
-                  setMode('forgot');
-                  setMessage(null);
-                }} 
-                className="text-[var(--muted)] text-[10px] font-black uppercase tracking-widest hover:text-[var(--text-main)] transition-colors"
-              >
-                Passwort vergessen?
-              </button>
+                  <div className="space-y-3">
+                    <button type="submit" disabled={loading} className="btn-action w-full">
+                      {loading ? 'Wird erstellt...' : 'Konto erstellen ✨'}
+                    </button>
+                    <button type="button" onClick={() => setRegStep(1)} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Angaben korrigieren</button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Footer Area */}
-      <footer className="pb-8 pt-4 w-full text-center z-10">
-        <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
-          Bisou-App v.01<br />
-          <a 
-            href="https://github.com/bene-s-dev" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="underline hover:text-[var(--secondary)] transition-colors"
-          >
-            Benedikt S.
-          </a> &copy; 2026
-        </p>
-        <div className="flex justify-center gap-6 mt-2">
-          <button 
-            onClick={() => setShowPrivacyModal(true)}
-            className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
-          >
-            Datenschutz
-          </button>
-          <button 
-            onClick={() => setShowImpressumModal(true)}
-            className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
-          >
-            Impressum
-          </button>
-        </div>
-      </footer>
+      {/* Footer Links */}
+      <div className="mt-8 flex items-center justify-center gap-6 relative z-10 select-none">
+        <button onClick={() => setShowPrivacyModal(true)} className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest hover:text-[var(--secondary)] transition-colors py-2 px-1">Datenschutz</button>
+        <div className="w-1 h-1 rounded-full bg-purple-200" />
+        <button onClick={() => setShowImpressumModal(true)} className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest hover:text-[var(--secondary)] transition-colors py-2 px-1">Impressum</button>
+      </div>
 
-      {showPrivacyModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-transparent" onClick={() => setShowPrivacyModal(false)} />
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative z-10 animate-entrance border border-purple-100 text-center shadow-2xl">
+      {/* Modals */}
+      {showPrivacyModal && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowPrivacyModal(false)} />
+          <div className="modal-content p-8 text-center">
             <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
               <ShieldCheck className="w-8 h-8 text-[var(--secondary)]" />
             </div>
-            <h3 className="text-xl font-bold text-[#1F1939] mb-4">Datenschutz</h3>
-            <p className="text-sm text-[#4A4468] leading-relaxed mb-8">
+            <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Datenschutz</h3>
+            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8 italic">
               Die Verarbeitung von Daten durch diese Anwendung erfolgt ausschließlich für persönliche oder familiäre Zwecke. Sie fällt daher gemäß Art. 2 Abs. 2 lit. c DSGVO unter das sogenannte Haushaltsprivileg, weshalb die Bestimmungen der DSGVO keine Anwendung finden.<br /><br />
-              <i className="opacity-80">Dein Bene</i>
+              <span className="opacity-80">Dein Bene</span>
             </p>
             <button 
               onClick={() => setShowPrivacyModal(false)}
@@ -292,18 +276,19 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
               Schließen
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showImpressumModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-transparent" onClick={() => setShowImpressumModal(false)} />
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative z-10 animate-entrance border border-purple-100 text-center shadow-2xl">
+      {showImpressumModal && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowImpressumModal(false)} />
+          <div className="modal-content p-8 text-center">
             <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-              <span className="text-3xl font-bold text-[var(--secondary)]">§</span>
+              <span className="text-3xl font-black text-[var(--secondary)]">§</span>
             </div>
-            <h3 className="text-xl font-bold text-[#1F1939] mb-4">Impressum</h3>
-            <p className="text-sm text-[#4A4468] leading-relaxed mb-8 font-bold">
+            <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Impressum</h3>
+            <p className="text-sm text-[#4A4468] font-bold leading-relaxed mb-8">
               Made with ❤️ in Freiburg
             </p>
             <button 
@@ -313,7 +298,8 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
               Schließen
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

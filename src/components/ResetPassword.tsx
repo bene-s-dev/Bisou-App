@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { KeyRound, CheckCircle2, AlertCircle } from 'lucide-react';
+import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ResetPassword({ onComplete }: { onComplete: () => void }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const navigate = useNavigate();
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,25 +30,29 @@ export default function ResetPassword({ onComplete }: { onComplete: () => void }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full px-4 animate-entrance">
-      <div className="w-20 h-20 bg-purple-50 rounded-[2.5rem] flex items-center justify-center mb-8">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full px-4 animate-entrance relative">
+      <button onClick={() => navigate('/signin')} className="absolute left-0 top-0 p-2 rounded-full bg-white border border-purple-100 shadow-sm active:scale-95 transition-all">
+        <ArrowLeft className="w-4 h-4 text-[var(--secondary)]" />
+      </button>
+
+      <div className="w-20 h-20 bg-purple-50 rounded-[2.5rem] flex items-center justify-center mb-8 border-2 border-white shadow-sm">
         <KeyRound className="w-10 h-10 text-[var(--secondary)]" />
       </div>
 
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-[#2D264B] mb-3">Neues Passwort</h2>
-        <p className="text-[var(--text)] text-sm opacity-70 leading-relaxed">
+        <h2 className="text-3xl font-black text-[#1F1939] mb-3 tracking-tight">Neues Passwort</h2>
+        <p className="text-[#4A4468] text-sm font-semibold leading-relaxed max-w-[280px] mx-auto opacity-80">
           Wähle ein neues, sicheres Passwort für dein Konto.
         </p>
       </div>
 
       <form onSubmit={handleReset} className="w-full max-w-md space-y-6">
         {message && (
-          <div className={`p-5 rounded-[22px] text-sm font-bold flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+          <div className={`p-5 rounded-[22px] text-sm font-black flex items-center gap-3 animate-in fade-in slide-in-from-top-2 border-2 ${
+            message.type === 'success' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'
           }`}>
-            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-            <p>{message.text}</p>
+            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+            <p className="leading-tight">{message.text}</p>
           </div>
         )}
 
@@ -63,7 +69,7 @@ export default function ResetPassword({ onComplete }: { onComplete: () => void }
           />
         </div>
 
-        <button type="submit" disabled={loading} className="btn-action w-full">
+        <button type="submit" disabled={loading} className="btn-action w-full shadow-lg">
           {loading ? 'Speichere...' : 'Passwort speichern ✨'}
         </button>
       </form>

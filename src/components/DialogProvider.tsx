@@ -47,9 +47,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       {alert && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
           <div className={`flex items-center gap-3 p-4 rounded-2xl shadow-xl border backdrop-blur-md ${
-            alert.type === 'error' ? 'bg-red-50/90 border-red-100 text-red-800' :
-            alert.type === 'success' ? 'bg-green-50/90 border-green-100 text-green-800' :
-            'bg-blue-50/90 border-blue-100 text-blue-800'
+            alert.type === 'error' ? 'bg-red-50/95 border-red-100 text-red-800' :
+            alert.type === 'success' ? 'bg-green-50/95 border-green-100 text-green-800' :
+            'bg-white/95 border-purple-100 text-purple-800'
           }`}>
             {alert.type === 'error' && <XCircle className="w-5 h-5 shrink-0" />}
             {alert.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
@@ -64,9 +64,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 
       {/* Confirm Modal */}
       {confirm && (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center px-6">
-          <div className="absolute inset-0 bg-[#2D264B]/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setConfirm(null)} />
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm relative z-10 animate-entrance border-2 border-purple-100 shadow-2xl text-center">
+        <div className="modal-backdrop">
+          <div className="absolute inset-0" onClick={() => setConfirm(null)} />
+          <div className="modal-content p-8 text-center">
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto ${confirm.options?.type === 'error' ? 'bg-red-50' : 'bg-purple-50'}`}>
               <AlertCircle className={`w-8 h-8 ${confirm.options?.type === 'error' ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`} />
             </div>
@@ -79,10 +79,10 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-3">
               <button 
                 onClick={handleConfirm} 
-                className={`w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-md active:scale-95 transition-all ${
+                className={`btn-action py-4 text-sm ${
                   confirm.options?.type === 'error' 
                   ? 'bg-[var(--primary)] hover:bg-red-500' 
-                  : 'bg-[var(--secondary)] hover:bg-purple-500'
+                  : ''
                 }`}
               >
                 {confirm.options?.confirmLabel || 'Ja, weiter'}

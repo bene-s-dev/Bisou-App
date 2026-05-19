@@ -2,40 +2,42 @@ import React from 'react';
 
 export default function LoadingSkeleton() {
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#F8F7FF] px-4 animate-entrance overflow-hidden">
-      <div className="max-w-md mx-auto w-full flex flex-col flex-1">
+    <div className="h-[100svh] w-screen flex flex-col bg-[#F8F7FF] px-6 animate-entrance overflow-hidden">
+      <div className="max-w-md mx-auto w-full flex flex-col flex-1 relative">
+        <div className="bg-aura" />
+        
         {/* Header Skeleton */}
-        <header className="flex items-center justify-between mb-8 mt-8">
-          <div className="flex flex-col gap-2">
-            <div className="w-32 h-6 rounded-xl skeleton" />
-            <div className="w-24 h-4 rounded-lg skeleton opacity-60" />
+        <header className="flex items-center justify-between mb-12 mt-12">
+          <div className="flex flex-col gap-3">
+            <div className="w-40 h-8 rounded-2xl skeleton" />
+            <div className="w-24 h-4 rounded-xl skeleton opacity-60" />
           </div>
-          <div className="w-12 h-12 rounded-2xl skeleton" />
+          <div className="w-14 h-14 rounded-3xl skeleton shadow-sm" />
         </header>
 
         {/* Main Content Skeleton */}
-        <div className="flex-1 flex flex-col gap-6">
+        <div className="flex-1 flex flex-col gap-8">
           {/* Large Card Skeleton */}
-          <div className="h-48 rounded-[2rem] skeleton" />
+          <div className="h-56 rounded-[3rem] skeleton shadow-sm border-2 border-white" />
           
           {/* Grid Skeletons */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="h-32 rounded-[2rem] skeleton" />
-            <div className="h-32 rounded-[2rem] skeleton" />
+          <div className="grid grid-cols-2 gap-5">
+            <div className="h-36 rounded-[2.5rem] skeleton shadow-sm border-2 border-white" />
+            <div className="h-36 rounded-[2.5rem] skeleton shadow-sm border-2 border-white" />
           </div>
 
           {/* List Skeleton */}
-          <div className="space-y-4">
-            <div className="h-16 rounded-[1.5rem] skeleton opacity-80" />
-            <div className="h-16 rounded-[1.5rem] skeleton opacity-60" />
+          <div className="space-y-5">
+            <div className="h-20 rounded-[2rem] skeleton opacity-80 border-2 border-white" />
+            <div className="h-20 rounded-[2rem] skeleton opacity-60 border-2 border-white" />
           </div>
         </div>
 
         {/* Bottom Nav Skeleton */}
-        <div className="fixed bottom-8 left-4 right-4 h-20 bg-white/50 backdrop-blur-md rounded-[2.5rem] border border-white/20 flex items-center justify-around px-2 max-w-md mx-auto">
-          <div className="w-10 h-10 rounded-2xl skeleton opacity-40" />
-          <div className="w-10 h-10 rounded-2xl skeleton opacity-40" />
-          <div className="w-10 h-10 rounded-2xl skeleton opacity-40" />
+        <div className="fixed bottom-6 left-6 right-6 h-16 bg-white/80 backdrop-blur-md rounded-[2rem] border-2 border-purple-50 flex items-center justify-around px-2 max-w-md mx-auto shadow-lg">
+          <div className="w-10 h-10 rounded-2xl skeleton opacity-30" />
+          <div className="w-10 h-10 rounded-2xl skeleton opacity-30" />
+          <div className="w-10 h-10 rounded-2xl skeleton opacity-30" />
         </div>
       </div>
     </div>

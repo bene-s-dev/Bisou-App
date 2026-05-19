@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Home, MessageCircle, User as UserIcon, Lock, LogOut } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation, Navigate, NavLink } from 'react-router-dom';
 import { supabase } from './lib/supabase';
@@ -110,21 +111,22 @@ function AppLayout({
         </nav>
       )}
 
-      {showLockedModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-[#2D264B]/40 backdrop-blur-sm" onClick={() => setShowLockedModal(false)} />
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative z-10 animate-entrance border-2 border-purple-100 shadow-2xl text-center">
+      {showLockedModal && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowLockedModal(false)} />
+          <div className="modal-content p-8 text-center">
             <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
               <Lock className="w-8 h-8 text-[var(--primary)]" />
             </div>
             <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Bereich gesperrt</h3>
-            <p className="text-sm text-[#4A4468] font-medium leading-relaxed mb-8 px-4">
-              Du kannst den Fragenbereich nur mit einem <span className="font-bold text-[var(--secondary)]">Bisou-Partner</span> öffnen.
+            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8 px-4 italic">
+              Du kannst den Fragenbereich nur mit einem <span className="text-[var(--secondary)] font-black">Bisou-Partner</span> öffnen.
             </p>
             <button onClick={() => { setShowLockedModal(false); navigate('/profile'); }} className="btn-action py-4 text-base font-black">Zum Profil ✨</button>
             <button onClick={() => setShowLockedModal(false)} className="w-full mt-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] hover:text-[#1F1939] transition-colors py-2">Schließen</button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -139,9 +141,9 @@ export default function App() {
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
+  const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
   const dayKey = getDailyKey();
-  const fetchLock = React.useRef<string | null>(null);
 
   useEffect(() => {
     const handler = (e: any) => {
@@ -160,9 +162,9 @@ export default function App() {
   };
 
   const fetchProfile = useCallback(async (userId: string) => {
-    // Prevent redundant parallel fetches for the same user
-    if (fetchLock.current === userId + dayKey) return;
-    fetchLock.current = userId + dayKey;
+    // Basic debounce/concurrency control
+    if (isFetching) return;
+    setIsFetching(true);
 
     try {
       // 1. First attempt to get existing profile and questions
@@ -249,10 +251,10 @@ export default function App() {
         setDashboardData({ answers: [], questions: [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text] });
       }
     } finally {
-      fetchLock.current = null;
+      setIsFetching(false);
       setLoading(false);
     }
-  }, [dayKey, dashboardData]);
+  }, [dayKey, dashboardData, isFetching]);
 
   useEffect(() => {
     let mounted = true;
@@ -399,17 +401,19 @@ export default function App() {
   return (
     <DialogProvider>
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
         <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <div className="min-h-screen bg-[#F8F7FF]"><Login onLogin={() => setLoading(true)} initialMode="login" /></div>} />
         <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <div className="min-h-screen bg-[#F8F7FF]"><Login onLogin={() => setLoading(true)} initialMode="register" /></div>} />
         <Route path="/reset-password" element={<div className="h-screen w-screen relative bg-[#F8F7FF] overflow-y-auto pt-12 px-4"><div className="bg-aura" /><ResetPassword onComplete={() => navigate('/signin')} /></div>} />
         
+        {/* Protected Routes Wrapper */}
         {session && profile ? (
-          <Route path="*" element={
+          <Route path="/*" element={
             <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
               <Routes>
-                <Route path="/onboarding" element={<Onboarding onComplete={handleOnboardingComplete} />} />
-                <Route path="/dashboard" element={<Dashboard 
+                <Route path="onboarding" element={<Onboarding onComplete={handleOnboardingComplete} />} />
+                <Route path="dashboard" element={<Dashboard 
                   userName={profile.display_name} 
                   userAvatar={profile.avatar_url} 
                   partnerName={partnerProfile?.display_name || 'Partner'} 
@@ -421,25 +425,27 @@ export default function App() {
                     else navigate('/questions');
                   }} 
                 />} />
-                <Route path="/questions" element={profile.partner_id ? <Questions 
+                <Route path="questions" element={profile.partner_id ? <Questions 
                   userName={profile.display_name} 
                   partnerName={partnerProfile?.display_name || 'Partner'} 
                   partnerId={profile.partner_id} 
                   dashboardData={dashboardData}
                   onComplete={refreshData} 
                 /> : <Navigate to="/dashboard" replace />} />
-                <Route path="/profile" element={<Profile 
+                <Route path="profile" element={<Profile 
                   profile={profile} 
                   partnerProfile={partnerProfile} 
                   onLogout={handleLogout} 
                   deferredPrompt={deferredPrompt}
                   onInstall={handleInstallClick}
                 />} />
-                <Route path="/" element={profile.onboarding_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />} />
+                {/* Default within protected area */}
+                <Route path="*" element={profile.onboarding_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />} />
               </Routes>
             </AppLayout>
           } />
         ) : (
+          /* Fallback for unauthenticated access to protected routes */
           <Route path="*" element={!loading ? <Navigate to="/" replace /> : <LoadingSkeleton />} />
         )}
       </Routes>

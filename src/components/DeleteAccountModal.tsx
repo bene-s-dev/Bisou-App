@@ -66,9 +66,9 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-transparent" onClick={onClose} />
-      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm animate-entrance border-2 animate-pulse-alarm-border relative">
+    <div className="modal-backdrop px-4">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="modal-content p-8 animate-pulse-alarm-border">
         
         {/* Back Button for all steps */}
         <button onClick={handleBack} className="absolute top-6 left-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all">
@@ -118,13 +118,14 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
         {step === 3 && (
           <div className="flex flex-col items-center text-center space-y-6 pt-8">
             <div className="flex gap-4">
-              <CircleAlert className="w-16 h-16 text-red-600" />
+              <AlertCircle className="w-16 h-16 text-red-600" />
               <Trash2 className="w-16 h-16 text-red-600" />
-              <CircleAlert className="w-16 h-16 text-red-600" />
             </div>
             <h3 className="text-2xl font-black text-red-600 uppercase tracking-widest">LETZTE WARNUNG!</h3>
-            <p className="text-md font-bold text-red-900 p-4 rounded-xl">BIST DU DIR WIRKLICH, WIRKLICH GANZ SICHER? ALLES WIRD GELÖSCHT!</p>
-            <button onClick={onConfirm} className="w-full py-6 rounded-2xl text-white font-black text-lg uppercase tracking-widest shadow-2xl animate-pulse-deep-red">JETZT UNWIDERRUFLICH LÖSCHEN</button>
+            <p className="text-md font-bold text-red-900 p-4 rounded-xl">BIST DU DIR WIRKLICH GANZ SICHER? ALLES WIRD GELÖSCHT!</p>
+            <button onClick={onConfirm} className="w-full py-6 rounded-2xl text-white font-black text-lg uppercase tracking-widest shadow-2xl animate-pulse-deep-red leading-tight">
+              UNWIDERRUFLICH (!) <br /> JETZT LÖSCHEN
+            </button>
             <button onClick={onClose} className="w-full py-4 rounded-2xl text-white font-black text-sm uppercase tracking-widest shadow-lg animate-calming-gradient">Löschen abbrechen</button>
           </div>
         )}

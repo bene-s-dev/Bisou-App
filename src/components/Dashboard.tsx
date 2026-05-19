@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { GREETINGS, Question } from '../constants/questions';
-import { User as UserIcon, Lock, Heart as HeartIcon, Clock, Sparkles, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon } from 'lucide-react';
+import { User as UserIcon, Lock, Heart as HeartIcon, Clock, Sparkles, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3, TrendingUp, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getDailyKey, getTimeUntilReset } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
@@ -14,6 +15,161 @@ interface DashboardProps {
   partnerId?: string | null;
   dashboardData: any;
   onStartQuestions: () => void;
+}
+
+function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isOpen: boolean, onClose: () => void, partnerId: string, partnerName: string, userName: string }) {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<{
+    totalAnswers: number;
+    agreementRate: number;
+    myHabit: number;
+    partnerHabit: number;
+  } | null>(null);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !partnerId) return;
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+      const { data: answers } = await supabase
+        .from('answers')
+        .select('*')
+        .gte('day_key', dateStr)
+        .in('user_id', [session.user.id, partnerId]);
+
+      if (!answers) return;
+
+      const myAnswers = answers.filter(a => a.user_id === session.user.id);
+      const partnerAnswers = answers.filter(a => a.user_id === partnerId);
+
+      // 1. Total Questions (Days where both answered)
+      const daysWithBoth = myAnswers.filter(ma => 
+        partnerAnswers.some(pa => pa.day_key === ma.day_key)
+      );
+
+      // 2. Agreement Rate (Only on Question 1 - TOT)
+      let agreements = 0;
+      daysWithBoth.forEach(ma => {
+        const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
+        if (pa) {
+          const myQ1 = ma.choice.split(' | ')[0];
+          const partnerQ1 = pa.choice.split(' | ')[0];
+          if (myQ1 === partnerQ1) agreements++;
+        }
+      });
+
+      // 3. Habits (Avg Hour)
+      const getAvgHour = (ans: any[]) => {
+        if (ans.length === 0) return 0;
+        const totalHours = ans.reduce((acc, a) => {
+          const hour = new Date(a.created_at).getHours();
+          return acc + hour;
+        }, 0);
+        return Math.round(totalHours / ans.length);
+      };
+
+      setStats({
+        totalAnswers: daysWithBoth.length,
+        agreementRate: daysWithBoth.length > 0 ? Math.round((agreements / daysWithBoth.length) * 100) : 0,
+        myHabit: getAvgHour(myAnswers),
+        partnerHabit: getAvgHour(partnerAnswers)
+      });
+    } catch (err) {
+      console.error("Stats error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (isOpen) fetchStats();
+  }, [isOpen, fetchStats]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal-backdrop px-4">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="modal-content p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center">
+              <BarChart3 className="w-7 h-7 text-[var(--secondary)]" />
+            </div>
+            <div>
+              <h3 className="font-black text-[#1F1939] text-lg leading-tight">Beziehungs-Statistik</h3>
+              <p className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-widest">Die letzten 30 Tage</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-5 h-5" /></button>
+        </div>
+
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-4">
+            <div className="w-10 h-10 border-4 border-purple-100 border-t-[var(--secondary)] rounded-full animate-spin" />
+            <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Analysiere Daten...</p>
+          </div>
+        ) : stats ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-purple-50 rounded-3xl p-5 border border-purple-100">
+                <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Gemeinsame Fragen</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
+                  <span className="text-[10px] font-bold text-[#4A4468]">Tage</span>
+                </div>
+              </div>
+              <div className="bg-orange-50 rounded-3xl p-5 border border-orange-100">
+                <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-2">Übereinstimmung</p>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-orange-500">{stats.agreementRate}%</span>
+                  <Zap className="w-4 h-4 text-orange-400" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border-2 border-purple-50 rounded-3xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-4 h-4 text-[var(--secondary)]" />
+                <h4 className="text-[10px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#4A4468]">{userName.split(' ')[0]}</span>
+                  <span className="text-xs font-black text-[var(--secondary)]">{stats.myHabit}:00 Uhr</span>
+                </div>
+                <div className="w-full h-1.5 bg-purple-50 rounded-full overflow-hidden">
+                  <div className="h-full bg-[var(--secondary)] rounded-full" style={{ width: `${(stats.myHabit / 24) * 100}%` }} />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#4A4468]">{partnerName.split(' ')[0]}</span>
+                  <span className="text-xs font-black text-[var(--secondary)]">{stats.partnerHabit}:00 Uhr</span>
+                </div>
+                <div className="w-full h-1.5 bg-purple-50 rounded-full overflow-hidden">
+                  <div className="h-full bg-[var(--primary)] rounded-full" style={{ width: `${(stats.partnerHabit / 24) * 100}%` }} />
+                </div>
+              </div>
+              <p className="text-[9px] font-bold text-[var(--muted)] mt-4 text-center italic opacity-60">Durchschnittliche Uhrzeit eurer Antworten</p>
+            </div>
+            
+            <button onClick={onClose} className="btn-action py-4 text-xs mt-4">Alles klar! ✨</button>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-sm font-bold text-[#4A4468]">Keine Daten für Statistiken verfügbar.</p>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boolean, onClose: () => void, streakData: any, partnerName: string }) {
@@ -33,10 +189,10 @@ function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boo
     return history.includes(dateStr);
   };
 
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center px-4">
-      <div className="absolute inset-0 bg-transparent" onClick={onClose} />
-      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative z-10 animate-entrance border-2 border-purple-100">
+  return createPortal(
+    <div className="modal-backdrop px-4">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="modal-content p-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center">
@@ -80,7 +236,8 @@ function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boo
           <p className="text-2xl font-black text-[var(--secondary)]">{streakData?.longest_streak || 0} TAGE</p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -96,6 +253,7 @@ export default function Dashboard({
   const { showAlert, showConfirm } = useDialog();
   const [showComparison, setShowComparison] = useState(false);
   const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
@@ -217,61 +375,64 @@ export default function Dashboard({
         
         {/* Header: Avatars and Streaks */}
         <div className="flex flex-col items-center mb-8 shrink-0">
-        {/* Avatars Row */}
-        <div className="flex -space-x-4 mb-5">
-          <div 
-            onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
-            className={`w-20 h-20 rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
-          >
-            {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+          {/* Avatars Row */}
+          <div className="flex -space-x-4 mb-5">
+            <div 
+              onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
+              className={`w-20 h-20 rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+            >
+              {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+            </div>
+            <div 
+              onClick={() => userAvatar && setFullscreenImage(userAvatar)}
+              className="w-20 h-20 rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-10 shadow-md transition-transform active:scale-95 cursor-pointer"
+            >
+              {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+            </div>
           </div>
-          <div 
-            onClick={() => userAvatar && setFullscreenImage(userAvatar)}
-            className="w-20 h-20 rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-10 shadow-md transition-transform active:scale-95 cursor-pointer"
-          >
-            {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
-          </div>
-        </div>
 
           {/* Names and Flames Row - Centered under Avatars */}
           <div className="w-full flex justify-center pt-2">
-            <div className="flex w-40"> {/* Width matches combined avatars */}
+            <div className="flex w-40 justify-center"> {/* Width matches combined avatars area */}
               {/* Partner side (Left) */}
-              <div className="flex-1 flex flex-col items-center gap-1 min-w-0 pr-1">
-                <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] truncate w-full text-center">
-                  {partnerName.split(' ')[0]}
-                </span>
-                {hasPartner ? (
-                  <button onClick={() => setShowStreakModal('partner')} className="flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 active:scale-90 transition-transform">
-                    <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
-                    <span className="text-[10px] font-black text-orange-600">{partnerStreak?.current_streak || 0}</span>
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200 opacity-40">
-                    <Flame className="w-3 h-3 text-gray-400 fill-gray-400" />
-                    <span className="text-[10px] font-black text-gray-400">0</span>
-                  </div>
+              <div className="flex-1 flex flex-col items-center min-w-0">
+                <div 
+                  onClick={() => hasPartner && setShowStreakModal('partner')}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-50/50' : 'opacity-40'}`}
+                >
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] truncate max-w-[50px]">
+                    {partnerName.split(' ')[0]}
+                  </span>
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                </div>
+                {hasPartner && (
+                  <span className="text-[9px] font-black text-orange-600 mt-0.5">{partnerStreak?.current_streak || 0}</span>
                 )}
               </div>
 
               {/* User side (Right) */}
-              <div className="flex-1 flex flex-col items-center gap-1 min-w-0 pl-1">
-                <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] truncate w-full text-center">
-                  {(userName || 'Ich').split(' ')[0]}
-                </span>
-                <button onClick={() => setShowStreakModal('user')} className="flex items-center gap-1.5 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100 active:scale-90 transition-transform">
-                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
-                  <span className="text-[10px] font-black text-orange-600">{myStreak?.current_streak || 0}</span>
-                </button>
+              <div className="flex-1 flex flex-col items-center min-w-0">
+                <div 
+                  onClick={() => setShowStreakModal('user')}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-xl active:scale-95 cursor-pointer hover:bg-orange-50/50 transition-all"
+                >
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] truncate max-w-[50px]">
+                    {(userName || 'Ich').split(' ')[0]}
+                  </span>
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                </div>
+                <span className="text-[9px] font-black text-orange-600 mt-0.5">{myStreak?.current_streak || 0}</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Greeting Section */}
-        <div className="mb-6 px-4">
+        <div className="mb-6 px-6">
           <h2 className="text-2xl font-black text-[#1F1939] leading-[1.1] tracking-tight text-left">
-            {greeting} <br />
+            {greeting},<br />
             <span className="text-[var(--secondary)]">{userName}</span>! ❤️
           </h2>
         </div>
@@ -319,16 +480,33 @@ export default function Dashboard({
                 </span>
               </div>
 
-              <button 
-                onClick={onStartQuestions} 
-                className="btn-action py-3 text-xs font-black uppercase tracking-widest shadow-md"
-              >
-                {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={onStartQuestions} 
+                  className="flex-1 btn-action py-3 text-xs font-black uppercase tracking-widest shadow-md"
+                >
+                  {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
+                </button>
+                <button 
+                  onClick={() => setShowStatsModal(true)} 
+                  className="w-12 h-12 bg-white border-2 border-purple-100 rounded-2xl flex items-center justify-center text-[var(--secondary)] shadow-sm active:scale-95 transition-all"
+                  title="Statistiken"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      <StatsModal 
+        isOpen={showStatsModal} 
+        onClose={() => setShowStatsModal(false)} 
+        partnerId={partnerId || ''} 
+        partnerName={partnerName}
+        userName={userName}
+      />
 
       <StreakModal 
         isOpen={!!showStreakModal} 

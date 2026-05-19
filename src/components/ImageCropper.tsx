@@ -64,7 +64,7 @@ export default function ImageCropper({ image, onCropComplete, onCancel }: ImageC
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+    <div className="fixed inset-0 z-[2000] bg-black flex flex-col">
       <div className="relative flex-1">
         <Cropper
           image={image}

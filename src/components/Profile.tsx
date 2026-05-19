@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
@@ -27,6 +28,12 @@ export default function Profile({
   const activeTab = (searchParams.get('tab') || 'main') as 'main' | 'partner' | 'notifications' | 'install' | 'app-info';
   
   const [profile, setProfile] = useState<any>(initialProfile);
+  
+  useEffect(() => {
+    setProfile(initialProfile);
+    setNewName(initialProfile?.display_name || '');
+  }, [initialProfile]);
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(initialProfile?.display_name || '');
   const [loading, setLoading] = useState(false);
@@ -77,32 +84,30 @@ export default function Profile({
     if (!partnerCodeInput.trim() || partnerCodeInput === 'CB-') return;
     setIsLinking(true);
     try {
-      const { data, error } = await supabase.from('profiles').select('id').eq('partner_code', partnerCodeInput.toUpperCase()).single();
-      if (error || !data) {
+      const { error } = await supabase.rpc('link_partners', { partner_code_to_link: partnerCodeInput.trim() });
+      if (error) {
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
-        showAlert("Code nicht gefunden.", "error");
+        showAlert(error.message || "Fehler beim Verknüpfen.", "error");
         return;
       }
-      if (data.id === profile.id) {
-        setShouldShake(true);
-        setTimeout(() => setShouldShake(false), 500);
-        showAlert("Du kannst dich nicht mit dir selbst verknüpfen.", "error");
-        return;
-      }
-      const { error: updateError } = await supabase.from('profiles').update({ partner_id: data.id }).eq('id', profile.id);
-      if (updateError) throw updateError;
-      window.location.reload();
-    } catch (err) { showAlert("Fehler beim Verknüpfen.", "error"); } finally { setIsLinking(false); setPartnerCodeInput('CB-'); }
+      showAlert("Erfolgreich verknüpft! ❤️", "success");
+      // App.tsx realtime will handle the rest, but we can trigger a refresh if needed
+    } catch (err: any) { 
+      showAlert(err.message || "Fehler beim Verknüpfen.", "error"); 
+    } finally { 
+      setIsLinking(false); 
+      setPartnerCodeInput('CB-'); 
+    }
   };
 
   const handleUnlinkPartner = async () => {
     showConfirm("Möchtest du die Verknüpfung wirklich aufheben?", async () => {
         setIsLinking(true);
         try {
-          const { error } = await supabase.from('profiles').update({ partner_id: null }).eq('id', profile.id);
+          const { error } = await supabase.rpc('unlink_partners');
           if (error) throw error;
-          window.location.reload();
+          showAlert("Verknüpfung gelöst.", "info");
         } catch (err) { showAlert("Fehler beim Trennen.", "error"); } finally { setIsLinking(false); }
       }, { title: "Verknüpfung lösen", confirmLabel: "Ja, trennen", cancelLabel: "Abbrechen" }
     );
@@ -415,7 +420,7 @@ export default function Profile({
         return (
           <div className="flex flex-col gap-2 px-4">
             {[
-              { id: 'partner', label: 'Bisou-Partner verbinden', icon: Users },
+              { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
               { id: 'install', label: 'App installieren', icon: Smartphone },
               { id: 'app-info', label: 'App-Info', icon: Info },
@@ -445,19 +450,19 @@ export default function Profile({
     }
   };
 
-  const renderServicesModal = () => (
-    <div className="fixed inset-0 z-[1000] flex items-end justify-center px-4 pb-32 pointer-events-none">
-      <div className="absolute inset-0 pointer-events-auto" onClick={() => setShowServices(false)} />
-      <div className="w-full max-w-sm p-8 animate-entrance relative z-10 flex flex-col max-h-[80vh] pointer-events-auto">
+  const renderServicesModal = () => createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-[#2D264B]/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowServices(false)} />
+      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm relative z-10 animate-entrance border-2 border-purple-100 shadow-2xl flex flex-col max-h-[85vh]">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">Verwendete Dienste</h3>
-          <button onClick={() => setShowServices(false)} className="p-2 text-[var(--muted)]"><X className="w-4 h-4" /></button>
+          <button onClick={() => setShowServices(false)} className="p-2 text-[var(--muted)] hover:bg-purple-50 rounded-full transition-colors"><X className="w-4 h-4" /></button>
         </div>
         
-        <div className="flex-1 overflow-y-auto pr-1">
+        <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
           <div className="space-y-6">
             <div>
-              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Kern-Technologien</h4>
+              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Kern-Technologien</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
                 <p>React 18 & TypeScript</p>
                 <p>Vite Build-System</p>
@@ -466,7 +471,7 @@ export default function Profile({
             </div>
             
             <div>
-              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Design & Styling</h4>
+              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Design & Styling</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
                 <p>Tailwind CSS</p>
                 <p>Lucide Icon Library</p>
@@ -475,7 +480,7 @@ export default function Profile({
             </div>
             
             <div>
-              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Spezialisierte Bibliotheken</h4>
+              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Spezialisierte Bibliotheken</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
                 <p>React Router (Navigation)</p>
                 <p>SortableJS (Ranking Drag&Drop)</p>
@@ -485,7 +490,7 @@ export default function Profile({
             </div>
 
             <div>
-              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Infrastruktur & Hosting</h4>
+              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Infrastruktur & Hosting</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
                 <p>Vercel Hosting</p>
                 <p>PWA Support (Service Worker)</p>
@@ -496,20 +501,25 @@ export default function Profile({
         
         <button 
           onClick={() => setShowServices(false)}
-          className="w-full mt-6 py-4 text-[var(--muted)] font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all"
+          className="w-full mt-6 py-4 bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all shadow-sm"
         >
           Schließen
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 
   return (
     <div className="flex flex-col h-full animate-entrance">
-      {selectedImage && (
-        <ImageCropper image={selectedImage} onCropComplete={handleCropComplete} onCancel={() => setSelectedImage(null)} />
+      {selectedImage && createPortal(
+        <ImageCropper image={selectedImage} onCropComplete={handleCropComplete} onCancel={() => setSelectedImage(null)} />,
+        document.body
       )}
-      <DeleteAccountModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={async () => { try { setLoading(true); const { error } = await supabase.from('profiles').delete().eq('id', profile.id); if (error) throw error; onLogout(); } catch (err) { showAlert("Fehler beim Löschen des Accounts.", "error"); } finally { setLoading(false); } }} />
+      {showDeleteModal && createPortal(
+        <DeleteAccountModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={async () => { try { setLoading(true); const { error } = await supabase.from('profiles').delete().eq('id', profile.id); if (error) throw error; onLogout(); } catch (err) { showAlert("Fehler beim Löschen des Accounts.", "error"); } finally { setLoading(false); } }} />,
+        document.body
+      )}
       {showServices && renderServicesModal()}
       
       <header className="flex flex-col items-center pt-16 pb-2 shrink-0 relative">
@@ -532,7 +542,7 @@ export default function Profile({
             <Pencil className="w-4 h-4" />
           </button>
         </div>
-        <div className="relative flex flex-col items-center justify-center w-full mt-1 mb-6">
+        <div className="relative flex flex-col items-center justify-center w-full mt-1 mb-6 px-4">
           {isEditingName ? (
             <div className="flex items-center gap-2">
               <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} className="text-lg font-black text-[var(--secondary)] bg-purple-50/50 border-b-2 border-[var(--secondary)] outline-none text-center py-1 w-[140px]" autoFocus onBlur={handleUpdateName} onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()} />
@@ -544,11 +554,11 @@ export default function Profile({
               </button>
             </div>
           ) : (
-            <div className="relative inline-flex items-center">
-              <span className="text-lg font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{profile?.display_name || 'User'}</span>
+            <div className="relative w-full flex justify-center items-center">
+              <span className="text-lg font-black text-[var(--secondary)] uppercase tracking-[0.1em] text-center">{profile?.display_name || 'User'}</span>
               <button 
                 onClick={() => setIsEditingName(true)}
-                className="ml-3 w-8 h-8 rounded-full bg-white border border-[var(--secondary)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all"
+                className="absolute right-[calc(50%-100px)] w-8 h-8 rounded-full bg-white border border-[var(--secondary)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all"
               >
                  <Pencil className="w-4 h-4" />
               </button>
@@ -562,16 +572,18 @@ export default function Profile({
         {renderContent()}
       </div>
 
-      {showAvatarMenu && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center px-4 pb-10 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowAvatarMenu(false)}>
-          <div className="bg-white rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl animate-entrance" onClick={e => e.stopPropagation()}>
+      {showAvatarMenu && createPortal(
+        <div className="modal-backdrop items-end pb-10 px-4">
+          <div className="absolute inset-0" onClick={() => setShowAvatarMenu(false)} />
+          <div className="modal-content p-8" onClick={e => e.stopPropagation()}>
             <div className="flex flex-col gap-4">
               <button onClick={() => { setShowAvatarMenu(false); document.getElementById('avatar-upload')?.click(); }} className="w-full py-4 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-purple-100 transition-all active:scale-95"><Camera className="w-5 h-5" /> Neues Bild wählen</button>
               <button onClick={handleDeleteImage} className="w-full py-4 rounded-2xl bg-red-50 text-red-500 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-100 transition-all active:scale-95"><Trash2 className="w-5 h-5" /> Bild löschen</button>
               <button onClick={() => setShowAvatarMenu(false)} className="w-full py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] hover:text-[var(--text-main)] transition-colors mt-2">Abbrechen</button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Heart, MessageCircle, Sparkles, ShieldCheck } from 'lucide-react';
 
@@ -21,8 +22,8 @@ export default function LandingPage() {
       setTimeout(() => {
         setWordIndex((prev) => (prev + 1) % words.length);
         setIsFading(false);
-      }, 500);
-    }, 3000);
+      }, 600);
+    }, 4000);
 
     return () => {
       clearTimeout(timer);
@@ -35,10 +36,24 @@ export default function LandingPage() {
       <div className="bg-aura" />
       
       {/* Header - Matches Login */}
-      <header className="max-w-md mx-auto pt-12 pb-4 text-center select-none w-full">
-        <h1 className="text-6xl font-semibold text-[var(--text-main)] mb-2 tracking-tight" style={{ fontFamily: 'Fraunces, serif' }}>
-          Bisou
-        </h1>
+      <header className="max-w-md mx-auto pt-12 pb-4 text-center select-none w-full relative">
+        <div className="absolute top-12 right-0">
+          <button 
+            onClick={() => navigate('/signin')}
+            className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest hover:text-[var(--primary)] transition-colors py-2 px-4"
+          >
+            Login
+          </button>
+        </div>
+        
+        <button 
+          onClick={() => navigate('/')}
+          className="group transition-transform active:scale-95"
+        >
+          <h1 className="text-6xl font-semibold text-[var(--text-main)] mb-2 tracking-tight group-hover:text-[var(--primary)] transition-colors" style={{ fontFamily: 'Fraunces, serif' }}>
+            Bisou
+          </h1>
+        </button>
         
         <div className="text-[var(--text)] text-base font-bold flex items-center justify-center select-none w-full" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
           <div className="flex items-center justify-center">
@@ -57,7 +72,8 @@ export default function LandingPage() {
 
             <span className="whitespace-nowrap">&nbsp;näher.</span>
           </div>
-        </div>      </header>
+        </div>
+      </header>
 
       {/* Hero Section - Tightened */}
       <main className="max-w-md mx-auto flex-1 flex flex-col justify-center gap-6 overflow-hidden">
@@ -126,10 +142,10 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {showPrivacyModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-transparent" onClick={() => setShowPrivacyModal(false)} />
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative z-10 animate-entrance border border-purple-100 text-center shadow-2xl">
+      {showPrivacyModal && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowPrivacyModal(false)} />
+          <div className="modal-content p-8 text-center">
             <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
               <ShieldCheck className="w-8 h-8 text-[var(--secondary)]" />
             </div>
@@ -145,13 +161,14 @@ export default function LandingPage() {
               Schließen
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {showImpressumModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-transparent" onClick={() => setShowImpressumModal(false)} />
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-md relative z-10 animate-entrance border border-purple-100 text-center shadow-2xl">
+      {showImpressumModal && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowImpressumModal(false)} />
+          <div className="modal-content p-8 text-center">
             <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
               <span className="text-3xl font-bold text-[var(--secondary)]">§</span>
             </div>
@@ -166,7 +183,8 @@ export default function LandingPage() {
               Schließen
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

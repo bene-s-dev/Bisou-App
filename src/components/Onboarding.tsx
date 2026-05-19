@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Camera, ArrowRight
 } from 'lucide-react';
@@ -98,12 +99,13 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div className="flex-1 flex flex-col pt-4 animate-entrance relative">
-      {selectedImage && (
+      {selectedImage && createPortal(
         <ImageCropper 
           image={selectedImage} 
           onCropComplete={handleCropComplete} 
           onCancel={() => setSelectedImage(null)} 
-        />
+        />,
+        document.body
       )}
 
       <header className="mb-10">
@@ -114,8 +116,8 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
 
       <div className="flex-1 flex flex-col">
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 text-center px-4">
-          <div className="relative mx-auto w-32 flex flex-col items-center">
-            <label className="cursor-pointer block relative h-32 w-32 mb-6 group">
+          <div className="relative mx-auto w-32">
+            <label className="cursor-pointer block relative h-32 w-32 mb-2 group">
               <input type="file" accept="image/*" className="hidden" onChange={handleFileSelect} disabled={loading} />
               <div className={`w-32 h-32 rounded-[2.5rem] bg-white flex items-center justify-center border-2 border-white shadow-md overflow-hidden transition-all group-hover:scale-105 active:scale-95 ${loading ? 'opacity-50' : ''}`}>
                 {avatarPreview ? (
@@ -123,27 +125,27 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
                 ) : (
                   <Camera className="w-10 h-10 text-[var(--secondary)]" />
                 )}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
                 {loading && (
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 z-10">
                     <div className="w-6 h-6 border-4 border-[var(--secondary)] border-t-transparent rounded-full animate-spin"></div>
                   </div>
                 )}
               </div>
+              {!avatarPreview && !loading && (
+                <div className="absolute -right-1 -bottom-1 w-10 h-10 rounded-full bg-[var(--secondary)] text-white flex items-center justify-center shadow-lg border-4 border-[#F8F7FF] animate-bounce-subtle">
+                  <Camera className="w-4 h-4" />
+                </div>
+              )}
             </label>
-            <button 
-              onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
-              disabled={loading}
-              className="bg-white border-2 border-[var(--card-border)] px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-[var(--secondary)] active:scale-95 transition-all flex items-center gap-2 shadow-sm"
-            >
-              <Camera className="w-4 h-4" />
-              {avatarPreview ? 'Foto ändern' : 'Foto wählen'}
-            </button>
           </div>
           
           <div className="space-y-3">
             <h2 className="text-3xl font-black text-[#1F1939] tracking-tight">Hallo {userName}! ❤️</h2>
             <p className="text-[var(--text)] text-xs font-bold leading-relaxed opacity-80 max-w-[240px] mx-auto">
-              Lass uns dein Profil vervollständigen. Möchtest du ein Foto hochladen?
+              {avatarPreview 
+                ? "Dein Profilbild sieht super aus! Möchtest du es so lassen oder ein anderes wählen?" 
+                : "Lass uns dein Profil vervollständigen. Möchtest du ein Foto hochladen?"}
             </p>
           </div>
         </div>
