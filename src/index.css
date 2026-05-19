@@ -124,7 +124,16 @@ html, body {
   .label-caps {
     @apply text-[10px] font-black uppercase tracking-[0.2em] text-[var(--muted)];
   }
+
+  .skeleton { @apply bg-purple-100/50 overflow-hidden relative; }
+  .skeleton::after {
+    content: ""; @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: skeleton-shimmer 1.5s infinite;
+  }
 }
+
+@keyframes skeleton-shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 
 /* Modal System Styles */
 .modal-backdrop {
@@ -139,12 +148,38 @@ html, body {
 .animate-entrance { animation: entrance 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 @keyframes entrance { from { opacity: 0; transform: translateY(16px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
-.animate-bounce-subtle {
-  animation: bounce-subtle 2s infinite;
+.animate-bounce-subtle { animation: bounce-subtle 2s infinite; }
+@keyframes bounce-subtle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+.animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
 }
-@keyframes bounce-subtle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+
+.animate-pulse-alarm-border { animation: pulse-alarm-border 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse-alarm-border {
+  0%, 100% { border-color: #fecaca; }
+  50% { border-color: #ef4444; }
+}
+
+.animate-pulse-deep-red { animation: pulse-deep-red 0.8s ease-in-out infinite alternate; }
+@keyframes pulse-deep-red {
+  0% { background-color: #dc2626; }
+  100% { background-color: #7f1d1d; }
+}
+
+.animate-calming-gradient {
+  animation: calming-gradient 4s ease infinite;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #10b981);
+  background-size: 200% 100%;
+}
+@keyframes calming-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 ::-webkit-scrollbar { display: none; }

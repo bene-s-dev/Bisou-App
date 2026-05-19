@@ -141,7 +141,7 @@ export default function App() {
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
-  const [isFetching, setIsFetching] = useState(false);
+  const fetchLock = React.useRef<string | null>(null);
   const navigate = useNavigate();
   const dayKey = getDailyKey();
 
@@ -163,28 +163,31 @@ export default function App() {
 
   const fetchProfile = useCallback(async (userId: string) => {
     // Basic debounce/concurrency control
-    if (isFetching) return;
-    setIsFetching(true);
+    if (fetchLock.current === userId + dayKey) return;
+    fetchLock.current = userId + dayKey;
 
     try {
-      // 1. First attempt to get existing profile and questions
-      let { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*, partner:partner_id(id, display_name, avatar_url)')
-        .eq('id', userId)
-        .maybeSingle();
+      setLoading(true);
+      // 1. Get profile and today's questions in parallel
+      const [profileRes, questionsRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*, partner:partner_id(id, display_name, avatar_url)')
+          .eq('id', userId)
+          .maybeSingle(),
+        supabase
+          .from('daily_questions')
+          .select('questions')
+          .eq('day_key', dayKey)
+          .maybeSingle()
+      ]);
 
-      if (profileError) throw profileError;
+      if (profileRes.error) throw profileRes.error;
+      
+      let profileData = profileRes.data;
+      let qData = questionsRes.data?.questions;
 
-      const { data: questionsRes } = await supabase
-        .from('daily_questions')
-        .select('questions')
-        .eq('day_key', dayKey)
-        .maybeSingle();
-
-      let qData = questionsRes?.questions;
-
-      // 2. If no questions exist for today, trigger the Edge Function
+      // 2. If no questions exist for today, trigger the Edge Function (non-blocking if possible, but here we wait for data)
       if (!qData) {
         try {
           const { data: genData, error: genError } = await supabase.functions.invoke('generate-questions', {
@@ -200,13 +203,14 @@ export default function App() {
         ? [qData.tot, qData.ranking, qData.text] 
         : [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];
 
-      // 3. Robust Profile Handling (Handle multi-tab race condition where profile exists but wasn't found)
+      // 3. Robust Profile Handling (Handle missing profile case)
       if (!profileData) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        // We use the metadata from the session if profile is missing
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
           const newProfile = {
             id: userId,
-            display_name: user.user_metadata?.display_name || 'Nutzer',
+            display_name: session.user.user_metadata?.display_name || 'Nutzer',
             partner_code: 'CB-' + userId.substring(0, 6).toUpperCase(),
             onboarding_completed: false
           };
@@ -219,8 +223,8 @@ export default function App() {
 
           if (inserted) {
             profileData = inserted;
-          } else if (insertError) {
-            // If insert fails (maybe already created in another tab), try one last fetch
+          } else {
+            // Last resort retry
             const { data: retryData } = await supabase.from('profiles').select('*, partner:partner_id(id, display_name, avatar_url)').eq('id', userId).maybeSingle();
             profileData = retryData;
           }
@@ -229,32 +233,30 @@ export default function App() {
 
       if (profileData) {
         setProfile(profileData);
-        if (profileData.partner) setPartnerProfile(profileData.partner);
-        else setPartnerProfile(null);
+        setPartnerProfile(profileData.partner || null);
 
         const userIds = [userId];
         if (profileData.partner_id) userIds.push(profileData.partner_id);
 
-        const { data: answers } = await supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey);
-        const { data: streaks } = await supabase.from('streaks').select('*').in('user_id', userIds);
+        const [answersRes, streaksRes] = await Promise.all([
+          supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey),
+          supabase.from('streaks').select('*').in('user_id', userIds)
+        ]);
 
         setDashboardData({
-          answers: answers || [],
+          answers: answersRes.data || [],
           questions: currentQs,
-          streaks: streaks || []
+          streaks: streaksRes.data || []
         });
       }
     } catch (e: any) {
-      console.error("Profil-Fehler:", e);
-      // Ensure we have at least fallback data to prevent total hang
-      if (!dashboardData) {
-        setDashboardData({ answers: [], questions: [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text] });
-      }
+      console.error("Critical Profile Error:", e);
+      setDashboardData((prev: any) => prev || { answers: [], questions: [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text] });
     } finally {
-      setIsFetching(false);
+      fetchLock.current = null;
       setLoading(false);
     }
-  }, [dayKey, dashboardData, isFetching]);
+  }, [dayKey]);
 
   useEffect(() => {
     let mounted = true;
