@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { translateError } from '../lib/translations';
 
 export default function ResetPassword({ onComplete }: { onComplete: () => void }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleReset = async (e: React.FormEvent) => {
@@ -23,7 +25,7 @@ export default function ResetPassword({ onComplete }: { onComplete: () => void }
         onComplete();
       }, 2000);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message });
+      setMessage({ type: 'error', text: translateError(err.message) });
     } finally {
       setLoading(false);
     }
@@ -57,16 +59,25 @@ export default function ResetPassword({ onComplete }: { onComplete: () => void }
         )}
 
         <div className="space-y-4">
-          <input
-            type="password"
-            className="input-base"
-            placeholder="Neues Passwort"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            autoFocus
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="input-base pr-12"
+              placeholder="Neues Passwort"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              autoFocus
+            />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--secondary)] transition-colors p-1"
+            >
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         <button type="submit" disabled={loading} className="btn-action w-full shadow-lg">

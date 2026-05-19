@@ -17,6 +17,22 @@ interface DashboardProps {
   onStartQuestions: () => void;
 }
 
+const getTimeIcon = (hour: number) => {
+  if (hour >= 5 && hour < 11) return '☕️';
+  if (hour >= 11 && hour < 14) return '☀️';
+  if (hour >= 14 && hour < 18) return '🌤️';
+  if (hour >= 18 && hour < 22) return '🌙';
+  return '🦉';
+};
+
+const getTimeLabel = (hour: number) => {
+  if (hour >= 5 && hour < 11) return 'Morgens';
+  if (hour >= 11 && hour < 14) return 'Mittags';
+  if (hour >= 14 && hour < 18) return 'Nachmittags';
+  if (hour >= 18 && hour < 22) return 'Abends';
+  return 'Nachts';
+};
+
 function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isOpen: boolean, onClose: () => void, partnerId: string, partnerName: string, userName: string }) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<{
@@ -118,7 +134,7 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-purple-50 rounded-3xl p-5 border border-purple-100">
-                <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Gemeinsame Fragen</p>
+                <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Gemeinsam Aktiv</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-3xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
                   <span className="text-[10px] font-bold text-[#4A4468]">Tage</span>
@@ -139,27 +155,22 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
                 <h4 className="text-[10px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
               </div>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#4A4468]">{userName.split(' ')[0]}</span>
-                  <span className="text-xs font-black text-[var(--secondary)]">{stats.myHabit}:00 Uhr</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col items-center justify-center py-4 px-2 bg-purple-50 rounded-2xl border-2 border-purple-100 text-center">
+                  <span className="text-2xl mb-1">{getTimeIcon(stats.myHabit)}</span>
+                  <span className="text-lg font-black text-[#1F1939]">{stats.myHabit}:00</span>
+                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] mt-2">{userName.split(' ')[0]}</span>
+                  <span className="text-[9px] font-bold text-[var(--muted)] mt-0.5">{getTimeLabel(stats.myHabit)}</span>
                 </div>
-                <div className="w-full h-1.5 bg-purple-50 rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--secondary)] rounded-full" style={{ width: `${(stats.myHabit / 24) * 100}%` }} />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#4A4468]">{partnerName.split(' ')[0]}</span>
-                  <span className="text-xs font-black text-[var(--secondary)]">{stats.partnerHabit}:00 Uhr</span>
-                </div>
-                <div className="w-full h-1.5 bg-purple-50 rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--primary)] rounded-full" style={{ width: `${(stats.partnerHabit / 24) * 100}%` }} />
+                <div className="flex flex-col items-center justify-center py-4 px-2 bg-orange-50 rounded-2xl border-2 border-orange-100 text-center">
+                  <span className="text-2xl mb-1">{getTimeIcon(stats.partnerHabit)}</span>
+                  <span className="text-lg font-black text-[#1F1939]">{stats.partnerHabit}:00</span>
+                  <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.1em] mt-2">{partnerName.split(' ')[0]}</span>
+                  <span className="text-[9px] font-bold text-[var(--muted)] mt-0.5">{getTimeLabel(stats.partnerHabit)}</span>
                 </div>
               </div>
               <p className="text-[9px] font-bold text-[var(--muted)] mt-4 text-center italic opacity-60">Durchschnittliche Uhrzeit eurer Antworten</p>
             </div>
-            
-            <button onClick={onClose} className="btn-action py-4 text-xs mt-4">Alles klar! ✨</button>
           </div>
         ) : (
           <div className="text-center py-8">
@@ -225,7 +236,7 @@ function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boo
             return (
               <div key={day} className={`aspect-square rounded-xl flex items-center justify-center relative transition-all ${active ? 'bg-orange-50 border-2 border-orange-100' : 'bg-gray-50 border-2 border-transparent'}`}>
                 <span className={`text-[10px] font-black ${active ? 'text-orange-500' : 'text-[#8E89AA]'}`}>{day}</span>
-                {active && <Flame className="w-2 h-2 text-orange-500 fill-orange-500 absolute -top-1 -right-1" />}
+                {active && <Flame className="w-4 h-4 text-orange-500 fill-orange-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />}
               </div>
             );
           })}
@@ -233,7 +244,9 @@ function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boo
 
         <div className="bg-purple-50 rounded-3xl p-6 text-center border-2 border-purple-100">
           <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Längster Streak</p>
-          <p className="text-2xl font-black text-[var(--secondary)]">{streakData?.longest_streak || 0} TAGE</p>
+          <p className="text-2xl font-black text-[var(--secondary)]">
+            {streakData?.longest_streak || 0} {(streakData?.longest_streak || 0) === 1 ? 'TAG' : 'TAGE'}
+          </p>
         </div>
       </div>
     </div>,
@@ -274,6 +287,20 @@ export default function Dashboard({
     const seed = new Date(dayKey).getDate() + new Date(dayKey).getMonth() + new Date(dayKey).getFullYear();
     return GREETINGS[seed % GREETINGS.length];
   }, [dayKey]);
+
+  const { firstHalf, secondHalf } = useMemo(() => {
+    // Remove all commas from the original string
+    const raw = greeting.replace(/,/g, '').trim();
+    const words = raw.split(' ');
+    if (words.length >= 3) {
+      const mid = Math.ceil(words.length / 2);
+      return {
+        firstHalf: words.slice(0, mid).join(' '),
+        secondHalf: words.slice(mid).join(' ')
+      };
+    }
+    return { firstHalf: raw, secondHalf: '' };
+  }, [greeting]);
 
   const { meAnswered, partnerAnswered, myAnswers, partnerAnswers, dailyQs, myStreak, partnerStreak } = useMemo(() => {
     if (!dashboardData) return { meAnswered: false, partnerAnswered: false, myAnswers: [], partnerAnswers: [], dailyQs: [], myStreak: null, partnerStreak: null };
@@ -374,56 +401,58 @@ export default function Dashboard({
       <div className="flex-1 flex flex-col pt-8 pb-32">
         
         {/* Header: Avatars and Streaks */}
-        <div className="flex flex-col items-center mb-8 shrink-0">
-          {/* Avatars Row */}
-          <div className="flex -space-x-4 mb-5">
-            <div 
-              onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
-              className={`w-20 h-20 rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
-            >
-              {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
-            </div>
-            <div 
-              onClick={() => userAvatar && setFullscreenImage(userAvatar)}
-              className="w-20 h-20 rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-10 shadow-md transition-transform active:scale-95 cursor-pointer"
-            >
-              {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
-            </div>
-          </div>
-
-          {/* Names and Flames Row - Centered under Avatars */}
-          <div className="w-full flex justify-center pt-2">
-            <div className="flex w-40 justify-center"> {/* Width matches combined avatars area */}
-              {/* Partner side (Left) */}
-              <div className="flex-1 flex flex-col items-center min-w-0">
+        <div className="flex flex-col items-center mb-6 shrink-0">
+          <div className="relative flex flex-col items-center">
+            {/* Avatars Row with Flame Pills attached */}
+            <div className="flex -space-x-4">
+              {/* Partner Avatar */}
+              <div className="relative">
+                <div 
+                  onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
+                  className={`w-20 h-20 rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+                >
+                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+                </div>
+                {/* Partner Flame Pill (Bottom Left, slightly overlapping) */}
                 <div 
                   onClick={() => hasPartner && setShowStreakModal('partner')}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-xl transition-all ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-50/50' : 'opacity-40'}`}
+                  className={`absolute bottom-0 right-[85%] z-30 flex items-center gap-1 px-2 py-0.5 bg-orange-50 border-2 border-orange-100 rounded-full transition-all shadow-sm ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-100' : 'opacity-40'}`}
                 >
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
-                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] truncate max-w-[50px]">
-                    {partnerName.split(' ')[0]}
-                  </span>
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[10px] font-black text-orange-600">{hasPartner ? (partnerStreak?.current_streak || 0) : 0}</span>
+                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
                 </div>
-                {hasPartner && (
-                  <span className="text-[9px] font-black text-orange-600 mt-0.5">{partnerStreak?.current_streak || 0}</span>
-                )}
               </div>
 
-              {/* User side (Right) */}
-              <div className="flex-1 flex flex-col items-center min-w-0">
+              {/* User Avatar */}
+              <div className="relative z-10">
+                <div 
+                  onClick={() => userAvatar && setFullscreenImage(userAvatar)}
+                  className="w-20 h-20 rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden shadow-md transition-transform active:scale-95 cursor-pointer"
+                >
+                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+                </div>
+                {/* User Flame Pill (Bottom Right, slightly overlapping) */}
                 <div 
                   onClick={() => setShowStreakModal('user')}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-xl active:scale-95 cursor-pointer hover:bg-orange-50/50 transition-all"
+                  className="absolute bottom-0 left-[85%] z-30 flex items-center gap-1 px-2 py-0.5 bg-orange-50 border-2 border-orange-100 rounded-full active:scale-95 cursor-pointer hover:bg-orange-100 transition-all shadow-sm"
                 >
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
-                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] truncate max-w-[50px]">
-                    {(userName || 'Ich').split(' ')[0]}
-                  </span>
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[10px] font-black text-orange-600">{myStreak?.current_streak || 0}</span>
                 </div>
-                <span className="text-[9px] font-black text-orange-600 mt-0.5">{myStreak?.current_streak || 0}</span>
+              </div>
+            </div>
+
+            {/* Names Row */}
+            <div className="flex items-center justify-center w-full mt-3">
+              <div className="w-1/2 flex justify-end pr-3">
+                <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] text-right">
+                  {partnerName.split(' ')[0]}
+                </span>
+              </div>
+              <div className="w-1/2 flex justify-start pl-3">
+                <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] text-left">
+                  {(userName || 'Ich').split(' ')[0]}
+                </span>
               </div>
             </div>
           </div>
@@ -431,9 +460,11 @@ export default function Dashboard({
 
         {/* Greeting Section */}
         <div className="mb-6 px-6">
-          <h2 className="text-2xl font-black text-[#1F1939] leading-[1.1] tracking-tight text-left">
-            {greeting},<br />
-            <span className="text-[var(--secondary)]">{userName}</span>! ❤️
+          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight text-left flex flex-col gap-1">
+            <span className="max-w-[70%] leading-[1.1]">{firstHalf}</span>
+            <span className="w-full leading-[1.2]">
+              {secondHalf ? `${secondHalf}, ` : ''}<span className="text-[var(--secondary)]">{userName}</span>! ❤️
+            </span>
           </h2>
         </div>
         

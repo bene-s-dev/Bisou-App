@@ -7,6 +7,7 @@ import { Session } from '@supabase/supabase-js';
 
 // Import modular components
 import LandingPage from './landingpage/LandingPage';
+import PublicLayout from './components/PublicLayout';
 import Login from './components/Login';
 import Onboarding from './components/Onboarding';
 import Dashboard from './components/Dashboard';
@@ -41,18 +42,23 @@ function AppLayout({
     return <Navigate to="/onboarding" replace />;
   }
 
-  const showHeader = location.pathname === '/profile' || location.pathname === '/dashboard' || location.pathname === '/questions';
+  const showHeader = ['/profile', '/dashboard', '/questions', '/onboarding'].includes(location.pathname);
 
   return (
     <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] select-none bg-[#F8F7FF] flex flex-col">
       <div className="bg-aura" />
       
-      {profile.onboarding_completed && showHeader && (
+      {showHeader && (
         <header className="px-4 z-20 absolute left-0 right-0 top-0 max-w-md mx-auto w-full pointer-events-none" style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}>
           <div className="flex items-start justify-between min-h-[40px]">
-            <h1 className="text-2xl font-semibold text-[var(--text-main)] tracking-tight select-none pointer-events-auto" style={{ fontFamily: 'Fraunces, serif' }}>
-              Bisou
-            </h1>
+            <button 
+              onClick={() => navigate('/')}
+              className="group transition-transform active:scale-95 pointer-events-auto"
+            >
+              <h1 className="text-2xl font-semibold text-[var(--text-main)] tracking-tight group-hover:text-[var(--primary)] transition-colors select-none" style={{ fontFamily: 'Fraunces, serif' }}>
+                Bisou
+              </h1>
+            </button>
             {location.pathname === '/profile' && (
               <button 
                 onClick={onLogout} 
@@ -70,7 +76,7 @@ function AppLayout({
       )}
 
       <main 
-        className="flex-1 flex flex-col relative z-10 px-4 pb-0 max-w-md mx-auto w-full overflow-hidden"
+        className={`flex-1 flex flex-col relative z-10 px-4 max-w-md mx-auto w-full overflow-hidden ${profile.onboarding_completed ? 'pb-32' : 'pb-8'}`}
         style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
       >
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -403,10 +409,13 @@ export default function App() {
   return (
     <DialogProvider>
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-        <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <div className="min-h-screen bg-[#F8F7FF]"><Login onLogin={() => setLoading(true)} initialMode="login" /></div>} />
-        <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <div className="min-h-screen bg-[#F8F7FF]"><Login onLogin={() => setLoading(true)} initialMode="register" /></div>} />
+        {/* Public Routes with Persistent Layout */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+          <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="login" />} />
+          <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="register" />} />
+        </Route>
+        
         <Route path="/reset-password" element={<div className="h-screen w-screen relative bg-[#F8F7FF] overflow-y-auto pt-12 px-4"><div className="bg-aura" /><ResetPassword onComplete={() => navigate('/signin')} /></div>} />
         
         {/* Protected Routes Wrapper */}
@@ -414,7 +423,7 @@ export default function App() {
           <Route path="/*" element={
             <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
               <Routes>
-                <Route path="onboarding" element={<Onboarding onComplete={handleOnboardingComplete} />} />
+                <Route path="onboarding" element={<Onboarding onComplete={handleOnboardingComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
                 <Route path="dashboard" element={<Dashboard 
                   userName={profile.display_name} 
                   userAvatar={profile.avatar_url} 

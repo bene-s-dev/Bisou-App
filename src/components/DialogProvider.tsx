@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Info, XCircle, X } from 'lucide-react';
 
 type DialogType = 'info' | 'success' | 'error' | 'confirm';
@@ -28,16 +28,32 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const closeConfirm = useCallback(() => {
+    setConfirm(null);
+  }, []);
+
   const showConfirm = useCallback((message: string, onConfirm: () => void, options?: DialogOptions) => {
     setConfirm({ message, onConfirm, options });
+    window.history.pushState({ modal: 'confirm' }, '');
   }, []);
 
   const handleConfirm = () => {
     if (confirm) {
       confirm.onConfirm();
       setConfirm(null);
+      // We don't necessarily pop here as the action might navigate away
     }
   };
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (confirm) {
+        setConfirm(null);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [confirm]);
 
   return (
     <DialogContext.Provider value={{ showAlert, showConfirm }}>

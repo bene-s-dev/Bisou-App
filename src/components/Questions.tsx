@@ -322,7 +322,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 )}
               </div>
             </div>
-            <div className="pb-6 pt-4">
+            <div className="pb-32 pt-4 px-1">
               <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-action py-5 shadow-lg disabled:opacity-40 font-black text-lg">
                 {isSubmitting ? 'Wird geteilt...' : (step === 2 ? 'Abschließen ✨' : 'Weiter')}
               </button>

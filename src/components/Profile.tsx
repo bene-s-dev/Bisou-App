@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { translateError } from '../lib/translations';
+import Onboarding from './Onboarding';
 
 interface ProfileProps {
   profile: any;
@@ -48,7 +50,56 @@ export default function Profile({
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [showServices, setShowServices] = useState(false);
-  
+  const [systemStatus, setSystemStatus] = useState<{
+    online: boolean | 'checking';
+    latency: number | null;
+    storageItems: number;
+    lastChecked: string | null;
+  }>({ online: 'checking', latency: null, storageItems: 0, lastChecked: null });
+
+  useEffect(() => {
+    if (activeTab !== 'app-info') return;
+
+    const checkStatus = async () => {
+      const start = performance.now();
+      try {
+        const { error } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).limit(1);
+        const end = performance.now();
+        
+        setSystemStatus({
+          online: !error,
+          latency: !error ? Math.round(end - start) : null,
+          storageItems: Object.keys(localStorage).length,
+          lastChecked: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        });
+      } catch (e) {
+        setSystemStatus({
+          online: false,
+          latency: null,
+          storageItems: Object.keys(localStorage).length,
+          lastChecked: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        });
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 15000);
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (showServices) window.history.pushState({ modal: 'services' }, '');
+  }, [showServices]);
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (showServices) setShowServices(false);
+      if (showDeleteModal) setShowDeleteModal(false);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [showServices, showDeleteModal]);
+
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -65,8 +116,21 @@ export default function Profile({
       setSearchParams({});
     } else {
       setSearchParams({ tab });
+      if (tab === 'intro') {
+        window.history.pushState({ modal: 'intro' }, '');
+      }
     }
   };
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (activeTab === 'intro') {
+        setSearchParams({});
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [activeTab, setSearchParams]);
 
   // --- Logic ---
   const handleUpdateName = async () => {
@@ -77,7 +141,7 @@ export default function Profile({
       if (error) throw error;
       setProfile({ ...profile, display_name: newName.trim() });
       showAlert("Name aktualisiert!", "success");
-    } catch (err) { showAlert("Fehler beim Aktualisieren.", "error"); } finally { setLoading(false); setIsEditingName(false); }
+    } catch (err: any) { showAlert(translateError(err.message), "error"); } finally { setLoading(false); setIsEditingName(false); }
   };
 
   const handleLinkPartner = async () => {
@@ -88,13 +152,13 @@ export default function Profile({
       if (error) {
         setShouldShake(true);
         setTimeout(() => setShouldShake(false), 500);
-        showAlert(error.message || "Fehler beim Verknüpfen.", "error");
+        showAlert(translateError(error.message), "error");
         return;
       }
       showAlert("Erfolgreich verknüpft! ❤️", "success");
       // App.tsx realtime will handle the rest, but we can trigger a refresh if needed
     } catch (err: any) { 
-      showAlert(err.message || "Fehler beim Verknüpfen.", "error"); 
+      showAlert(translateError(err.message), "error"); 
     } finally { 
       setIsLinking(false); 
       setPartnerCodeInput('CB-'); 
@@ -108,7 +172,7 @@ export default function Profile({
           const { error } = await supabase.rpc('unlink_partners');
           if (error) throw error;
           showAlert("Verknüpfung gelöst.", "info");
-        } catch (err) { showAlert("Fehler beim Trennen.", "error"); } finally { setIsLinking(false); }
+        } catch (err: any) { showAlert(translateError(err.message), "error"); } finally { setIsLinking(false); }
       }, { title: "Verknüpfung lösen", confirmLabel: "Ja, trennen", cancelLabel: "Abbrechen" }
     );
   };
@@ -129,11 +193,11 @@ export default function Profile({
 
   const handleShareCode = async () => {
     if (!profile?.partner_code) return;
-    const cleanCode = profile.partner_code;
+    const cleanCode = profile.partner_code.replace(/^CB-/, '');
     const shareData = { title: 'Bisou Partner-Code', text: `Verknüpf dich mit mir auf Bisou! Mein Code ist: ${cleanCode}` };
     if (navigator.share) {
       try { await navigator.share(shareData); } catch (err) { console.log('Teilen abgebrochen'); }
-    } else { copyToClipboard(profile.partner_code); }
+    } else { copyToClipboard(cleanCode); }
   };
 
   const handleTogglePush = async () => {
@@ -203,8 +267,8 @@ export default function Profile({
       if (updateError) throw updateError;
       setProfile({ ...profile, avatar_url: publicUrl });
       showAlert("Profilbild aktualisiert!", "success");
-    } catch (err) {
-      showAlert("Fehler beim Hochladen.", "error");
+    } catch (err: any) {
+      showAlert(translateError(err.message), "error");
     } finally {
       setLoading(false);
       setShowAvatarMenu(false);
@@ -223,7 +287,9 @@ export default function Profile({
       case 'partner': 
         return (
           <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300 px-4">
-            <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center">BISOU-PARTNER VERBINDEN</h2>
+            <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center">
+              {profile?.partner_id ? 'BISOU-PARTNER' : 'BISOU-PARTNER VERBINDEN'}
+            </h2>
             {profile?.partner_id ? (
               <div className="w-full flex flex-col gap-2">
                 <div className="status-box pt-3 pb-8 flex flex-col items-center justify-center gap-2 text-center shrink-0 min-h-[90px] relative w-full">
@@ -238,41 +304,48 @@ export default function Profile({
                 </div>
               </div>
             ) : (
-              <div className="w-full flex flex-col gap-4">
-                <div className="status-box p-5 flex flex-col items-center gap-4">
-                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">Mein Bisou-Code:</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-black tracking-widest text-[#1F1939]">{profile?.partner_code}</span>
-                    <div className="flex items-center gap-1.5 ml-2">
-                      <button onClick={() => copyToClipboard(profile?.partner_code)} className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] active:scale-90 transition-all">
-                        <Copy className="w-5 h-5" />
-                      </button>
-                      <button onClick={handleShareCode} className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] active:scale-90 transition-all">
-                        <Share2 className="w-5 h-5" />
+              <div className="w-full flex flex-col items-center gap-6 pt-4">
+                <div className="w-full max-w-[300px] flex flex-col gap-2">
+                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] pl-1">Mein Code</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1 bg-white border-2 border-purple-100 rounded-2xl px-4 py-2.5 flex items-center shadow-sm relative group overflow-hidden">
+                      <span className="text-xl font-black tracking-widest text-[#1F1939] mr-1">CB-</span>
+                      <span className="text-xl font-black tracking-widest text-[#1F1939] flex-1 truncate">{profile?.partner_code?.replace(/^CB-/, '')}</span>
+                      <button 
+                        onClick={() => copyToClipboard(profile?.partner_code?.replace(/^CB-/, ''))} 
+                        className="ml-2 p-2 bg-purple-50 text-[var(--secondary)] rounded-xl hover:bg-purple-100 transition-all active:scale-90 flex items-center justify-center shrink-0"
+                      >
+                        <Copy className="w-4 h-4" />
                       </button>
                     </div>
+                    <button onClick={handleShareCode} className="w-[52px] h-[52px] rounded-2xl bg-[var(--secondary)] text-white flex items-center justify-center shadow-md active:scale-95 transition-all shrink-0">
+                      <Share2 className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
 
-                <div className={`status-box p-6 flex flex-col gap-4 transition-all ${shouldShake ? 'animate-shake border-red-200' : ''}`}>
-                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] text-center">Partner-Bisou-Code eingeben:</span>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 relative">
+                <div className={`w-full max-w-[300px] flex flex-col gap-2 transition-all ${shouldShake ? 'animate-shake' : ''}`}>
+                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] pl-1">Partner Code</span>
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1 bg-white border-2 border-purple-100 rounded-2xl px-4 py-2.5 flex items-center shadow-sm relative overflow-hidden">
+                      <span className="text-xl font-black text-[#1F1939] tracking-widest mr-1">CB-</span>
                       <input 
                         type="text" 
-                        value={partnerCodeInput} 
+                        value={partnerCodeInput.replace(/^CB-/, '')} 
                         onChange={(e) => {
-                          const val = e.target.value.toUpperCase();
-                          if (val.length <= 9) setPartnerCodeInput(val);
+                          const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                          if (val.length <= 6) setPartnerCodeInput('CB-' + val);
                         }}
-                        placeholder="CB-XXXXXX"
-                        className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-4 py-3 text-2xl font-black text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-all uppercase tracking-widest"
+                        placeholder="XXXXXX"
+                        className="w-full bg-transparent text-xl font-black text-[#1F1939] outline-none placeholder:text-purple-200 tracking-widest"
                       />
+                      {/* Spacer to match the copy button in the top pill for perfect alignment */}
+                      <div className="w-[32px] shrink-0 ml-2" />
                     </div>
                     <button 
                       onClick={handleLinkPartner}
                       disabled={isLinking || partnerCodeInput.length < 5}
-                      className="w-12 h-12 rounded-xl bg-[var(--secondary)] text-white flex items-center justify-center shadow-lg active:scale-90 disabled:opacity-50 disabled:active:scale-100 transition-all"
+                      className="w-[52px] h-[52px] rounded-2xl bg-[var(--secondary)] text-white flex items-center justify-center shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all shrink-0"
                     >
                       {isLinking ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Check className="w-6 h-6" />}
                     </button>
@@ -393,28 +466,134 @@ export default function Profile({
           </div>
         );
       case 'app-info':
+        const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
         return (
           <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300 px-4">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">APP-INFORMATIONEN</h2>
-            <div className="status-box p-6 flex flex-col gap-6 w-full">
-              <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center pb-3 border-b border-purple-50">
-                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Version</span>
-                  <span className="text-xs font-black text-[#1F1939]">1.0.0</span>
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-6 border-2 border-purple-100 w-full max-w-md overflow-hidden">
+              <div className="flex flex-col gap-2 pb-2">
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Entwickler</span>
+                  <div className="flex-1 flex justify-end">
+                    <span className="text-xs font-black text-[#1F1939] pr-1.5">Benedikt S.</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center pb-3 border-b border-purple-50">
-                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Entwickler</span>
-                  <span className="text-xs font-black text-[#1F1939]">Benedikt S.</span>
+
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Version</span>
+                  <div className="flex-1 flex justify-end">
+                    <span className="text-xs font-black text-[#1F1939] pr-1.5">1.0.0</span>
+                  </div>
                 </div>
+
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">App läuft gerade auf</span>
+                  <div className="flex-1 flex justify-end gap-1 items-center">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${isDesktop ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      Desktop
+                    </span>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] tracking-wider transition-all whitespace-nowrap ${isIOS ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      iOS
+                    </span>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${isAndroid ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      Android
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">App läuft als</span>
+                  <div className="flex-1 flex justify-end gap-1 items-center">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      Progressive Web App
+                    </span>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${!isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      Webseite
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Server-Verbindung</span>
+                  <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
+                    <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] transition-all duration-500 shrink-0 ${
+                      systemStatus.online === 'checking' ? 'bg-amber-400 shadow-amber-200 animate-pulse' :
+                      systemStatus.online ? 'bg-green-500 shadow-green-200 animate-pulse' : 
+                      'bg-red-500 shadow-red-200 animate-bounce'
+                    }`} />
+                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                      {systemStatus.online === 'checking' ? 'Connecting...' : systemStatus.online ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 flex items-center pr-1.5">
+                    <div className="flex gap-1.5 items-center">
+                      {systemStatus.latency && (
+                        <>
+                          <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
+                            {systemStatus.latency}
+                          </span>
+                          <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider">
+                            ms
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider whitespace-nowrap ml-auto">
+                      Antwortzeit
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Lokaler Speicher</span>
+                  <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
+                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px] shadow-green-200 animate-pulse shrink-0" />
+                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">Aktiv</span>
+                  </div>
+
+                  <div className="flex-1 flex items-center pr-1.5">
+                    <div className="flex gap-1.5 items-center">
+                      <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
+                        {systemStatus.storageItems}
+                      </span>
+                      <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider">
+                        Keys
+                      </span>
+                    </div>
+                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider whitespace-nowrap ml-auto">
+                      Datensätze
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-center mt-3">
                 <button 
                   onClick={() => setShowServices(true)}
-                  className="w-full mt-2 py-4 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-purple-100 transition-all active:scale-95 shadow-sm"
+                  className="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-1 hover:opacity-70 transition-all active:scale-95 underline underline-offset-4"
                 >
-                  <Sparkles className="w-4 h-4" /> Verwendete Dienste
+                  Verwendete Dienste 🔧
                 </button>
               </div>
             </div>
           </div>
+        );
+      case 'intro':
+        return createPortal(
+          <div className="fixed inset-0 z-[200] flex items-center justify-center sm:p-4">
+            {/* Backdrop Blur */}
+            <div 
+              className="absolute inset-0 bg-black/60 backdrop-blur-md animate-in fade-in duration-300"
+              onClick={() => setActiveTab('main')}
+            />
+            
+            {/* Modal Container */}
+            <div className="relative w-full h-full sm:max-w-lg sm:h-[85vh] sm:max-h-[850px] bg-white sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 sm:slide-in-from-bottom-0 duration-300">
+              <Onboarding isIntroOnly onComplete={() => setActiveTab('main')} />
+            </div>
+          </div>,
+          document.body
         );
       default:
         return (
@@ -423,13 +602,17 @@ export default function Profile({
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
               { id: 'install', label: 'App installieren', icon: Smartphone },
+              { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles },
               { id: 'app-info', label: 'App-Info', icon: Info },
               { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true }
             ].map(item => (
               <button 
                 key={item.id} 
                 onClick={() => {
-                  if (item.id === 'delete') setShowDeleteModal(true);
+                  if (item.id === 'delete') {
+                    setShowDeleteModal(true);
+                    window.history.pushState({ modal: 'delete' }, '');
+                  }
                   else setActiveTab(item.id as any);
                 }} 
                 className={`w-full flex items-center justify-between p-4 bg-white rounded-2xl border-2 shadow-sm transition-all ${
@@ -455,7 +638,7 @@ export default function Profile({
       <div className="absolute inset-0 bg-[#2D264B]/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowServices(false)} />
       <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm relative z-10 animate-entrance border-2 border-purple-100 shadow-2xl flex flex-col max-h-[85vh]">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">Verwendete Dienste</h3>
+          <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.15em]">Verwendete Dienste 🔧</h3>
           <button onClick={() => setShowServices(false)} className="p-2 text-[var(--muted)] hover:bg-purple-50 rounded-full transition-colors"><X className="w-4 h-4" /></button>
         </div>
         
@@ -464,36 +647,42 @@ export default function Profile({
             <div>
               <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Kern-Technologien</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
-                <p>React 18 & TypeScript</p>
-                <p>Vite Build-System</p>
-                <p>Supabase Backend (DB, Auth, Storage)</p>
+                <p>React 18 & TypeScript <span className="opacity-50">(Frontend Framework)</span></p>
+                <p>Vite <span className="opacity-50">(Build-Tooling)</span></p>
+                <p>Supabase <span className="opacity-50">(Backend, Auth, DB)</span></p>
               </div>
             </div>
             
             <div>
               <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Design & Styling</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
-                <p>Tailwind CSS</p>
-                <p>Lucide Icon Library</p>
-                <p>Gemini CLI (AI Assistance)</p>
+                <p>Tailwind CSS <span className="opacity-50">(Styling Framework)</span></p>
+                <p>Lucide <span className="opacity-50">(Icon Library)</span></p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Künstliche Intelligenz</h4>
+              <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
+                <p>Antigravity CLI <span className="opacity-50">(Vibe-Coding)</span></p>
               </div>
             </div>
             
             <div>
               <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Spezialisierte Bibliotheken</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
-                <p>React Router (Navigation)</p>
-                <p>SortableJS (Ranking Drag&Drop)</p>
-                <p>React Easy Crop (Avatar Editor)</p>
-                <p>Canvas Confetti (Animationen)</p>
+                <p>React Router <span className="opacity-50">(Navigation)</span></p>
+                <p>SortableJS <span className="opacity-50">(Ranking Drag&Drop)</span></p>
+                <p>React Easy Crop <span className="opacity-50">(Avatar Editor)</span></p>
+                <p>Canvas Confetti <span className="opacity-50">(Animationen)</span></p>
               </div>
             </div>
 
             <div>
               <h4 className="text-[8px] font-black text-[var(--muted)] uppercase tracking-widest mb-2 border-l-2 border-purple-200 pl-2">Infrastruktur & Hosting</h4>
               <div className="text-[11px] font-bold text-[#1F1939] leading-relaxed uppercase tracking-wider space-y-1">
-                <p>Vercel Hosting</p>
-                <p>PWA Support (Service Worker)</p>
+                <p>GitHub <span className="opacity-50">(Versionsverwaltung)</span></p>
+                <p>Vercel <span className="opacity-50">(Hosting)</span></p>
               </div>
             </div>
           </div>
@@ -523,11 +712,7 @@ export default function Profile({
       {showServices && renderServicesModal()}
       
       <header className="flex flex-col items-center pt-16 pb-2 shrink-0 relative">
-        {activeTab !== 'main' && (
-          <button onClick={() => navigate(-1)} className="absolute left-4 top-10 p-2 rounded-full bg-white border border-purple-100 shadow-sm active:scale-95 transition-all">
-            <ArrowLeft className="w-4 h-4 text-[var(--secondary)]" />
-          </button>
-        )}
+
         <h2 className="text-xs font-black text-[#1F1939] uppercase tracking-widest">Mein Bisou-Profil</h2>
         
         <div className="relative flex items-center mb-3 mt-4">
@@ -544,24 +729,32 @@ export default function Profile({
         </div>
         <div className="relative flex flex-col items-center justify-center w-full mt-1 mb-6 px-4">
           {isEditingName ? (
-            <div className="flex items-center gap-2">
-              <input type="text" value={newName} onChange={(e) => setNewName(e.target.value)} className="text-lg font-black text-[var(--secondary)] bg-purple-50/50 border-b-2 border-[var(--secondary)] outline-none text-center py-1 w-[140px]" autoFocus onBlur={handleUpdateName} onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()} />
+            <div className="flex items-center gap-2 pl-4 pr-1.5 py-1.5 bg-white border-2 border-[var(--secondary)] rounded-full shadow-md w-[220px]">
+              <input 
+                type="text" 
+                value={newName} 
+                onChange={(e) => setNewName(e.target.value)} 
+                className="flex-1 text-[15px] font-black text-[var(--secondary)] bg-transparent outline-none text-center uppercase tracking-[0.1em] pt-0.5 min-w-0" 
+                autoFocus 
+                onBlur={handleUpdateName} 
+                onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()} 
+              />
               <button 
                 onClick={handleUpdateName} 
-                className="w-8 h-8 rounded-full bg-white border border-[var(--secondary)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all"
+                className="w-8 h-8 rounded-full bg-[var(--secondary)] text-white flex items-center justify-center shadow-sm active:scale-90 transition-all shrink-0"
               >
                 <Check className="w-4 h-4" />
               </button>
             </div>
           ) : (
-            <div className="relative w-full flex justify-center items-center">
-              <span className="text-lg font-black text-[var(--secondary)] uppercase tracking-[0.1em] text-center">{profile?.display_name || 'User'}</span>
-              <button 
-                onClick={() => setIsEditingName(true)}
-                className="absolute right-[calc(50%-100px)] w-8 h-8 rounded-full bg-white border border-[var(--secondary)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all"
-              >
-                 <Pencil className="w-4 h-4" />
-              </button>
+            <div 
+              onClick={() => setIsEditingName(true)}
+              className="flex items-center justify-center gap-3 px-6 py-2.5 bg-white border-2 border-[var(--card-border)] rounded-full cursor-pointer hover:bg-purple-50 transition-all active:scale-95 shadow-sm"
+            >
+              <span className="text-[15px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] pt-0.5">
+                {profile?.display_name || 'User'}
+              </span>
+              <Pencil className="w-4 h-4 text-[var(--secondary)] opacity-80" />
             </div>
           )}
         </div>
