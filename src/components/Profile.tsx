@@ -468,21 +468,21 @@ export default function Profile({
       case 'app-info':
         const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
         return (
-          <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300 px-4">
+          <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300 px-2 w-full">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">APP-INFORMATIONEN</h2>
-            <div className="bg-white/80 backdrop-blur-md rounded-[32px] p-6 border-2 border-purple-100 w-full max-w-md overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] px-2 py-5 border-2 border-purple-100 w-full max-w-xl overflow-hidden">
               <div className="flex flex-col gap-2 pb-2">
                 <div className="flex items-center pb-2 border-b border-purple-50">
                   <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Entwickler</span>
                   <div className="flex-1 flex justify-end">
-                    <span className="text-xs font-black text-[#1F1939] pr-1.5">Benedikt S.</span>
+                    <span className="text-xs font-black text-[#1F1939]">Benedikt S.</span>
                   </div>
                 </div>
 
                 <div className="flex items-center pb-2 border-b border-purple-50">
                   <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Version</span>
                   <div className="flex-1 flex justify-end">
-                    <span className="text-xs font-black text-[#1F1939] pr-1.5">1.0.0</span>
+                    <span className="text-xs font-black text-[#1F1939]">1.0.0</span>
                   </div>
                 </div>
 
@@ -526,7 +526,7 @@ export default function Profile({
                     </span>
                   </div>
                   
-                  <div className="flex-1 flex items-center pr-1.5">
+                  <div className="flex-1 flex items-center">
                     <div className="flex gap-1.5 items-center">
                       {systemStatus.latency && (
                         <>
@@ -552,7 +552,7 @@ export default function Profile({
                     <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">Aktiv</span>
                   </div>
 
-                  <div className="flex-1 flex items-center pr-1.5">
+                  <div className="flex-1 flex items-center">
                     <div className="flex gap-1.5 items-center">
                       <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
                         {systemStatus.storageItems}
@@ -589,7 +589,7 @@ export default function Profile({
             />
             
             {/* Modal Container */}
-            <div className="relative w-full h-full sm:max-w-lg sm:h-[85vh] sm:max-h-[850px] bg-white/80 backdrop-blur-md sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 sm:slide-in-from-bottom-0 duration-300">
+            <div className="relative w-full h-full sm:max-w-lg sm:h-[85vh] sm:max-h-[850px] bg-white/30 backdrop-blur-xl border border-white/20 sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 sm:slide-in-from-bottom-0 duration-300">
               <Onboarding isIntroOnly onComplete={() => setActiveTab('main')} />
             </div>
           </div>,
@@ -761,7 +761,7 @@ export default function Profile({
         <div className="w-[60%] h-[2px] bg-purple-100 mb-4 mx-auto" />
       </header>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-32">
+      <div className="flex-1 overflow-hidden scrollbar-hide pb-32">
         {renderContent()}
       </div>
 
