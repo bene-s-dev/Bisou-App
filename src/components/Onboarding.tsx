@@ -435,7 +435,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 pb-6 overflow-hidden h-full bg-white relative">
+    <div className="flex-1 flex flex-col pt-6 pb-6 overflow-hidden h-full bg-transparent relative">
       {selectedImage && createPortal(
         <ImageCropper 
           image={selectedImage} 
@@ -479,13 +479,13 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
       </div>
 
       <div className="px-6 mt-auto pt-6">
-        {(step === 5 || (isIntroOnly && step === 4)) && deferredPrompt && !isIntroOnly ? (
+        {(step === 5 || (isIntroOnly && step === 4)) && deferredPrompt ? (
           <button 
             disabled={loading}
             onClick={onInstall}
-            className="btn-action py-5 text-lg font-black group shadow-xl mb-4"
+            className="btn-action py-4 text-sm font-black group shadow-xl mb-4"
           >
-            App jetzt installieren ✨
+            App jetzt installieren
           </button>
         ) : (
           <button 
@@ -498,7 +498,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
           </button>
         )}
         
-        {step === 5 && !isIntroOnly && (
+        {((step === 5 && !isIntroOnly) || (step === 4 && isIntroOnly)) && (
           <button 
             onClick={onComplete}
             className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-widest mt-2 opacity-50 hover:opacity-100 transition-opacity py-2"
