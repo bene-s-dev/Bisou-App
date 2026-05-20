@@ -149,7 +149,7 @@ export default function PublicLayout() {
             </p>
             <button 
               onClick={() => setShowImpressumModal(false)}
-              className="btn-action"
+              className="btn-action-animated"
             >
               Schließen
             </button>
