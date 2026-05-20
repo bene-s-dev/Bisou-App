@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -822,13 +822,25 @@ export default function Profile({
                 )}
               </div>
 
-              <div className="flex justify-center mt-3">
+              <div className="flex justify-center items-center gap-2 mt-2">
+                {isDevMode && (
+                  <a
+                    href="https://github.com/bene-s-dev/Bisou-App#readme"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors flex items-center gap-1.5 active:scale-95"
+                  >
+                    GitHub Repo
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
                 <button
                   onClick={() => setShowServices(true)}
-                  className="text-blue-600 font-black text-[10px] uppercase tracking-[0.2em] flex items-center gap-1 hover:opacity-70 transition-all active:scale-95 underline underline-offset-4"
+                  className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-100 transition-colors flex items-center gap-1.5 active:scale-95"
                 >
                   Verwendete Dienste
-                </button>              </div>
+                </button>
+              </div>
             </div>
           </div>
         );
