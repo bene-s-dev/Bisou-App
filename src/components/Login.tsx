@@ -108,7 +108,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
           <>
             {mode === 'login' && (
               <form onSubmit={handleSubmit} className={`space-y-4 ${shouldShake ? 'animate-shake' : ''}`}>
-                <input type="email" autoFocus className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <input type="email" autoFocus className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} 
@@ -117,6 +117,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)} 
                     required 
+                    autoComplete="current-password"
                   />
                   <button 
                     type="button"
@@ -148,7 +149,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                       <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
                       <p className="text-sm text-[#4A4468]">Wir senden dir einen Link zum Einloggen.</p>
                     </div>
-                    <input type="email" autoFocus className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <input type="email" autoFocus className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
                     <button type="submit" disabled={loading} className="btn-static">{loading ? 'Sende...' : 'Link senden ✨'}</button>
                     <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Zurück zum Login</button>
                   </>
@@ -178,12 +179,12 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 ) : (
                   <>
                     {regStep === 1 && (
-                      <div className="space-y-4">
+                      <form onSubmit={(e) => { e.preventDefault(); setRegStep(2); }} className="space-y-4">
                         <div className="text-center mb-6">
                           <h2 className="text-2xl font-black text-[#1F1939]">Bisou-Profil erstellen</h2>
                         </div>
-                        <input type="text" autoFocus className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-                        <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        <input type="text" autoFocus className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoComplete="name" />
+                        <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                         <div className="relative">
                           <input 
                             type={showPassword ? "text" : "password"} 
@@ -192,6 +193,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                             value={password} 
                             onChange={(e) => setPassword(e.target.value)} 
                             required 
+                            autoComplete="new-password"
                           />
                           <button 
                             type="button"
@@ -201,8 +203,8 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                           </button>
                         </div>
-                        <button disabled={!email || password.length < 6 || !displayName} onClick={() => setRegStep(2)} className="btn-static w-full mt-2">Weiter <ArrowRight className="w-5 h-5" /></button>
-                      </div>
+                        <button type="submit" disabled={!email || password.length < 6 || !displayName} className="btn-static w-full mt-2">Weiter <ArrowRight className="w-5 h-5" /></button>
+                      </form>
                     )}
                     {regStep === 2 && (
                       <form onSubmit={handleRegister} className="space-y-6 animate-entrance">
