@@ -52,19 +52,17 @@ export default function LandingPage() {
         ))}
       </div>
 
-      <div className="pt-2">
+      <div className="pt-2 flex flex-col gap-2">
         <button 
           onClick={() => navigate('/signup')} 
           className="w-full btn-action-animated py-5 text-sm font-black shadow-lg shadow-purple-200"
         >
           Kostenlos starten ✨
-          </button>
-          </div>
-          <div className="text-center">
-          <p className="mt-4 text-[10px] font-bold text-[var(--muted)] opacity-60">
-          In 60 Sekunden bereit.
-          </p>
-          </div>
-          </section>
-          );
-          }
+        </button>
+        <p className="text-[10px] font-bold text-[var(--muted)] opacity-60">
+          In unter 60 Sekunden bereit.
+        </p>
+      </div>
+    </section>
+  );
+}
