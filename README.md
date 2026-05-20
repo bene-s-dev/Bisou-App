@@ -1,4 +1,7 @@
-
+<div align="center">
+  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/heart.svg" alt="Bisou Logo" width="80" height="80">
+  
+  # Bisou
   
   **Die App für dich und deinen Lieblingsmenschen.** <br>
   Jeden Tag ein kleiner magischer Moment zu zweit.
@@ -37,39 +40,4 @@ Bisou ist eine moderne Single Page Application, gebaut mit:
 *   **Frontend:** React (Vite) + TypeScript
 *   **Styling:** Tailwind CSS + Lucide Icons für wunderschöne UI
 *   **Backend / Auth:** Supabase (PostgreSQL + Authentication)
-*   **Hosting:** Bereit für Vercel / Netlify
-
-<br>
-
-## 📦 Lokale Entwicklung
-
-Möchtest du Bisou lokal ausführen? So geht's:
-
-1. **Repository klonen**
-   ```bash
-   git clone https://github.com/dein-username/bisou.git
-   cd bisou
-   ```
-
-2. **Abhängigkeiten installieren**
-   ```bash
-   npm install
-   ```
-
-3. **Umgebungsvariablen setzen**
-   Kopiere die `.env.example` zu `.env` und trage deine Supabase-Keys ein:
-   ```env
-   VITE_SUPABASE_URL=deine_supabase_url
-   VITE_SUPABASE_ANON_KEY=dein_supabase_anon_key
-   ```
-
-4. **Entwicklungsserver starten**
-   ```bash
-   npm run dev
-   ```
-
-<br>
-
-<div align="center">
-  Made with ❤️ for couples.
-</div>
+*   **Hosting:** Bereit für Vercel
