@@ -210,12 +210,13 @@ serve(async (req) => {
 CREATE TABLE IF NOT EXISTS public.streaks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  partner_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
   current_streak INTEGER DEFAULT 0,
   longest_streak INTEGER DEFAULT 0,
   last_answer_date DATE,
   streak_history JSONB DEFAULT '[]'::jsonb, -- Array of dates where the streak was active
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  UNIQUE(user_id)
+  UNIQUE(user_id, partner_id)
 );
 
 ALTER TABLE public.streaks ENABLE ROW LEVEL SECURITY;
@@ -231,17 +232,28 @@ DECLARE
     yesterday DATE;
     current_s INTEGER;
     last_d DATE;
+    curr_partner_id UUID;
 BEGIN
     today := NEW.day_key;
     yesterday := today - INTERVAL '1 day';
     
+    -- Get current partner of the user
+    SELECT partner_id INTO curr_partner_id
+    FROM public.profiles
+    WHERE id = NEW.user_id;
+
+    -- Streaks only count if linked to a partner
+    IF curr_partner_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    
     SELECT current_streak, last_answer_date INTO current_s, last_d
     FROM public.streaks
-    WHERE user_id = NEW.user_id;
+    WHERE user_id = NEW.user_id AND partner_id = curr_partner_id;
     
     IF NOT FOUND THEN
-        INSERT INTO public.streaks (user_id, current_streak, longest_streak, last_answer_date, streak_history)
-        VALUES (NEW.user_id, 1, 1, today, jsonb_build_array(today));
+        INSERT INTO public.streaks (user_id, partner_id, current_streak, longest_streak, last_answer_date, streak_history)
+        VALUES (NEW.user_id, curr_partner_id, 1, 1, today, jsonb_build_array(today));
     ELSE
         IF last_d = today THEN
             -- Already answered today, do nothing
@@ -253,14 +265,14 @@ BEGIN
                 longest_streak = GREATEST(longest_streak, current_s + 1),
                 last_answer_date = today,
                 streak_history = streak_history || jsonb_build_array(today)
-            WHERE user_id = NEW.user_id;
+            WHERE user_id = NEW.user_id AND partner_id = curr_partner_id;
         ELSE
             -- Streak broken
             UPDATE public.streaks
             SET current_streak = 1,
                 last_answer_date = today,
                 streak_history = jsonb_build_array(today)
-            WHERE user_id = NEW.user_id;
+            WHERE user_id = NEW.user_id AND partner_id = curr_partner_id;
         END IF;
     END IF;
     

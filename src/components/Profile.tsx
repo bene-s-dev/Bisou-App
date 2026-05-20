@@ -73,7 +73,7 @@ export default function Profile({
         try {
           const [partnerRes, streakRes] = await Promise.all([
             supabase.from('profiles').select('created_at').eq('id', profile.partner_id).single(),
-            supabase.from('streaks').select('current_streak').eq('user_id', profile.partner_id).maybeSingle()
+            supabase.from('streaks').select('current_streak').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
           ]);
 
           if (partnerRes.data) {
@@ -328,39 +328,51 @@ export default function Profile({
 
   const handleDeleteImage = async () => {
     if (!profile.avatar_url) return;
-    showConfirm(
-      "Möchtest du dein Profilbild wirklich löschen?",
-      async () => {
-        setLoading(true);
-        try {
-          const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id);
-          if (error) throw error;
-          setProfile({ ...profile, avatar_url: null });
-          showAlert("Bild gelöscht.", "info");
-          setShowAvatarMenu(false);
-        } catch (err) {
-          showAlert("Fehler beim Löschen.", "error");
-        } finally {
-          setLoading(false);
-        }
-      },
-      { title: "Bild löschen", confirmLabel: "Jetzt löschen", cancelLabel: "Abbrechen" }
-    );
+    
+    // Close the avatar menu first so the confirmation dialog is not blocked/hidden
+    setShowAvatarMenu(false);
+    
+    // Add a tiny delay to allow the menu animation to start closing
+    setTimeout(() => {
+      showConfirm(
+        "Möchtest du dein Profilbild wirklich löschen?",
+        async () => {
+          setLoading(true);
+          try {
+            const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id);
+            if (error) throw error;
+            setProfile({ ...profile, avatar_url: null });
+            showAlert("Bild gelöscht.", "info");
+          } catch (err) {
+            showAlert("Fehler beim Löschen.", "error");
+          } finally {
+            setLoading(false);
+          }
+        },
+        { title: "Bild löschen", confirmLabel: "Jetzt löschen", cancelLabel: "Abbrechen" }
+      );
+    }, 100);
   };
 
   const handleCropComplete = async (croppedBlob: Blob) => {
     setSelectedImage(null);
     setLoading(true);
     try {
-      const fileName = `${profile.id}-${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, croppedBlob);
+      const fileName = `${profile.id}/avatar-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, croppedBlob, {
+        upsert: true,
+        contentType: 'image/jpeg'
+      });
       if (uploadError) throw uploadError;
+      
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profile.id);
       if (updateError) throw updateError;
+      
       setProfile({ ...profile, avatar_url: publicUrl });
       showAlert("Profilbild aktualisiert!", "success");
     } catch (err: any) {
+      console.error("Upload error:", err);
       showAlert(translateError(err.message), "error");
     } finally {
       setLoading(false);
@@ -961,7 +973,7 @@ export default function Profile({
             {profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" /> : <UserIcon className="w-10 h-10 text-[var(--secondary)]" />}
           </div>
           <button 
-            onClick={() => document.getElementById('avatar-upload')?.click()}
+            onClick={() => profile?.avatar_url ? setShowAvatarMenu(true) : document.getElementById('avatar-upload')?.click()}
             className="absolute -right-2 bottom-0 w-8 h-8 rounded-full bg-white border border-[var(--secondary)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all z-30"
           >
             <input type="file" id="avatar-upload" accept="image/*" className="hidden" onChange={handleFileSelect} />

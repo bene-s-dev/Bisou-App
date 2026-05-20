@@ -250,7 +250,7 @@ export default function App() {
 
         const [answersRes, streaksRes] = await Promise.all([
           supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey),
-          supabase.from('streaks').select('*').in('user_id', userIds)
+          supabase.from('streaks').select('*').in('user_id', userIds).in('partner_id', userIds)
         ]);
 
         setDashboardData({

@@ -149,7 +149,7 @@ const AnimatedFlame = () => {
     let animationFrameId: number;
     let timeoutId: any;
     let startTime: number;
-    const duration = 10000; // 10 seconds climb
+    const duration = 6000; // 6 seconds climb
 
     const runAnimation = () => {
       startTime = Date.now();
@@ -157,18 +157,18 @@ const AnimatedFlame = () => {
       const update = () => {
         const elapsed = Date.now() - startTime;
         const p = Math.min(elapsed / duration, 1);
-        // Exponential ease-in (6th power for slower start)
-        const ep = Math.pow(p, 6);
+        // Quadratic ease-in-out for snappy start and smooth finish
+        const ep = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
         const currentVal = Math.floor(1 + ep * 998);
         setCount(currentVal);
 
         if (p < 1) {
           animationFrameId = requestAnimationFrame(update);
         } else {
-          // Stay at 999 for 2 seconds, then restart
+          // Stay at 999 for 3 seconds, then restart
           timeoutId = setTimeout(() => {
             runAnimation();
-          }, 2000);
+          }, 3000);
         }
       };
 
@@ -185,7 +185,7 @@ const AnimatedFlame = () => {
 
   return (
     <div className="flex items-center gap-3.5 px-6 py-3 bg-orange-50 border-[3.5px] border-orange-100 rounded-full shadow-[0_12px_30px_rgba(249,115,22,0.18)] active:scale-95 transition-all select-none scale-110 mb-8">
-      <Flame className="w-9 h-9 text-orange-500 fill-orange-500 animate-pulse shrink-0" />
+      <Flame className="w-9 h-9 text-orange-500 fill-orange-500 shrink-0" />
       <span className="text-3xl font-black text-orange-600 tracking-tight tabular-nums min-w-[65px] text-left">
         {count}
       </span>
@@ -381,7 +381,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
             <div className="h-40 flex items-center justify-center mb-4">
               <AnimatedFlame />
             </div>
-            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">EURE STORY</h2>
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
             <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">
               Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.
             </p>
@@ -477,11 +477,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
 
       {/* Progress Dots Header */}
       <header className="px-6 mb-8 flex items-center justify-between gap-4">
-        {isIntroOnly ? (
-          <button onClick={onComplete} className="p-2 -ml-2 hover:bg-purple-50 rounded-full transition-colors text-[var(--secondary)]">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        ) : <div className="w-9" />}
+        <div className="w-9" />
         
         <div className="quiz-prog-dots flex justify-center gap-1.5 flex-1">
           {Array.from({ length: totalSteps }).map((_, i) => {

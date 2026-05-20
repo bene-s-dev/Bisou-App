@@ -13,8 +13,6 @@ export default function PublicLayout() {
   const [wordIndex, setWordIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
 
-  const isSignIn = location.pathname === '/signin';
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsKuss(true);
@@ -34,14 +32,17 @@ export default function PublicLayout() {
     };
   }, []);
 
+  const isAuthPage = ['/signin', '/signup'].includes(location.pathname);
+
   return (
     <div className="h-[100svh] w-screen overflow-hidden bg-[#F8F7FF] text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative">
       <div className="bg-aura" />
-      
+
       {/* Header */}
       <header className="max-w-md mx-auto pt-12 pb-4 text-center select-none w-full relative shrink-0 z-20">
-        {!isSignIn && (
+        {!isAuthPage && (
           <div className="absolute top-12 right-0">
+
             <button 
               onClick={() => navigate('/signin')}
               className="px-4 py-2 bg-purple-50 text-[var(--secondary)] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 active:scale-95 transition-all shadow-sm border border-purple-100"

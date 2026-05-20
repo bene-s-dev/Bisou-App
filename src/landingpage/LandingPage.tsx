@@ -16,13 +16,13 @@ export default function LandingPage() {
       icon: <Heart className="w-5 h-5" />,
       title: "Vergleichen",
       desc: "Seht erst was der andere denkt, wenn beide geantwortet haben.",
-      color: "bg-red-50 text-[var(--primary)] border-red-100"
+      color: "bg-purple-50 text-[var(--secondary)] border-purple-100"
     },
     {
       icon: <Flame className="w-5 h-5" />,
       title: "Eure Serie",
       desc: "Sammelt Flammen für jeden gemeinsamen Tag.",
-      color: "bg-orange-50 text-orange-600 border-orange-100"
+      color: "bg-purple-50 text-[var(--secondary)] border-purple-100"
     },
     {
       icon: <ShieldCheck className="w-5 h-5" />,
@@ -46,7 +46,7 @@ export default function LandingPage() {
 
       <div className="mt-4">
         <p className="text-[#4A4468] text-sm font-semibold leading-relaxed px-4 opacity-80">
-          Tägliche Fragen, die euch näher zusammenbringen und für ehrliche Gespräche sorgen.
+          Tägliche Fragen, die euch näher zusammenbringen.
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export default function LandingPage() {
           Kostenlos starten ✨
         </button>
         <p className="mt-4 text-[10px] font-bold text-[var(--muted)] opacity-60">
-          In weniger als 1 Minute bereit.
+          In 60 Sekunden bereit.
         </p>
       </div>
     </section>

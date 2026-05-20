@@ -137,8 +137,8 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
         {loading ? (
           <div className="space-y-4 animate-in fade-in duration-500">
             <div className="grid grid-cols-2 gap-4">
-              <div className="h-[92px] rounded-3xl skeleton border border-purple-50" />
-              <div className="h-[92px] rounded-3xl skeleton border border-orange-50" />
+              <div className="h-[92px] rounded-3xl skeleton" />
+              <div className="h-[92px] rounded-3xl skeleton" />
             </div>
             <div className="bg-white border-2 border-purple-50 rounded-3xl p-6">
               <div className="w-32 h-3 rounded-full skeleton mb-6" />
