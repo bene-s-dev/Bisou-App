@@ -9,7 +9,7 @@ import { Session } from '@supabase/supabase-js';
 import LandingPage from './landingpage/LandingPage';
 import PublicLayout from './components/PublicLayout';
 import Login from './components/Login';
-import Onboarding from './components/Onboarding';
+import Intro from './components/Intro';
 import Dashboard from './components/Dashboard';
 import Questions from './components/Questions';
 import Profile from './components/Profile';
@@ -38,11 +38,11 @@ function AppLayout({
   const navigate = useNavigate();
   const location = useLocation();
 
-  if (!profile.onboarding_completed && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />;
+  if (!profile.intro_completed && location.pathname !== '/intro') {
+    return <Navigate to="/intro" replace />;
   }
 
-  const showHeader = ['/profile', '/dashboard', '/questions', '/onboarding'].includes(location.pathname);
+  const showHeader = ['/profile', '/dashboard', '/questions', '/intro'].includes(location.pathname);
 
   return (
     <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] select-none bg-[#F8F7FF] flex flex-col">
@@ -76,7 +76,7 @@ function AppLayout({
       )}
 
       <main 
-        className={`flex-1 flex flex-col relative z-10 px-4 max-w-md mx-auto w-full overflow-hidden ${profile.onboarding_completed ? 'pb-0' : 'pb-8'}`}
+        className={`flex-1 flex flex-col relative z-10 px-4 max-w-md mx-auto w-full overflow-hidden ${profile.intro_completed ? 'pb-0' : 'pb-8'}`}
         style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
       >
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -85,11 +85,11 @@ function AppLayout({
       </main>
 
       {/* Blurry fade transition at the bottom */}
-      {profile.onboarding_completed && (
+      {profile.intro_completed && location.pathname !== '/intro' && !location.search.includes('tab=intro') && (
         <div className="fixed bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/90 to-transparent pointer-events-none z-[90] backdrop-blur-[1px]" />
       )}
 
-      {profile.onboarding_completed && (
+      {profile.intro_completed && location.pathname !== '/intro' && !location.search.includes('tab=intro') && (
         <nav className="nav-dock">
           <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
             <Home className="w-6 h-6" />
@@ -104,13 +104,10 @@ function AppLayout({
           ) : (
             <div 
               onClick={() => setShowLockedModal(true)}
-              className="nav-item cursor-pointer relative"
+              className="nav-item cursor-pointer"
             >
-              <MessageCircle className="w-6 h-6" />
+              <Lock className="w-6 h-6 text-red-500" />
               <span className="nav-label">Fragen&Antworten</span>
-              <div className="absolute top-1 right-3 bg-white border border-purple-50 rounded-full p-0.5 shadow-sm">
-                <Lock className="w-2.5 h-2.5 text-[var(--primary)]" />
-              </div>
             </div>
           )}
 
@@ -129,7 +126,7 @@ function AppLayout({
               <Lock className="w-8 h-8 text-[var(--primary)]" />
             </div>
             <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Bereich gesperrt</h3>
-            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8 px-4 italic">
+            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8 px-4">
               Du kannst den Fragenbereich nur mit einem <span className="text-[var(--secondary)] font-black">Bisou-Partner</span> öffnen.
             </p>
             <button onClick={() => { setShowLockedModal(false); navigate('/profile'); }} className="btn-action py-4 text-base font-black">Zum Profil ✨</button>
@@ -171,9 +168,9 @@ export default function App() {
     if (outcome === 'accepted') setDeferredPrompt(null);
   };
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string, bypassLock = false) => {
     // Basic debounce/concurrency control
-    if (fetchLock.current === userId + dayKey) return;
+    if (!bypassLock && fetchLock.current === userId + dayKey) return;
     fetchLock.current = userId + dayKey;
 
     try {
@@ -222,7 +219,7 @@ export default function App() {
             id: userId,
             display_name: session.user.user_metadata?.display_name || 'Nutzer',
             partner_code: 'CB-' + userId.substring(0, 6).toUpperCase(),
-            onboarding_completed: false
+            intro_completed: false
           };
 
           const { data: inserted, error: insertError } = await supabase
@@ -398,17 +395,20 @@ export default function App() {
     }
   };
 
-  const handleOnboardingComplete = async () => {
+  const handleIntroComplete = async () => {
     if (session) {
       setLoading(true); 
-      await supabase.from('profiles').update({ onboarding_completed: true }).eq('id', session.user.id);
-      await fetchProfile(session.user.id);
+      // Optimistic update to prevent guard redirect
+      setProfile(prev => prev ? { ...prev, intro_completed: true } : null);
+      
+      await supabase.from('profiles').update({ intro_completed: true }).eq('id', session.user.id);
+      await fetchProfile(session.user.id, true);
       navigate('/dashboard');
     }
   };
 
   const refreshData = async () => {
-    if (session) await fetchProfile(session.user.id);
+    if (session) await fetchProfile(session.user.id, true);
   };
 
   if (loading && !profile) return <LoadingSkeleton />;
@@ -430,7 +430,7 @@ export default function App() {
           <Route path="/*" element={
             <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
               <Routes>
-                <Route path="onboarding" element={<Onboarding onComplete={handleOnboardingComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
+                <Route path="intro" element={<Intro onComplete={handleIntroComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
                 <Route path="dashboard" element={<Dashboard 
                   userName={profile.display_name} 
                   userAvatar={profile.avatar_url} 
@@ -458,7 +458,7 @@ export default function App() {
                   onInstall={handleInstallClick}
                 />} />
                 {/* Default within protected area */}
-                <Route path="*" element={profile.onboarding_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/onboarding" replace />} />
+                <Route path="*" element={profile.intro_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/intro" replace />} />
               </Routes>
             </AppLayout>
           } />

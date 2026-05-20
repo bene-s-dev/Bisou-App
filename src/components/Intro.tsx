@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, BarChart3, UserCircle2, Clock, MessageCircle
+  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, BarChart3, UserCircle2, Clock, MessageCircle, X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ImageCropper from './ImageCropper';
@@ -10,7 +10,7 @@ import { translateError } from '../lib/translations';
 import { useNavigate, useLocation } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
-interface OnboardingProps {
+interface IntroProps {
   onComplete: () => void;
   deferredPrompt?: any;
   onInstall?: () => void;
@@ -193,13 +193,13 @@ const AnimatedFlame = () => {
   );
 };
 
-export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIntroOnly }: OnboardingProps) {
+export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOnly }: IntroProps) {
   const { showAlert } = useDialog();
   const navigate = useNavigate();
   const location = useLocation();
   
   // Use local state for step if we are just replaying the intro
-  // Otherwise use URL for the real onboarding (so refresh works)
+  // Otherwise use URL for the real Intro (so refresh works)
   const [localStep, setLocalStep] = useState(isIntroOnly ? 1 : 0);
   const initialStep = isIntroOnly ? '1' : '0';
   const urlStep = parseInt(new URLSearchParams(location.search).get('s') || initialStep);
@@ -216,6 +216,29 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const [isIOS, setIsIOS] = useState(false);
+
+  // Synchronized Transition State
+  const [displayState, setDisplayState] = useState({
+    current: step,
+    previous: null as number | null
+  });
+
+  // Update display state synchronously when step changes
+  if (step !== displayState.current) {
+    setDisplayState({
+      current: step,
+      previous: displayState.current
+    });
+  }
+
+  useEffect(() => {
+    if (displayState.previous !== null) {
+      const timer = setTimeout(() => {
+        setDisplayState(prev => ({ ...prev, previous: null }));
+      }, 400); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [displayState.previous]);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
@@ -239,7 +262,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         }
       }
     } catch (err) {
-      console.error("Fehler beim Laden des Profils im Onboarding:", err);
+      console.error("Fehler beim Laden des Profils im Intro:", err);
     }
   }, []);
 
@@ -306,11 +329,13 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
   const totalSteps = isIntroOnly ? 4 : 6;
   const lastStepIndex = isIntroOnly ? 4 : 5;
 
-  const renderStep = () => {
-    switch (step) {
+  const renderStepContent = (s: number, isOutgoing = false) => {
+    const animationClass = isOutgoing ? 'animate-slide-out-left' : 'animate-slide-in-right';
+    
+    switch (s) {
       case 0:
         return (
-          <div className="flex-1 flex flex-col items-center pt-24 text-center px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className={`flex-1 flex flex-col items-center pt-24 text-center px-4 ${animationClass}`}>
             <div className="h-40 flex items-center justify-center mb-4">
               <div className="relative">
                 <div className={`w-32 h-32 rounded-[2.5rem] bg-white flex items-center justify-center border-2 border-white shadow-xl overflow-hidden transition-all ${loading ? 'opacity-50' : ''}`}>
@@ -341,7 +366,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         );
       case 1:
         return (
-          <div className="flex-1 flex flex-col items-center pt-24 text-center px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className={`flex-1 flex flex-col items-center pt-24 text-center px-6 ${animationClass}`}>
             <div className="h-40 flex items-center justify-center mb-4">
               <ScramblingCode />
             </div>
@@ -353,7 +378,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         );
       case 2:
         return (
-          <div className="flex-1 flex flex-col items-center pt-24 text-center px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className={`flex-1 flex flex-col items-center pt-24 text-center px-6 ${animationClass}`}>
             <div className="h-40 flex items-center justify-center mb-4">
               <MagicClock />
             </div>
@@ -365,7 +390,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         );
       case 3:
         return (
-          <div className="flex-1 flex flex-col items-center pt-24 text-center px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className={`flex-1 flex flex-col items-center pt-24 text-center px-6 ${animationClass}`}>
             <div className="h-40 flex items-center justify-center mb-4">
               <TypingChatBubble />
             </div>
@@ -377,7 +402,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         );
       case 4:
         return (
-          <div className="flex-1 flex flex-col items-center pt-24 text-center px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className={`flex-1 flex flex-col items-center pt-24 text-center px-6 ${animationClass}`}>
             <div className="h-40 flex items-center justify-center mb-4">
               <AnimatedFlame />
             </div>
@@ -389,7 +414,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         );
       case 5:
         return (
-          <div className="flex-1 flex flex-col items-center pt-24 text-center px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className={`flex-1 flex flex-col items-center pt-24 text-center px-6 ${animationClass}`}>
             <div className="h-40 flex items-center justify-center mb-4">
               {isIOS ? (
                 <div className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center shadow-lg border-2 border-purple-50">
@@ -405,7 +430,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
                 {isIOS ? (
                   <div className="flex flex-col gap-6 items-center w-full">
                     <h2 className="text-2xl font-black text-[#1F1939] tracking-tight uppercase">App installieren</h2>
-                    <p className="text-sm font-bold text-[var(--text)] opacity-70 leading-relaxed max-w-[280px] mb-2">Für das beste Erlebnis installiere Bisou auf deinem Homescreen.</p>
+                    <p className="text-sm font-bold text-[var(--text)] opacity-70 leading-relaxed max-w-[280px] mb-2">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
                     <div className="space-y-3 w-full">
                       <div className="flex items-center gap-3 text-left bg-white p-4 rounded-2xl border-2 border-purple-50 shadow-sm">
                         <div className="w-8 h-8 rounded-full bg-[var(--secondary)] text-white text-xs font-black flex items-center justify-center shrink-0 shadow-sm">1</div>
@@ -432,7 +457,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
                     <h2 className="text-2xl font-black text-[#1F1939] tracking-tight uppercase">App installieren</h2>
                     
                     {deferredPrompt ? (
-                      <p className="text-sm font-bold text-[var(--text)] opacity-70 leading-relaxed max-w-xs text-center">Installiere Bisou für einen blitzschnellen Zugriff direkt von deinem&nbsp;Startbildschirm.</p>
+                      <p className="text-sm font-bold text-[var(--text)] opacity-70 leading-relaxed max-w-xs text-center">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
                     ) : (
                       <div className="space-y-4 w-full">
                         <p className="text-sm font-bold text-[var(--text)] opacity-70 leading-relaxed">Öffne dein Browser-Menü und wähle "App installieren".</p>
@@ -454,6 +479,21 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
       default:
         return null;
     }
+  };
+
+  const renderStep = () => {
+    return (
+      <div className="flex-1 flex flex-col relative overflow-hidden">
+        <div key={`curr-${displayState.current}`} className="flex-1 flex flex-col">
+          {renderStepContent(displayState.current, false)}
+        </div>
+        {displayState.previous !== null && (
+          <div key={`prev-${displayState.previous}`} className="absolute inset-0 flex flex-col z-10 pointer-events-none">
+            {renderStepContent(displayState.previous, true)}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const handleNext = () => {
@@ -494,8 +534,11 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         </div>
         
         {isIntroOnly ? (
-          <button onClick={onComplete} className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest hover:text-[var(--secondary)] transition-colors pr-2">
-            Skip
+          <button 
+            onClick={onComplete} 
+            className="w-9 h-9 flex items-center justify-center text-[var(--muted)] hover:text-[var(--secondary)] transition-colors"
+          >
+            <X className="w-5 h-5" />
           </button>
         ) : <div className="w-9" />}
       </header>
@@ -509,15 +552,15 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
           <button 
             disabled={loading}
             onClick={onInstall}
-            className="btn-action py-4 text-sm font-black group shadow-xl mb-4"
+            className="btn-action py-4 text-sm font-black group mb-2 shadow-none"
           >
-            App jetzt installieren
+            App installieren <Download className="w-5 h-5 ml-1" />
           </button>
         ) : (
           <button 
             disabled={loading}
             onClick={handleNext}
-            className="btn-action py-5 text-lg font-black group shadow-xl"
+            className="btn-action py-5 text-lg font-black group shadow-none"
           >
             {step === lastStepIndex ? (isIntroOnly ? 'Schließen' : 'Jetzt loslegen! 🚀') : 'Weiter'} 
             {step < lastStepIndex && <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />}
@@ -527,7 +570,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
         {step === 5 && !isIntroOnly && (
           <button 
             onClick={onComplete}
-            className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-widest mt-2 opacity-50 hover:opacity-100 transition-opacity py-2"
+            className="btn-secondary w-full mt-0 !text-xs !py-4"
           >
             {deferredPrompt ? 'Später installieren & starten' : 'Vorerst überspringen'}
           </button>

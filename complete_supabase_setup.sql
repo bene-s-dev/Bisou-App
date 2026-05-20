@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   partner_id UUID REFERENCES public.profiles(id),
   partner_code TEXT UNIQUE,
   avatar_url TEXT,
-  onboarding_completed BOOLEAN DEFAULT FALSE,
+  intro_completed BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

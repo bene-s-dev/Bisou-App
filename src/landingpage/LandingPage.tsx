@@ -35,7 +35,7 @@ export default function LandingPage() {
   return (
     <section className="text-center px-2 flex flex-col gap-8 py-4 relative">
       {/* Login Button positioned in Header context */}
-      <div className="absolute -top-16 right-0">
+      <div className="absolute -top-20 right-4">
         <button 
           onClick={() => navigate('/signin')}
           className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border-2 border-[var(--card-border)] text-[var(--secondary)] font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all"

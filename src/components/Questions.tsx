@@ -391,7 +391,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           setLoading(false);
         }
       },
-      { title: "Quiz neu starten", confirmLabel: "Ja, Neustart", cancelLabel: "Abbrechen" }
+      { title: "Fragen neu starten", confirmLabel: "Ja, Neustart", cancelLabel: "Abbrechen" }
+
     );
   };
 

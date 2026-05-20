@@ -306,18 +306,10 @@ export default function Dashboard({
     return GREETINGS[seed % GREETINGS.length];
   }, [dayKey]);
 
-  const { firstHalf, secondHalf } = useMemo(() => {
-    // Remove all commas from the original string
-    const raw = greeting.replace(/,/g, '').trim();
-    const words = raw.split(' ');
-    if (words.length >= 3) {
-      const mid = Math.ceil(words.length / 2);
-      return {
-        firstHalf: words.slice(0, mid).join(' '),
-        secondHalf: words.slice(mid).join(' ')
-      };
-    }
-    return { firstHalf: raw, secondHalf: '' };
+  const { rawGreeting, isQuestion } = useMemo(() => {
+    const isQuestion = greeting.endsWith('?');
+    const rawGreeting = greeting.replace(/\?$/, '').replace(/,$/, '').trim();
+    return { rawGreeting, isQuestion };
   }, [greeting]);
 
   const { meAnswered, partnerAnswered, myAnswers, partnerAnswers, dailyQs, myStreak, partnerStreak, myTime, partnerTime } = useMemo(() => {
@@ -448,7 +440,7 @@ export default function Dashboard({
       <div className="flex-1 flex flex-col pt-[52px] pb-32">
         
         {/* Header: Avatars and Streaks */}
-        <div className="flex flex-col items-center mb-[20px] shrink-0">
+        <div className="flex flex-col items-center mb-12 shrink-0">
           <div className="relative flex flex-col items-center">
             {/* Avatars Row with Flame Pills attached */}
             <div className="flex -space-x-4">
@@ -506,12 +498,10 @@ export default function Dashboard({
         </div>
 
         {/* Greeting Section */}
-        <div className="mb-6 pl-1 pr-6">
-          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight text-left flex flex-col gap-1">
-            <span className="max-w-[70%] leading-[1.1]">{firstHalf}</span>
-            <span className="w-full leading-[1.2]">
-              {secondHalf ? `${secondHalf}, ` : ''}<span className="text-[var(--secondary)]">{userName}</span>! ❤️
-            </span>
+        <div className="mb-6 pl-1 pr-6 relative overflow-hidden">
+          <div className="float-right w-1/2 h-[1.1em] pointer-events-none" />
+          <h2 className="text-xl font-black text-[#1F1939] tracking-tight text-left leading-[1.1]">
+            {rawGreeting}, <span className="text-[var(--secondary)]">{userName}</span>{isQuestion ? '?' : '!'} ❤️
           </h2>
         </div>
         
