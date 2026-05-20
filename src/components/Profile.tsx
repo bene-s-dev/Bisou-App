@@ -536,7 +536,7 @@ export default function Profile({
                     </span>
                   </div>
                   
-                  <div className="flex-1 flex items-center">
+                  <div className="flex-1 flex items-center justify-end">
                     <div className="flex gap-1.5 items-center">
                       {systemStatus.latency && (
                         <>
@@ -549,9 +549,6 @@ export default function Profile({
                         </>
                       )}
                     </div>
-                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider whitespace-nowrap ml-auto">
-                      Antwortzeit
-                    </span>
                   </div>
                 </div>
 
@@ -562,7 +559,7 @@ export default function Profile({
                     <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">Aktiv</span>
                   </div>
 
-                  <div className="flex-1 flex items-center">
+                  <div className="flex-1 flex items-center justify-end">
                     <div className="flex gap-1.5 items-center">
                       <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
                         {systemStatus.storageItems.toFixed(2)}
@@ -571,9 +568,6 @@ export default function Profile({
                         / 5.00 MB
                       </span>
                     </div>
-                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider whitespace-nowrap ml-auto">
-                      Speicherplatz
-                    </span>
                   </div>
                 </div>
 
