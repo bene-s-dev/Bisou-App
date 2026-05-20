@@ -397,24 +397,44 @@ export default function Dashboard({
             <span className="group-active:-translate-x-1 transition-transform">←</span> Zurück zum Dashboard
           </button>
           <h2 className="text-3xl font-black mb-8 text-[#1F1939] tracking-tight">Unsere Gedanken</h2>
-          <div className="space-y-8 flex-1 overflow-visible">
-            {dailyQs.map((q, i) => (
-              <div key={i} className="animate-in fade-in slide-in-from-bottom-2">
-                <div className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-3 px-1">{q.q}</div>
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div className="res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm">
-                    <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>
-                    <span className="font-bold text-xs text-[var(--text-main)] leading-relaxed">{myAnswers[i] || '—'}</span>
+          <div className="flex-1 relative min-h-0">
+            <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
+              <div className="space-y-8 pb-72 pt-10">
+                {dailyQs.map((q, i) => (
+                  <div key={i} className="animate-in fade-in slide-in-from-bottom-2">
+                    <div className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-3 px-1">{q.q}</div>
+                    <div className="grid grid-cols-2 gap-3.5">
+                      <div className="res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm">
+                        <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>
+                        <span className="font-bold text-xs text-[var(--text-main)] leading-relaxed">{myAnswers[i] || '—'}</span>
+                      </div>
+                      <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${!partnerAnswered ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
+                        <b className="text-[9px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
+                        <span className={`font-bold text-xs text-[var(--text-main)] leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
+                          {partnerAnswered ? partnerAnswers?.[i] : 'Wartet...'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${!partnerAnswered ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
-                    <b className="text-[9px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
-                    <span className={`font-bold text-xs text-[var(--text-main)] leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
-                      {partnerAnswered ? partnerAnswers?.[i] : 'Wartet...'}
-                    </span>
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
+
+            {/* Overlays on top */}
+            <div 
+              className="absolute top-0 left-0 right-0 h-5 z-20 pointer-events-none bg-gradient-to-b from-[#F8F7FF] to-transparent"
+              style={{ 
+                maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)'
+              }}
+            />
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-56 z-20 pointer-events-none bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent"
+              style={{ 
+                maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)'
+              }}
+            />
           </div>
         </div>
         <div className="pb-6 pt-6">
@@ -440,7 +460,7 @@ export default function Dashboard({
       <div className="flex-1 flex flex-col pt-[52px] pb-32">
         
         {/* Header: Avatars and Streaks */}
-        <div className="flex flex-col items-center mb-12 shrink-0">
+        <div className="flex flex-col items-center mb-6 shrink-0">
           <div className="relative flex flex-col items-center">
             {/* Avatars Row with Flame Pills attached */}
             <div className="flex -space-x-4">
@@ -512,7 +532,7 @@ export default function Dashboard({
             <button onClick={() => navigate('/profile?tab=partner')} className="btn-action-animated py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
           </div>
         ) : (
-          <div className="status-box p-4 mb-2">
+          <div className="status-box pt-4 px-4 pb-3 mb-2">
             <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] text-center mb-4">Fragen von heute</h3>
             
             <div className="flex flex-col gap-3">
@@ -546,29 +566,30 @@ export default function Dashboard({
             </div>
 
             <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-3">
-              <div className="flex gap-2 items-center justify-center">
-                <button 
-                  onClick={onStartQuestions} 
-                  className="flex-1 btn-action-animated h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-lg"
-                >
-                  {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
-                </button>
+              <button 
+                onClick={onStartQuestions} 
+                className="w-full btn-action-animated h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-lg"
+              >
+                {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
+              </button>
 
-                <button 
-                  onClick={() => setShowStatsModal(true)} 
-                  className="w-12 h-12 bg-white border-2 border-purple-100 rounded-[22px] flex items-center justify-center text-[var(--secondary)] active:scale-95 transition-all shrink-0"
-                  title="Statistiken"
-                >
-                  <BarChart3 className="w-5 h-5" />
-                </button>
-              </div>
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
+                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
+                    <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest ml-1">
+                      {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                    </span>
+                  </div>
 
-              <div className="flex items-center justify-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
-                <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
-                <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest ml-1">
-                  {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                </span>
+                  <button 
+                    onClick={() => setShowStatsModal(true)} 
+                    className="p-2 bg-purple-50 rounded-xl text-[var(--secondary)] active:scale-95 transition-all border border-purple-100 shadow-sm"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

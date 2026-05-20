@@ -86,8 +86,14 @@ function AppLayout({
       </main>
 
       {/* Blurry fade transition at the bottom */}
-      {profile.intro_completed && location.pathname !== '/intro' && !location.search.includes('tab=intro') && (
-        <div className="fixed bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/90 to-transparent pointer-events-none z-[90] backdrop-blur-[1px]" />
+      {profile.intro_completed && !['/intro', '/dashboard'].includes(location.pathname) && !location.search.includes('tab=intro') && (
+        <div 
+          className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
+          style={{ 
+            maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)'
+          }}
+        />
       )}
 
       {profile.intro_completed && location.pathname !== '/intro' && !location.search.includes('tab=intro') && (

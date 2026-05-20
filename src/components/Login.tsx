@@ -27,6 +27,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
   const [regStep, setRegStep] = useState(1);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [shouldShake, setShouldShake] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +40,8 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     });
 
     if (error) {
+      setShouldShake(true);
+      setTimeout(() => setShouldShake(false), 500);
       setMessage({ type: 'error', text: translateError(error.message) });
       setLoading(false);
     } else {
@@ -92,13 +95,6 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
 
   const handleSubmit = mode === 'login' ? handleLogin : (mode === 'register' ? handleRegister : handleMagicLink);
 
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Small delay to allow the keyboard to start opening and the layout to shift
-    setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 300);
-  };
-
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       {message && message.text && (
@@ -107,16 +103,15 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide pb-20">
+      <div className="flex-1 overflow-hidden">
         <div className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-8 shadow-[var(--shadow-soft)]">
           <>
             {mode === 'login' && (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input type="email" onFocus={handleInputFocus} className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <form onSubmit={handleSubmit} className={`space-y-4 ${shouldShake ? 'animate-shake' : ''}`}>
+                <input type="email" autoFocus className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} 
-                    onFocus={handleInputFocus}
                     className="input-base pr-12" 
                     placeholder="Passwort" 
                     value={password} 
@@ -153,7 +148,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                       <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
                       <p className="text-sm text-[#4A4468]">Wir senden dir einen Link zum Einloggen.</p>
                     </div>
-                    <input type="email" onFocus={handleInputFocus} className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    <input type="email" autoFocus className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     <button type="submit" disabled={loading} className="btn-action">{loading ? 'Sende...' : 'Link senden ✨'}</button>
                     <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Zurück zum Login</button>
                   </>
@@ -187,12 +182,11 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                         <div className="text-center mb-6">
                           <h2 className="text-2xl font-black text-[#1F1939]">Bisou-Profil erstellen</h2>
                         </div>
-                        <input type="text" onFocus={handleInputFocus} className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
-                        <input type="email" onFocus={handleInputFocus} className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                        <input type="text" autoFocus className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+                        <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
                         <div className="relative">
                           <input 
                             type={showPassword ? "text" : "password"} 
-                            onFocus={handleInputFocus}
                             className="input-base pr-12" 
                             placeholder="Passwort (min. 6 Zeichen)" 
                             value={password} 

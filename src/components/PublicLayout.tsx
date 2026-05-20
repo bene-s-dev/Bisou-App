@@ -122,7 +122,7 @@ export default function PublicLayout() {
               <ShieldCheck className="w-8 h-8 text-[var(--secondary)]" />
             </div>
             <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Datenschutz</h3>
-            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8 italic">
+            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8">
               Die Verarbeitung von Daten durch diese Anwendung erfolgt ausschließlich für persönliche oder familiäre Zwecke. Sie fällt daher gemäß Art. 2 Abs. 2 lit. c DSGVO unter das sogenannte Haushaltsprivileg, weshalb die Bestimmungen der DSGVO keine Anwendung finden.<br /><br />
               <span className="opacity-80">Dein Bene</span>
             </p>

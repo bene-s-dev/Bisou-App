@@ -506,14 +506,9 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 Antworten zurücksetzen <RefreshCcw className="w-3 h-3" />
               </button>
             </header>
-            <div 
-              className="flex-1 pr-1 overflow-y-auto scroll-smooth show-scrollbar"
-              style={{
-                maskImage: 'linear-gradient(to bottom, transparent 0px, black 12px, black 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, black 12px, black 100%)'
-              }}
-            >
-              <div className="space-y-10 pb-32 pt-1">
+            <div className="flex-1 relative min-h-0">
+              <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
+                <div className="space-y-10 pb-72 pt-10">
                 {dailyQs.map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
@@ -541,11 +536,28 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                     </div>
                   );
                 })}
+                </div>
               </div>
-            </div>
+              
+              {/* Overlays on top */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-5 z-20 pointer-events-none bg-gradient-to-b from-[#F8F7FF] to-transparent"
+                style={{ 
+                  maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)'
+                }}
+              />
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-56 z-20 pointer-events-none bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent"
+                style={{ 
+                  maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)'
+                }}
+              />
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
     );
   } catch (e: any) {
     setInternalError(e.message);

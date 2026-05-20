@@ -973,8 +973,8 @@ export default function Profile({
             {profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" /> : <UserIcon className="w-10 h-10 text-[var(--secondary)]" />}
           </div>
           <button 
-            onClick={() => profile?.avatar_url ? setShowAvatarMenu(true) : document.getElementById('avatar-upload')?.click()}
-            className="absolute -right-2 bottom-0 w-8 h-8 rounded-full bg-white border border-[var(--secondary)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all z-30"
+            onClick={() => setShowAvatarMenu(true)}
+            className="absolute -right-2 bottom-0 w-8 h-8 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all z-30"
           >
             <input type="file" id="avatar-upload" accept="image/*" className="hidden" onChange={handleFileSelect} />
             <Pencil className="w-4 h-4" />
@@ -1000,14 +1000,20 @@ export default function Profile({
               </button>
             </div>
           ) : (
-            <div 
-              onClick={() => setIsEditingName(true)}
-              className="flex items-center justify-center gap-3 px-6 py-2.5 bg-white border-2 border-[var(--card-border)] rounded-full cursor-pointer hover:bg-purple-50 transition-all active:scale-95 shadow-sm"
-            >
-              <span className="text-[15px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] pt-0.5">
-                {profile?.display_name || 'User'}
-              </span>
-              <Pencil className="w-4 h-4 text-[var(--secondary)] opacity-80" />
+            <div className="relative">
+              <div 
+                className="flex items-center justify-center px-8 py-2.5 bg-white border-2 border-[var(--card-border)] rounded-full shadow-sm"
+              >
+                <span className="text-[15px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] pt-0.5">
+                  {profile?.display_name || 'User'}
+                </span>
+              </div>
+              <button 
+                onClick={() => setIsEditingName(true)}
+                className="absolute -right-2 -bottom-1 w-8 h-8 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all z-30"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>
@@ -1023,8 +1029,21 @@ export default function Profile({
           <div className="absolute inset-0" onClick={() => setShowAvatarMenu(false)} />
           <div className="modal-content p-8" onClick={e => e.stopPropagation()}>
             <div className="flex flex-col gap-4">
-              <button onClick={() => { setShowAvatarMenu(false); document.getElementById('avatar-upload')?.click(); }} className="w-full py-4 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-purple-100 transition-all active:scale-95"><Camera className="w-5 h-5" /> Neues Bild wählen</button>
-              <button onClick={handleDeleteImage} className="w-full py-4 rounded-2xl bg-red-50 text-red-500 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-100 transition-all active:scale-95"><Trash2 className="w-5 h-5" /> Bild löschen</button>
+              <div className="text-center mb-2">
+                <h3 className="text-sm font-black text-[#1F1939] uppercase tracking-widest">Profilbild anpassen</h3>
+              </div>
+              
+              <button onClick={() => { setShowAvatarMenu(false); document.getElementById('avatar-upload')?.click(); }} className="w-full py-4 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-purple-100 transition-all active:scale-95">
+                <Camera className="w-5 h-5" /> 
+                {profile?.avatar_url ? 'Neues Bild wählen' : 'Bild hochladen'}
+              </button>
+
+              {profile?.avatar_url && (
+                <button onClick={handleDeleteImage} className="w-full py-4 rounded-2xl bg-red-50 text-red-500 font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-red-100 transition-all active:scale-95">
+                  <Trash2 className="w-5 h-5" /> Bild löschen
+                </button>
+              )}
+
               <button onClick={() => setShowAvatarMenu(false)} className="w-full py-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] hover:text-[var(--text-main)] transition-colors mt-2">Abbrechen</button>
             </div>
           </div>
