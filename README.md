@@ -1,5 +1,4 @@
-<div align="center">
-  <img src="https://raw.githubusercontent.com/lucide-icons/lucide/main/icons/heart.svg" alt="Bisou Logo" width="80" height="80">
+
   
   # Bisou
   
