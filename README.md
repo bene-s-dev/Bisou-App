@@ -24,7 +24,7 @@ Täglich gibt es drei neue Fragen für euch beide. Aber pssst: Die Antworten des
 
 ### 🚀 Features
 
-- **Für zwei gemacht:** Verknüpft eure Profile mit einem einzigartigen Partner-Code.
+- **Für zwei gemacht:** Verknüpft eure Profile mit einem einzigartigen Bisou-Code.
 - **Tägliche Magie:** Jeden Morgen drei neue spannende, tiefe oder lustige Fragen.
 - **Gemeinsam teilen:** Die Antworten werden erst sichtbar, wenn beide Partner geantwortet haben.
 - **Streaks & Serien:** Schaut täglich rein, beantwortet die Fragen und baut eure Flamme (Serie) auf! 🔥
