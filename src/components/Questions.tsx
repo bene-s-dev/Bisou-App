@@ -456,16 +456,16 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   </div>
                 )}
                 {step === 2 && (
-                  <div className="flex-1 flex flex-col gap-2">
+                  <div className="flex-1 flex flex-col gap-2 relative">
                     <textarea 
-                      className="w-full flex-1 min-h-[160px] p-6 rounded-[2rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
+                      className="w-full flex-1 min-h-[160px] p-6 pb-12 rounded-[2rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
                       placeholder="Deine Gedanken hier..." 
                       value={textVal} 
                       onChange={(e) => setTextVal(e.target.value)} 
                       maxLength={MAX_TEXT_LENGTH}
                     />
-                    <div className="flex justify-end px-4">
-                      <span className={`text-[10px] font-black tracking-widest uppercase ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
+                      <span className={`text-[9px] font-black tracking-[0.2em] uppercase px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
                         {textVal.length} / {MAX_TEXT_LENGTH}
                       </span>
                     </div>

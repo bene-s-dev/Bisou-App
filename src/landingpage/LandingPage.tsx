@@ -33,17 +33,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <section className="text-center px-2 flex flex-col gap-8 py-4 relative">
-      {/* Login Button positioned in Header context */}
-      <div className="absolute -top-20 right-4">
-        <button 
-          onClick={() => navigate('/signin')}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border-2 border-[var(--card-border)] text-[var(--secondary)] font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all"
-        >
-          Login <LogIn className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
+    <section className="text-center flex flex-col gap-8 py-4 relative">
       <div className="mt-4">
         <p className="text-[#4A4468] text-sm font-semibold leading-relaxed px-4 opacity-80">
           Tägliche Fragen, die euch näher zusammenbringen.

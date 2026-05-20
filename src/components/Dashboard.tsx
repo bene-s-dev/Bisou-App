@@ -427,7 +427,7 @@ export default function Dashboard({
   }
 
   return (
-    <div className="animate-entrance flex flex-col flex-1 overflow-y-auto scrollbar-hide relative">
+    <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
       {userAvatar && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
           <img 

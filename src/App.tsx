@@ -50,7 +50,7 @@ function AppLayout({
       
       {showHeader && (
         <header className="px-4 z-20 absolute left-0 right-0 top-0 max-w-md mx-auto w-full pointer-events-none" style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}>
-          <div className="flex items-start justify-between min-h-[40px]">
+          <div className="flex items-start justify-between">
             <button 
               onClick={() => navigate('/')}
               className="group transition-transform active:scale-95 pointer-events-auto"
@@ -59,16 +59,17 @@ function AppLayout({
                 Bisou
               </h1>
             </button>
+
             {location.pathname === '/profile' && (
               <button 
                 onClick={onLogout} 
-                className="flex flex-col items-center gap-1 group"
+                className="flex flex-col items-center gap-1 group pointer-events-auto"
                 title="Abmelden"
               >
-                <div className="p-2.5 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90 pointer-events-auto">
-                    <LogOut className="w-5 h-5" />
+                <div className="p-2 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90">
+                    <LogOut className="w-4 h-4" />
                 </div>
-                <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600">Logout</span>
+                <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600 leading-none">Logout</span>
               </button>
             )}
           </div>
@@ -93,7 +94,7 @@ function AppLayout({
         <nav className="nav-dock">
           <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
             <Home className="w-6 h-6" />
-            <span className="nav-label">Dashboard</span>
+            <span className="nav-label">Start</span>
           </NavLink>
 
           {profile.partner_id ? (

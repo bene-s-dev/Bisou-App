@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, LogIn } from 'lucide-react';
 
 export default function PublicLayout() {
   const navigate = useNavigate();
@@ -41,13 +41,12 @@ export default function PublicLayout() {
       {/* Header */}
       <header className="max-w-md mx-auto pt-12 pb-4 text-center select-none w-full relative shrink-0 z-20">
         {!isAuthPage && (
-          <div className="absolute top-12 right-0">
-
+          <div className="absolute top-6 right-4">
             <button 
               onClick={() => navigate('/signin')}
-              className="px-4 py-2 bg-purple-50 text-[var(--secondary)] rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-purple-100 active:scale-95 transition-all shadow-sm border border-purple-100"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border-2 border-[var(--card-border)] text-[var(--secondary)] font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all"
             >
-              Login
+              Login <LogIn className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
