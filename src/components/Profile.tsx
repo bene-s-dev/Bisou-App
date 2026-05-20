@@ -66,17 +66,27 @@ export default function Profile({
         const { error } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).limit(1);
         const end = performance.now();
         
+        // Calculate storage size
+        let totalBytes = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) {
+            totalBytes += (key.length + (localStorage.getItem(key)?.length || 0)) * 2;
+          }
+        }
+        const storageMB = (totalBytes / (1024 * 1024)).toFixed(2);
+        
         setSystemStatus({
           online: !error,
           latency: !error ? Math.round(end - start) : null,
-          storageItems: Object.keys(localStorage).length,
+          storageItems: parseFloat(storageMB),
           lastChecked: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         });
       } catch (e) {
         setSystemStatus({
           online: false,
           latency: null,
-          storageItems: Object.keys(localStorage).length,
+          storageItems: 0,
           lastChecked: new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         });
       }
@@ -470,7 +480,7 @@ export default function Profile({
         return (
           <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 duration-300 px-2 w-full">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em]">APP-INFORMATIONEN</h2>
-            <div className="bg-white/80 backdrop-blur-md rounded-[32px] px-2 py-5 border-2 border-purple-100 w-full max-w-xl overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] px-2 py-5 border-2 border-blue-100 w-full max-w-xl overflow-hidden">
               <div className="flex flex-col gap-2 pb-2">
                 <div className="flex items-center pb-2 border-b border-purple-50">
                   <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Entwickler</span>
@@ -555,14 +565,14 @@ export default function Profile({
                   <div className="flex-1 flex items-center">
                     <div className="flex gap-1.5 items-center">
                       <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
-                        {systemStatus.storageItems}
+                        {systemStatus.storageItems.toFixed(2)}
                       </span>
                       <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider">
-                        Keys
+                        / 5.00 MB
                       </span>
                     </div>
                     <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider whitespace-nowrap ml-auto">
-                      Datensätze
+                      Speicherplatz
                     </span>
                   </div>
                 </div>
@@ -574,31 +584,27 @@ export default function Profile({
                       (() => {
                         const lastFetch = localStorage.getItem('last_question_fetch');
                         if (!lastFetch) return 'bg-gray-400 shadow-gray-200';
-                        const date = new Date(lastFetch);
-                        const mins = date.getHours() * 60 + date.getMinutes();
-                        const isAktuell = mins >= (2 * 60 + 50) && mins <= (3 * 60 + 30);
-                        return isAktuell ? 'bg-blue-500 shadow-blue-200' : 'bg-red-500 shadow-red-200';
+                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
+                        return hoursSince <= 24 ? 'bg-blue-500 shadow-blue-200' : 'bg-red-500 shadow-red-200';
                       })()
                     }`} />
                     <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
                       {(() => {
                         const lastFetch = localStorage.getItem('last_question_fetch');
                         if (!lastFetch) return 'keine info';
-                        const date = new Date(lastFetch);
-                        const mins = date.getHours() * 60 + date.getMinutes();
-                        const isAktuell = mins >= (2 * 60 + 50) && mins <= (3 * 60 + 30);
-                        return isAktuell ? 'Aktuell' : 'Veraltet';
+                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
+                        return hoursSince <= 24 ? 'Aktuell' : 'Veraltet';
                       })()}
                     </span>
                   </div>
                   
                   <div className="flex-1 flex items-center justify-end">
-                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider whitespace-nowrap">
                       {(() => {
                         const lastFetch = localStorage.getItem('last_question_fetch');
                         if (!lastFetch) return 'Noch nie geladen';
                         const date = new Date(lastFetch);
-                        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' • ' + 
+                        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ', ' + 
                                date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                       })()}
                     </span>
@@ -674,7 +680,7 @@ export default function Profile({
   const renderServicesModal = () => createPortal(
     <div className="fixed inset-0 z-[1000] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-[#2D264B]/40 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setShowServices(false)} />
-      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm relative z-10 animate-entrance border-2 border-purple-100 shadow-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm relative z-10 animate-entrance border-2 border-blue-100 shadow-2xl flex flex-col max-h-[85vh]">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.15em]">Verwendete Dienste 🔧</h3>
           <button onClick={() => setShowServices(false)} className="p-2 text-[var(--muted)] hover:bg-purple-50 rounded-full transition-colors"><X className="w-4 h-4" /></button>
