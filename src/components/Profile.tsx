@@ -562,7 +562,13 @@ export default function Profile({
                   <div className="flex-1 flex items-center justify-end">
                     <div className="flex gap-1.5 items-center">
                       <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
-                        {systemStatus.storageItems.toFixed(2)}
+                        {(() => {
+                          const mb = systemStatus.storageItems;
+                          if (mb < 0.1) {
+                            return (mb * 1024).toFixed(1) + ' KB';
+                          }
+                          return mb.toFixed(2) + ' MB';
+                        })()}
                       </span>
                       <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider">
                         / 5.00 MB
