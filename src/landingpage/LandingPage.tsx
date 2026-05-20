@@ -59,6 +59,8 @@ export default function LandingPage() {
         >
           Kostenlos starten ✨
         </button>
+      </div>
+      <div className="text-center">
         <p className="mt-4 text-[10px] font-bold text-[var(--muted)] opacity-60">
           In 60 Sekunden bereit.
         </p>

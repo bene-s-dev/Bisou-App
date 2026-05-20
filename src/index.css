@@ -81,8 +81,8 @@ html, body {
   .btn-action-animated {
     @apply w-full p-5 rounded-[22px] border-none text-white font-black text-sm uppercase tracking-[0.15em] cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-lg active:scale-95 active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed outline-none;
     background: linear-gradient(-45deg, var(--primary), var(--secondary), var(--primary-dark), var(--secondary-dark));
-    background-size: 400% 400%;
-    animation: gradient-animation 6s ease infinite;
+    background-size: 300% 300%;
+    animation: gradient-animation 3s ease infinite;
   }
 
   .btn-secondary {
