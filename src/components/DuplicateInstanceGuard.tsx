@@ -7,8 +7,17 @@ interface DuplicateInstanceGuardProps {
 
 export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGuardProps) {
   const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [clickCount, setClickCount] = useState(0);
+  const [bypassed, setBypassed] = useState(false);
 
   useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     let isMounted = true;
     let releaseLock: (() => void) | null = null;
 
@@ -46,10 +55,30 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
     return () => {
       isMounted = false;
       if (releaseLock) releaseLock();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
-  if (isDuplicate) {
+  const handleTextClick = () => {
+    setClickCount(prev => {
+      if (prev + 1 >= 4) {
+        setBypassed(true);
+        return 0;
+      }
+      return prev + 1;
+    });
+  };
+
+  if ((isDuplicate || isOffline) && !bypassed) {
+    const title = isOffline 
+      ? "Ups... Die App kann nicht laden, weil keine Internetverbindung besteht."
+      : "Ups... Die App kann nicht laden, weil sie auf deinem Gerät mehrfach geöffnet ist.";
+    
+    const subtext = isOffline
+      ? "Bitte überprüfe deine Verbindung, damit wir deine Daten synchronisieren können."
+      : "Bitte öffne Bisou nur einmal, damit deine Daten sicher bleiben.";
+
     return (
       <div className="fixed inset-0 z-[9999] bg-[#F8F7FF] flex items-center justify-center p-8 text-center overflow-hidden">
         <div className="bg-aura grayscale opacity-50" />
@@ -69,7 +98,7 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
           {/* Connection missing animation - Centerpiece */}
           <div className="flex flex-col items-center gap-6 mb-24 scale-110">
             <div className="flex items-center gap-5">
-              <Smartphone className="w-9 h-9 text-[#A29BFE] opacity-60" />
+              <Smartphone className="w-9 h-9 text-[#A29BFE]" />
               <div className="w-20 h-1.5 bg-[#A29BFE]/10 rounded-full relative overflow-hidden">
                 <div className="absolute inset-0 bg-[#A29BFE]/40 animate-[loading-bar_3s_infinite]" />
               </div>
@@ -87,14 +116,14 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
             </div>
           </div>
 
-          {/* Messages at the bottom */}
-          <div className="space-y-8">
+          {/* Messages at the bottom - Clickable for bypass */}
+          <div className="space-y-8 cursor-default select-none" onClick={handleTextClick}>
             <p className="text-[17px] text-[#4A4468] font-bold px-8 leading-relaxed" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-              Bitte öffne Bisou nur einmal,<br />damit deine Daten sicher bleiben.
+              {subtext}
             </p>
 
             <h2 className="text-[17px] font-bold text-[#4A4468] leading-[1.4] px-6" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-              Die App kann nicht laden, weil sie auf deinem Gerät mehrfach geöffnet ist.
+              {title}
             </h2>
           </div>
         </div>
