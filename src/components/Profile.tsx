@@ -578,6 +578,50 @@ export default function Profile({
                 </div>
 
                 <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Cache-Alter</span>
+                  <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
+                    <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
+                      (() => {
+                        const lastSync = localStorage.getItem('last_sync_timestamp');
+                        if (!lastSync) return 'bg-gray-400 shadow-gray-200';
+                        const diffMins = Math.floor((Date.now() - new Date(lastSync).getTime()) / 60000);
+                        if (diffMins < 5) return 'bg-green-500 shadow-green-200';
+                        if (diffMins < 30) return 'bg-orange-500 shadow-orange-200';
+                        return 'bg-red-500 shadow-red-200';
+                      })()
+                    }`} />
+                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                      {(() => {
+                        const lastSync = localStorage.getItem('last_sync_timestamp');
+                        if (!lastSync) return 'Inaktiv';
+                        const diffMins = Math.floor((Date.now() - new Date(lastSync).getTime()) / 60000);
+                        if (diffMins < 5) return 'Sync';
+                        if (diffMins < 30) return 'Standby';
+                        return 'Delay';
+                      })()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 flex items-center justify-end">
+                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider whitespace-nowrap">
+                      {(() => {
+                        const lastSync = localStorage.getItem('last_sync_timestamp');
+                        if (!lastSync) return 'Keine Info';
+                        const diffMs = Date.now() - new Date(lastSync).getTime();
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const diffSecs = Math.floor(diffMs / 1000);
+                        
+                        if (diffSecs < 60) return 'Gerade eben';
+                        if (diffMins < 60) return `vor ${diffMins} Minute${diffMins === 1 ? '' : 'n'}`;
+                        const diffHours = Math.floor(diffMins / 60);
+                        if (diffHours < 24) return `vor ${diffHours} Stunde${diffHours === 1 ? '' : 'n'}`;
+                        return `vor ${Math.floor(diffHours / 24)} Tag${Math.floor(diffHours / 24) === 1 ? '' : 'en'}`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center pb-2">
                   <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Gemini API <span className="font-normal">(Fragen)</span></span>
                   <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
                     <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${

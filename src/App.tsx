@@ -254,6 +254,9 @@ export default function App() {
           questions: currentQs,
           streaks: streaksRes.data || []
         });
+        
+        // Mark successful data sync
+        localStorage.setItem('last_sync_timestamp', new Date().toISOString());
       }
     } catch (e: any) {
       console.error("Critical Profile Error:", e);
