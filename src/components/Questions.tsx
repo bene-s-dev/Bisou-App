@@ -83,6 +83,12 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         const q = qData.questions;
         if (q.tot && q.ranking && q.text) {
           setDailyQs([q.tot, q.ranking, q.text]);
+          // Only update fetch timestamp if it's a new day/set of questions
+          const lastDayKey = localStorage.getItem('last_question_day_key');
+          if (lastDayKey !== dayKey) {
+            localStorage.setItem('last_question_fetch', new Date().toISOString());
+            localStorage.setItem('last_question_day_key', dayKey);
+          }
         }
       }
 

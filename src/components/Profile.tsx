@@ -572,17 +572,22 @@ export default function Profile({
                   <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
                     <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
                       (() => {
-                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
-                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
-                        if (hoursSince > 24) return 'bg-red-500 shadow-red-200';
-                        return 'bg-green-500 shadow-green-200';
+                        const lastFetch = localStorage.getItem('last_question_fetch');
+                        if (!lastFetch) return 'bg-gray-400 shadow-gray-200';
+                        const date = new Date(lastFetch);
+                        const mins = date.getHours() * 60 + date.getMinutes();
+                        const isAktuell = mins >= (2 * 60 + 50) && mins <= (3 * 60 + 30);
+                        return isAktuell ? 'bg-blue-500 shadow-blue-200' : 'bg-red-500 shadow-red-200';
                       })()
                     }`} />
                     <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
                       {(() => {
-                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
-                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
-                        return hoursSince > 24 ? 'Veraltet' : 'Aktiv';
+                        const lastFetch = localStorage.getItem('last_question_fetch');
+                        if (!lastFetch) return 'keine info';
+                        const date = new Date(lastFetch);
+                        const mins = date.getHours() * 60 + date.getMinutes();
+                        const isAktuell = mins >= (2 * 60 + 50) && mins <= (3 * 60 + 30);
+                        return isAktuell ? 'Aktuell' : 'Veraltet';
                       })()}
                     </span>
                   </div>
@@ -590,7 +595,8 @@ export default function Profile({
                   <div className="flex-1 flex items-center justify-end">
                     <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
                       {(() => {
-                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
+                        const lastFetch = localStorage.getItem('last_question_fetch');
+                        if (!lastFetch) return 'Noch nie geladen';
                         const date = new Date(lastFetch);
                         return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' • ' + 
                                date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
