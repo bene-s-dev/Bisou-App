@@ -250,35 +250,39 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
             </div>
           </div>
           <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px]">Ein Foto macht dein Profil persönlicher.</p>
+          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px]">
+            {avatarPreview 
+              ? "Tolles Bild! Das passt perfekt zu deinem Profil." 
+              : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
+          </p>
         </div>
       );
       case 1: return (
         <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
           <div className="h-44 flex items-center justify-center mb-4"><ScramblingCode /></div>
           <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner finden</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Bisou ist für zwei gemacht.</p>
+          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Bisou ist für zwei gemacht. Tauscht nach der Einführung eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
         </div>
       );
       case 2: return (
         <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
           <div className="h-44 flex items-center justify-center mb-4"><MagicClock /></div>
           <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Jeden Morgen drei Fragen für euch.</p>
+          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
         </div>
       );
       case 3: return (
         <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
           <div className="h-44 flex items-center justify-center mb-4"><TypingChatBubble /></div>
           <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Erst wenn ihr beide fertig seid...</p>
+          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
         </div>
       );
       case 4: return (
         <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
           <div className="h-44 flex items-center justify-center mb-4"><AnimatedFlame /></div>
           <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Baut eure Serie auf.</p>
+          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
         </div>
       );
       case 5: return (
@@ -291,7 +295,17 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
             </div>
           </div>
           <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Installiere Bisou auf deinem Startbildschirm.</p>
+          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mb-6">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
+          
+          {!isIntroOnly && (deferredPrompt || isIOS) && (
+            <button 
+              onClick={onInstall}
+              className="bg-[var(--secondary)] text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-purple-500/30 flex items-center gap-2 active:scale-95 transition-transform"
+            >
+              <Download className="w-5 h-5" />
+              App installieren
+            </button>
+          )}
         </div>
       );
       default: return null;
@@ -316,7 +330,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
       </div>
       <div className="px-6 mt-auto pt-6">
         <button className="btn-static py-5 text-lg font-black group shadow-none" onClick={() => step < 5 ? setStep(step + 1) : onComplete()}>
-          {step === 5 ? 'Jetzt loslegen! 🚀' : 'Weiter'}
+          {step === 5 ? 'Jetzt loslegen!' : 'Weiter'}
         </button>
       </div>
     </div>

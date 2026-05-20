@@ -70,7 +70,6 @@ Möchtest du Bisou lokal ausführen? So geht's:
    ```bash
    npm run dev
    ```
-   Die App ist nun unter `http://localhost:5173` erreichbar.
 
 <br>
 
