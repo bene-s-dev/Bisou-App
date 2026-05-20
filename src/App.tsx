@@ -463,7 +463,7 @@ export default function App() {
                   deferredPrompt={deferredPrompt}
                   onInstall={handleInstallClick}
                 />} />
-                {/* Default within protected area */}
+                {/* Default within protected area: if intro finished, go dashboard, else intro */}
                 <Route path="*" element={profile.intro_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/intro" replace />} />
               </Routes>
             </AppLayout>

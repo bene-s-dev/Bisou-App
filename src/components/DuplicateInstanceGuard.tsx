@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Smartphone, CloudOff } from 'lucide-react';
+import { Smartphone, CloudOff, Terminal, Copy } from 'lucide-react';
 
 interface DuplicateInstanceGuardProps {
   children: React.ReactNode;
@@ -11,137 +11,74 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
   }
 
   const [isDuplicate, setIsDuplicate] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
-  const [bypassed, setBypassed] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
-    let releaseLock: (() => void) | null = null;
-
     if ('locks' in navigator) {
       navigator.locks.request('bisou_app_instance_lock', { ifAvailable: true }, async (lock) => {
-        if (!lock) {
-          if (isMounted) setIsDuplicate(true);
-          return;
-        }
-
-        await new Promise((resolve) => {
-          releaseLock = () => {
-            resolve(null);
-          };
-        });
-      }).catch(err => {
-        console.error('Lock request failed:', err);
+        if (!lock) setIsDuplicate(true);
       });
     } else {
       const channel = new BroadcastChannel('bisou_instance_check');
-      const checkInstance = () => {
-        channel.postMessage({ type: 'CHECK_INSTANCES' });
-      };
       channel.onmessage = (event) => {
-        if (event.data.type === 'CHECK_INSTANCES') {
-          channel.postMessage({ type: 'INSTANCE_ALREADY_EXISTS' });
-        } else if (event.data.type === 'INSTANCE_ALREADY_EXISTS') {
-          setIsDuplicate(true);
-        }
+        if (event.data.type === 'INSTANCE_ALREADY_EXISTS') setIsDuplicate(true);
       };
-      checkInstance();
+      channel.postMessage({ type: 'CHECK_INSTANCES' });
       return () => channel.close();
     }
-
-    return () => {
-      isMounted = false;
-      if (releaseLock) releaseLock();
-    };
   }, []);
 
-  const handleTextClick = () => {
-    setClickCount(prev => {
-      if (prev + 1 >= 4) {
-        setBypassed(true);
-        return 0;
-      }
-      return prev + 1;
-    });
+  const copyCode = () => {
+    navigator.clipboard.writeText('00mulitinstanz40');
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const isStandalone = typeof window !== 'undefined' && 
-    (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone);
-
-  if (isStandalone) return <>{children}</>;
-
-  if (isDuplicate && !bypassed) {
-    const title = "Ups... Die App kann nicht laden, weil sie auf deinem Gerät mehrfach geöffnet ist.";
-    const subtext = (
-      <>Bitte öffne Bisou nur einmal,<br />damit deine Daten sicher bleiben.</>
-    );
-
+  if (isDuplicate) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-[#F8F7FF] flex items-center justify-center p-8 text-center overflow-hidden">
+      <div className="fixed inset-0 z-[9999] bg-[#F8F7FF] flex items-center justify-center p-8 text-center overflow-auto">
         <div className="bg-aura grayscale opacity-50" />
         
-        {/* Branding top left */}
-        <div className="absolute top-8 left-8 z-50">
-          <h1 className="text-2xl font-bold text-[#4A4468] tracking-tight select-none" style={{ fontFamily: 'Fraunces, serif' }}>
-            Bisou
-          </h1>
-        </div>
-        
-        {/* Decorative elements in grayscale */}
-        <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-gray-200/30 rounded-full blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-gray-300/30 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }} />
-
-        <div className="max-w-sm w-full animate-entrance relative z-10 flex flex-col items-center">
-          {/* Connection missing animation - Centerpiece */}
-          <div className="flex flex-col items-center gap-6 mb-24 scale-110">
+        <div className="max-w-sm w-full relative z-10 flex flex-col items-center">
+          <div className="flex flex-col items-center gap-6 mb-12">
             <div className="flex items-center gap-5">
               <Smartphone className="w-9 h-9 text-[#A29BFE]" />
               <div className="w-20 h-1.5 bg-[#A29BFE]/10 rounded-full relative overflow-hidden">
                 <div className="absolute inset-0 bg-[#A29BFE]/40 animate-[loading-bar_3s_infinite]" />
               </div>
               <div className="relative">
-                <div className="absolute inset-0 flex items-center justify-center">
-                   <div className="w-2.5 h-2.5 bg-[#FF8A8A]/80 rounded-full animate-ping" />
-                </div>
                 <CloudOff className="w-11 h-11 text-[#4A4468] opacity-60 animate-pulse relative z-10" />
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#4A4468]/60">
-                Zugriff auf Server blockiert
-              </span>
-            </div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-[#4A4468]/60">
+              Zugriff blockiert
+            </span>
           </div>
 
-          {/* Messages at the bottom - Clickable for bypass */}
-          <div className="space-y-8 cursor-default select-none" onClick={handleTextClick}>
-            <p className="text-[17px] text-[#4A4468] font-bold px-8 leading-relaxed" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-              {subtext}
-            </p>
+          <p className="text-[17px] text-[#4A4468] font-bold px-4 leading-relaxed mb-6">
+            Bitte öffne Bisou nur einmal,<br />damit deine Daten sicher bleiben.
+          </p>
 
-            <h2 className="text-[17px] font-bold text-[#4A4468] leading-[1.4] px-6" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-              {title}
-            </h2>
+          <div className="w-full bg-[#0F0F1A] border border-gray-800 rounded-lg p-4 font-mono text-left mb-6">
+            <div className="flex items-center justify-between mb-2">
+               <div className="flex items-center gap-2 text-emerald-400">
+                <Terminal className="w-3 h-3" />
+                <span className="text-[9px] uppercase font-bold tracking-widest">Error Log</span>
+               </div>
+               <button onClick={copyCode} className="text-gray-500 hover:text-white transition-colors">
+                <Copy className="w-3 h-3" />
+               </button>
+            </div>
+            <code className="text-emerald-400 text-[10px] block truncate">Code: 00mulitinstanz40</code>
+            {copied && <p className="text-emerald-500 text-[8px] mt-1 italic">Copied!</p>}
           </div>
         </div>
 
         <style>{`
-          @keyframes text-shimmer {
-            0% { background-position: 200% center; }
-            100% { background-position: -200% center; }
-          }
           @keyframes loading-bar {
-            0% { transform: translateX(-100%); opacity: 1; background-color: #A29BFE; }
-            40% { transform: translateX(-40%); opacity: 1; background-color: #A29BFE; }
-            60% { transform: translateX(-25%); opacity: 1; background-color: #A29BFE; }
-            /* Quick Red Blinks */
-            65% { background-color: #FF8A8A; }
-            68% { background-color: #A29BFE; }
-            71% { background-color: #FF8A8A; }
-            74% { background-color: #A29BFE; }
-            77% { background-color: #FF8A8A; }
-            80% { background-color: #A29BFE; }
-            85% { transform: translateX(-25%); opacity: 1; }
+            0% { transform: translateX(-100%); opacity: 1; }
+            40% { transform: translateX(-40%); opacity: 1; }
+            60% { transform: translateX(-25%); opacity: 1; }
             90% { transform: translateX(-25%); opacity: 0; }
             100% { transform: translateX(-25%); opacity: 0; }
           }
