@@ -95,7 +95,7 @@ export default function PublicLayout() {
             className="underline hover:text-[var(--secondary)] transition-colors"
           >
             Benedikt S.
-          </a> &copy; 2026 • ver 1.0.1
+          </a> &copy; 2026
         </p>
         <div className="flex justify-center gap-6 mt-2">
           <button 

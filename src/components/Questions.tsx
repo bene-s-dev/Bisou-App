@@ -456,9 +456,9 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   </div>
                 )}
                 {step === 2 && (
-                  <div className="flex-1 flex flex-col gap-2 relative">
+                  <div className="flex flex-col gap-2 relative">
                     <textarea 
-                      className="w-full flex-1 min-h-[160px] p-6 pb-12 rounded-[2rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
+                      className="w-full h-[180px] p-6 pb-12 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
                       placeholder="Deine Gedanken hier..." 
                       value={textVal} 
                       onChange={(e) => setTextVal(e.target.value)} 

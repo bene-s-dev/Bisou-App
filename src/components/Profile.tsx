@@ -1022,9 +1022,6 @@ export default function Profile({
 
       <div className="flex-1 overflow-hidden scrollbar-hide pb-32">
         {renderContent()}
-        <div className="text-center mt-8 pb-12 opacity-30">
-          <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em]">ver 1.0.1</p>
-        </div>
       </div>
 
       {showAvatarMenu && createPortal(
