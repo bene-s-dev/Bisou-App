@@ -80,7 +80,7 @@ export default function ResetPassword({ onComplete }: { onComplete: () => void }
           </div>
         </div>
 
-        <button type="submit" disabled={loading} className="btn-static w-full shadow-lg">
+        <button type="submit" disabled={loading} className="btn-static w-full shadow-none">
           {loading ? 'Speichere...' : 'Passwort speichern ✨'}
         </button>
       </form>

@@ -568,7 +568,7 @@ export default function Dashboard({
             <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-3">
               <button 
                 onClick={onStartQuestions} 
-                className="w-full btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-lg"
+                className="w-full btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
               >
                 {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
               </button>

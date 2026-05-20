@@ -577,7 +577,7 @@ export default function Profile({
                         <p className="text-[10px] font-bold text-[#1F1939] uppercase tracking-wider leading-relaxed">Klicke auf den Button unten, um Bisou direkt über deinen Browser zu installieren.</p>
                         <button 
                           onClick={onInstall} 
-                          className="btn-static py-4 px-6 text-[10px] font-black uppercase tracking-widest w-full shadow-lg"
+                          className="btn-static py-4 px-6 text-[10px] font-black uppercase tracking-widest w-full shadow-none"
                         >
                           Bisou-App jetzt installieren
                         </button>
