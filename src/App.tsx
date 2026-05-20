@@ -136,7 +136,7 @@ function AppLayout({
             <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8 px-4">
               Du kannst den Fragenbereich nur mit einem <span className="text-[var(--secondary)] font-black">Bisou-Partner</span> öffnen.
             </p>
-            <button onClick={() => { setShowLockedModal(false); navigate('/profile'); }} className="btn-action py-4 text-base font-black">Zum Profil ✨</button>
+            <button onClick={() => { setShowLockedModal(false); navigate('/profile'); }} className="btn-action-animated py-4 text-base font-black">Zum Profil ✨</button>
             <button onClick={() => setShowLockedModal(false)} className="w-full mt-4 text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] hover:text-[#1F1939] transition-colors py-2">Schließen</button>
           </div>
         </div>,

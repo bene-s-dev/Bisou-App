@@ -552,7 +552,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           <button 
             disabled={loading}
             onClick={onInstall}
-            className="btn-action py-4 text-sm font-black group mb-2 shadow-none"
+            className="btn-action-animated py-4 text-sm font-black group mb-2 shadow-none"
           >
             App installieren <Download className="w-5 h-5 ml-1" />
           </button>
@@ -560,7 +560,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           <button 
             disabled={loading}
             onClick={handleNext}
-            className="btn-action py-5 text-lg font-black group shadow-none"
+            className="btn-action-animated py-5 text-lg font-black group shadow-none"
           >
             {step === lastStepIndex ? (isIntroOnly ? 'Schließen' : 'Jetzt loslegen! 🚀') : 'Weiter'} 
             {step < lastStepIndex && <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />}

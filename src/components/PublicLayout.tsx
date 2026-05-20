@@ -127,7 +127,7 @@ export default function PublicLayout() {
             </p>
             <button 
               onClick={() => setShowPrivacyModal(false)}
-              className="btn-action"
+              className="btn-action-animated"
             >
               Schließen
             </button>

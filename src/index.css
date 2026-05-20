@@ -81,8 +81,8 @@ html, body {
   .btn-action-animated {
     @apply w-full p-5 rounded-[22px] border-none text-white font-black text-sm uppercase tracking-[0.15em] cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-lg active:scale-95 active:shadow-md disabled:opacity-40 disabled:cursor-not-allowed outline-none;
     background: linear-gradient(-45deg, var(--primary), #FFD700, var(--secondary), var(--primary-dark), #A29BFE, var(--secondary-dark));
-    background-size: 400% 400%;
-    animation: gradient-animation 3s ease-in-out infinite;
+    background-size: 300% 300%;
+    animation: gradient-animation 2s ease infinite;
   }
 
   .btn-secondary {
@@ -331,9 +331,9 @@ html, body {
 }
 
 .animate-calming-gradient {
-  animation: calming-gradient 4s ease infinite;
-  background: linear-gradient(90deg, #10b981, #3b82f6, #10b981);
-  background-size: 200% 100%;
+  animation: calming-gradient 2s ease infinite;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6, #10b981);
+  background-size: 300% 100%;
 }
 @keyframes calming-gradient {
   0% { background-position: 0% 50%; }
