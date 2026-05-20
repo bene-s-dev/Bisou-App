@@ -1,7 +1,4 @@
-<div align="center">
-  <img src="https://github.com/bene-s-dev/Bisou-App/blob/main/public/vorschau.png?raw=true">
-  
-  # Bisou
+
   
   **Die App für dich und deinen Lieblingsmenschen.** <br>
   Jeden Tag ein kleiner magischer Moment zu zweit.
