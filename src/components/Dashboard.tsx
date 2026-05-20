@@ -103,22 +103,31 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
   }, [partnerId]);
 
   useEffect(() => {
-    if (isOpen) fetchStats();
+    if (isOpen) {
+      // Reset state on open to avoid showing old data before skeleton
+      setLoading(true);
+      setStats(null);
+      
+      const timer = setTimeout(() => {
+        fetchStats();
+      }, 400);
+      return () => clearTimeout(timer);
+    }
   }, [isOpen, fetchStats]);
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="modal-backdrop px-4">
+    <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="modal-content p-8">
+      <div className="modal-content p-8 will-change-transform contain-layout">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center">
               <BarChart3 className="w-7 h-7 text-[var(--secondary)]" />
             </div>
             <div>
-              <h3 className="font-black text-[#1F1939] text-lg leading-tight">Beziehungs-Statistik</h3>
+              <h3 className="font-black text-[#1F1939] text-lg leading-tight">Eure Bisou-Statistik</h3>
               <p className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-widest">Die letzten 30 Tage</p>
             </div>
           </div>
@@ -126,9 +135,18 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
         </div>
 
         {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-4">
-            <div className="w-10 h-10 border-4 border-purple-100 border-t-[var(--secondary)] rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Analysiere Daten...</p>
+          <div className="space-y-4 animate-in fade-in duration-500">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="h-[92px] rounded-3xl skeleton border border-purple-50" />
+              <div className="h-[92px] rounded-3xl skeleton border border-orange-50" />
+            </div>
+            <div className="bg-white border-2 border-purple-50 rounded-3xl p-6">
+              <div className="w-32 h-3 rounded-full skeleton mb-6" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-[120px] rounded-2xl skeleton" />
+                <div className="h-[120px] rounded-2xl skeleton" />
+              </div>
+            </div>
           </div>
         ) : stats ? (
           <div className="space-y-4">
@@ -201,9 +219,9 @@ function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boo
   };
 
   return createPortal(
-    <div className="modal-backdrop px-4">
+    <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="modal-content p-8">
+      <div className="modal-content p-8 will-change-transform contain-layout">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center">
@@ -302,8 +320,8 @@ export default function Dashboard({
     return { firstHalf: raw, secondHalf: '' };
   }, [greeting]);
 
-  const { meAnswered, partnerAnswered, myAnswers, partnerAnswers, dailyQs, myStreak, partnerStreak } = useMemo(() => {
-    if (!dashboardData) return { meAnswered: false, partnerAnswered: false, myAnswers: [], partnerAnswers: [], dailyQs: [], myStreak: null, partnerStreak: null };
+  const { meAnswered, partnerAnswered, myAnswers, partnerAnswers, dailyQs, myStreak, partnerStreak, myTime, partnerTime } = useMemo(() => {
+    if (!dashboardData) return { meAnswered: false, partnerAnswered: false, myAnswers: [], partnerAnswers: [], dailyQs: [], myStreak: null, partnerStreak: null, myTime: null, partnerTime: null };
     const { answers, questions, streaks } = dashboardData;
     const me = answers.find((a: any) => a.user_id !== partnerId);
     const other = partnerId ? answers.find((a: any) => a.user_id === partnerId) : null;
@@ -319,7 +337,9 @@ export default function Dashboard({
       partnerAnswers: other ? other.choice.split(" [")[0].split(" | ") : null,
       dailyQs: questions as Question[],
       myStreak: myS,
-      partnerStreak: pS
+      partnerStreak: pS,
+      myTime: me ? new Date(me.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null,
+      partnerTime: other ? new Date(other.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null
     };
   }, [dashboardData, partnerId]);
 
@@ -340,7 +360,16 @@ export default function Dashboard({
   };
 
   if (!dashboardData) return (
-    <div className="flex-1 flex flex-col animate-entrance">
+    <div className="flex-1 flex flex-col animate-entrance relative">
+      {userAvatar && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
+          <img 
+            src={userAvatar} 
+            alt="background-avatar" 
+            className="w-full h-full object-cover filter blur-[40px] scale-110"
+          />
+        </div>
+      )}
       <div className="relative h-[110px] mb-8 flex flex-col items-center justify-center">
         <div className="flex -space-x-4">
           <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-20" />
@@ -361,7 +390,16 @@ export default function Dashboard({
 
   if (showComparison) {
     return (
-      <div className="animate-entrance flex flex-col h-full overflow-visible">
+      <div className="animate-entrance flex flex-col h-full overflow-visible relative">
+        {userAvatar && (
+          <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
+            <img 
+              src={userAvatar} 
+              alt="background-avatar" 
+              className="w-full h-full object-cover filter blur-[40px] scale-110"
+            />
+          </div>
+        )}
         <div className="flex-1 overflow-visible flex flex-col">
           <button onClick={() => setShowComparison(false)} className="mb-8 text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] flex items-center gap-2 group">
             <span className="group-active:-translate-x-1 transition-transform">←</span> Zurück zum Dashboard
@@ -397,16 +435,25 @@ export default function Dashboard({
   }
 
   return (
-    <div className="animate-entrance flex flex-col flex-1 overflow-y-auto scrollbar-hide">
-      <div className="flex-1 flex flex-col pt-8 pb-32">
+    <div className="animate-entrance flex flex-col flex-1 overflow-y-auto scrollbar-hide relative">
+      {userAvatar && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
+          <img 
+            src={userAvatar} 
+            alt="background-avatar" 
+            className="w-full h-full object-cover filter blur-[40px] scale-110"
+          />
+        </div>
+      )}
+      <div className="flex-1 flex flex-col pt-[52px] pb-32">
         
         {/* Header: Avatars and Streaks */}
-        <div className="flex flex-col items-center mb-6 shrink-0">
+        <div className="flex flex-col items-center mb-[20px] shrink-0">
           <div className="relative flex flex-col items-center">
             {/* Avatars Row with Flame Pills attached */}
             <div className="flex -space-x-4">
               {/* Partner Avatar */}
-              <div className="relative">
+              <div className="relative z-20">
                 <div 
                   onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
                   className={`w-20 h-20 rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
@@ -445,12 +492,12 @@ export default function Dashboard({
             {/* Names Row */}
             <div className="flex items-center justify-center w-full mt-3">
               <div className="w-1/2 flex justify-end pr-3">
-                <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] text-right">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-right">
                   {partnerName.split(' ')[0]}
                 </span>
               </div>
               <div className="w-1/2 flex justify-start pl-3">
-                <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] text-left">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-left">
                   {(userName || 'Ich').split(' ')[0]}
                 </span>
               </div>
@@ -459,7 +506,7 @@ export default function Dashboard({
         </div>
 
         {/* Greeting Section */}
-        <div className="mb-6 px-6">
+        <div className="mb-6 pl-1 pr-6">
           <h2 className="text-2xl font-black text-[#1F1939] tracking-tight text-left flex flex-col gap-1">
             <span className="max-w-[70%] leading-[1.1]">{firstHalf}</span>
             <span className="w-full leading-[1.2]">
@@ -472,7 +519,7 @@ export default function Dashboard({
           <div className="status-box flex flex-col items-center text-center p-6 mb-2">
             <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3 text-[var(--secondary)] border border-purple-100"><LinkIcon className="w-6 h-6" /></div>
             <p className="font-black text-base mb-1 text-[var(--text-main)]">Der erste Schritt</p>
-            <button onClick={() => navigate('/profile?tab=partner')} className="btn-action py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
+            <button onClick={() => navigate('/profile?tab=partner')} className="btn-action-animated py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
           </div>
         ) : (
           <div className="status-box p-4 mb-2">
@@ -481,54 +528,77 @@ export default function Dashboard({
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className={`status-dot ${meAnswered ? 'status-green' : 'status-red'}`} />
-                  <span className="font-black text-xs text-[var(--text-main)] uppercase tracking-wide">Meine Antwort</span>
+                  <div className={`status-dot ${meAnswered ? 'status-green-dot' : 'status-orange-dot'}`} />
+                  <span className="font-black text-xs text-[var(--text-main)] uppercase tracking-wide">Ich</span>
                 </div>
-                <span className={`px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-wider border-2 ${meAnswered ? 'bg-green-50 text-[var(--accent-green)] border-green-100' : 'bg-red-50 text-[var(--primary)] border-red-100'}`}>
-                  {meAnswered ? 'Fertig' : 'Offen'}
+                <span className={`status-pill ${meAnswered ? 'pill-green' : 'pill-orange'}`}>
+                  {meAnswered ? (
+                    <>
+                      antwort gesendet <span className="ml-1.5 opacity-50 font-bold">{myTime}</span>
+                    </>
+                  ) : 'noch keine antwort'}
                 </span>
               </div>
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className={`status-dot ${partnerAnswered ? 'status-green' : 'status-orange'}`} />
+                  <div className={`status-dot ${partnerAnswered ? 'status-green-dot' : 'status-orange-dot'}`} />
                   <span className="font-black text-xs text-[var(--text-main)] uppercase tracking-wide">{partnerName}</span>
                 </div>
-                <span className={`px-3 py-1.5 rounded-full font-black text-[9px] uppercase tracking-wider border-2 ${partnerAnswered ? 'bg-green-50 text-[var(--accent-green)] border-green-100' : 'bg-orange-50 text-orange-500 border-orange-100'}`}>
-                  {partnerAnswered ? 'Fertig' : 'Wartet'}
+                <span className={`status-pill ${partnerAnswered ? 'pill-green' : 'pill-orange'}`}>
+                  {partnerAnswered ? (
+                    <>
+                      antwort gesendet <span className="ml-1.5 opacity-50 font-bold">{partnerTime}</span>
+                    </>
+                  ) : 'noch keine antwort'}
                 </span>
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
-                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
-                </div>
-                <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest">
-                  {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                </span>
-              </div>
-
-              <div className="flex gap-2">
+            <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-3">
+              <div className="flex gap-2 items-center justify-center">
                 <button 
                   onClick={onStartQuestions} 
-                  className="flex-1 btn-action py-3 text-xs font-black uppercase tracking-widest shadow-md"
+                  className="flex-1 btn-action-animated h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-lg"
                 >
                   {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
                 </button>
+
                 <button 
                   onClick={() => setShowStatsModal(true)} 
-                  className="w-12 h-12 bg-white border-2 border-purple-100 rounded-2xl flex items-center justify-center text-[var(--secondary)] shadow-sm active:scale-95 transition-all"
+                  className="w-12 h-12 bg-white border-2 border-purple-100 rounded-[22px] flex items-center justify-center text-[var(--secondary)] active:scale-95 transition-all shrink-0"
                   title="Statistiken"
                 >
                   <BarChart3 className="w-5 h-5" />
                 </button>
               </div>
+
+              <div className="flex items-center justify-center gap-2">
+                <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
+                <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
+                <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest ml-1">
+                  {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                </span>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Placeholder for future features - merged into one card */}
+        <div 
+          className="w-full max-w-md mx-auto mt-2 bg-white border-2 border-dashed border-[var(--card-border)] rounded-[2.5rem] overflow-hidden shadow-[var(--shadow-soft)]"
+        >
+          <div className="flex flex-col">
+            <div className="h-14 flex items-center justify-between px-6">
+              <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-widest blur-[3px] select-none opacity-50">Weitere Funktionen</span>
+              <span className="text-[8px] font-black text-gray-400/60 uppercase tracking-wider bg-white/40 px-3 py-1.5 rounded-full border border-gray-100/30 shadow-sm">Bald verfügbar</span>
+            </div>
+            <div className="h-14 flex items-center justify-between px-6">
+              <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-widest blur-[3px] select-none opacity-50">Geheime Überraschung</span>
+              <span className="text-[8px] font-black text-gray-400/60 uppercase tracking-wider bg-white/40 px-3 py-1.5 rounded-full border border-gray-100/30 shadow-sm">Bald verfügbar</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <StatsModal 

@@ -143,22 +143,52 @@ const TypingChatBubble = () => {
 
 // Animated Flame for Step 4
 const AnimatedFlame = () => {
+  const [count, setCount] = useState(1);
+
+  useEffect(() => {
+    let animationFrameId: number;
+    let timeoutId: any;
+    let startTime: number;
+    const duration = 10000; // 10 seconds climb
+
+    const runAnimation = () => {
+      startTime = Date.now();
+      
+      const update = () => {
+        const elapsed = Date.now() - startTime;
+        const p = Math.min(elapsed / duration, 1);
+        // Exponential ease-in (6th power for slower start)
+        const ep = Math.pow(p, 6);
+        const currentVal = Math.floor(1 + ep * 998);
+        setCount(currentVal);
+
+        if (p < 1) {
+          animationFrameId = requestAnimationFrame(update);
+        } else {
+          // Stay at 999 for 2 seconds, then restart
+          timeoutId = setTimeout(() => {
+            runAnimation();
+          }, 2000);
+        }
+      };
+
+      update();
+    };
+
+    runAnimation();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
   return (
-    <div className="w-24 h-24 bg-gradient-to-br from-orange-50 to-red-50 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-inner border-2 border-white relative overflow-hidden">
-      <div className="relative flex items-center justify-center">
-        {/* Main Flames */}
-        <Flame className="w-12 h-12 text-red-500 absolute flame-main-wobble" style={{ animationDuration: '3s' }} />
-        <Flame className="w-10 h-10 text-orange-500 absolute flame-main-wobble" style={{ animationDuration: '2s', animationDelay: '0.2s' }} />
-        <Flame className="w-8 h-8 text-yellow-400 absolute flame-main-wobble" style={{ animationDuration: '1.5s', animationDelay: '0.4s' }} />
-        
-        {/* Flying Particles */}
-        <div className="flame-particle one absolute w-2 h-2 bg-red-400 rounded-full blur-[1px]" style={{ animationDelay: '1s', left: '-10px' }} />
-        <div className="flame-particle two absolute w-1.5 h-1.5 bg-orange-300 rounded-full blur-[1px]" style={{ animationDelay: '2s', right: '-8px' }} />
-        <div className="flame-particle absolute w-1 h-1 bg-yellow-200 rounded-full blur-[1px]" style={{ animationDelay: '0.5s', top: '10px' }} />
-        
-        {/* Glow */}
-        <div className="absolute inset-0 w-12 h-12 bg-orange-400 blur-2xl opacity-20 animate-pulse rounded-full" />
-      </div>
+    <div className="flex items-center gap-3.5 px-6 py-3 bg-orange-50 border-[3.5px] border-orange-100 rounded-full shadow-[0_12px_30px_rgba(249,115,22,0.18)] active:scale-95 transition-all select-none scale-110 mb-8">
+      <Flame className="w-9 h-9 text-orange-500 fill-orange-500 animate-pulse shrink-0" />
+      <span className="text-3xl font-black text-orange-600 tracking-tight tabular-nums min-w-[65px] text-left">
+        {count}
+      </span>
     </div>
   );
 };
@@ -498,7 +528,7 @@ export default function Onboarding({ onComplete, deferredPrompt, onInstall, isIn
           </button>
         )}
         
-        {((step === 5 && !isIntroOnly) || (step === 4 && isIntroOnly)) && (
+        {step === 5 && !isIntroOnly && (
           <button 
             onClick={onComplete}
             className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-widest mt-2 opacity-50 hover:opacity-100 transition-opacity py-2"

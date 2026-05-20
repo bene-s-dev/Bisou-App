@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle } from 'lucide-react';
+import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send } from 'lucide-react';
 import { getDailyKey } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 
@@ -14,14 +15,41 @@ interface QuestionsProps {
   onComplete: () => void;
 }
 
+// --- HELPERS ---
+const safeSplit = (val: any, delimiter: string) => {
+  if (!val) return [];
+  try {
+    return String(val).split(delimiter);
+  } catch (e) {
+    return [];
+  }
+};
+
+const getResultsFromData = (data: any, uid: string | null | undefined) => {
+  if (!data?.answers || !uid) return [];
+  const ans = data.answers.find((a: any) => a.user_id === uid);
+  if (!ans) return [];
+  const mainPart = String(ans.choice || '').split(" [")[0];
+  return safeSplit(mainPart, " | ");
+};
+
 export default function Questions({ userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
   const { showAlert, showConfirm } = useDialog();
+
+  // --- INITIAL STATE DERIVATION ---
+  const [initialMyResults, initialPartnerResults, initialStep] = useMemo(() => {
+    const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
+    const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
+    const step = my.length >= 3 ? 3 : 0;
+    return [my, partner, step];
+  }, [dashboardData, partnerId]);
+
   // --- STATE ---
-  const [step, setStep] = useState<number>(0); 
-  const [dailyQs, setDailyQs] = useState<Question[]>([FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text]);
-  const [myResults, setMyResults] = useState<string[]>([]);
-  const [partnerResults, setPartnerResults] = useState<string[] | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [step, setStep] = useState<number>(initialStep); 
+  const [dailyQs, setDailyQs] = useState<Question[]>(dashboardData?.questions || [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text]);
+  const [myResults, setMyResults] = useState<string[]>(initialMyResults);
+  const [partnerResults, setPartnerResults] = useState<string[] | null>(initialPartnerResults);
+  const [loading, setLoading] = useState(!dashboardData);
   const [selectedTot, setSelectedTot] = useState<string | null>(null);
   const [textVal, setTextVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,42 +61,28 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const dayKey = getDailyKey();
   const MAX_TEXT_LENGTH = 100;
 
-  // --- SAFE SPLIT HELPER ---
-  const safeSplit = (val: any, delimiter: string) => {
-    if (!val) return [];
-    try {
-      return String(val).split(delimiter);
-    } catch (e) {
-      return [];
-    }
-  };
-
-  // Sync with live dashboardData from App.tsx
+  // Sync with live dashboardData if it changes (e.g. partner answers while viewing)
   useEffect(() => {
-    if (dashboardData?.answers && partnerId) {
-      const pAnsObj = dashboardData.answers.find((a: any) => a.user_id === partnerId);
-      if (pAnsObj) {
-        const pMainPart = String(pAnsObj.choice || '').split(" [")[0];
-        setPartnerResults(safeSplit(pMainPart, " | "));
-      } else {
-        setPartnerResults(null);
+    if (dashboardData) {
+      const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
+      const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
+      
+      // Update results but only change step if moving TO completed state
+      if (my.length >= 3 && step < 3) {
+        setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
+        setStep(3);
+      } else if (my.length >= 3) {
+        // Just update results if we are already in step 3
+        setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
       }
       
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          const myAnsObj = dashboardData.answers.find((a: any) => a.user_id === session.user.id);
-          if (myAnsObj && step < 3) {
-            const mainPart = String(myAnsObj.choice || '').split(" [")[0];
-            const parts = safeSplit(mainPart, " | ");
-            if (parts.length >= 3) {
-              setMyResults(parts);
-              setStep(3);
-            }
-          }
-        }
-      });
+      setPartnerResults(prev => JSON.stringify(prev) === JSON.stringify(partner) ? prev : partner);
+      if (dashboardData.questions) {
+        setDailyQs(prev => JSON.stringify(prev) === JSON.stringify(dashboardData.questions) ? prev : dashboardData.questions);
+      }
+      setLoading(false);
     }
-  }, [dashboardData, partnerId]);
+  }, [dashboardData, partnerId, step]);
 
   // --- DATA LOADING ---
   const loadData = useCallback(async (forceRefresh = false) => {
@@ -125,7 +139,11 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
     }
   }, [dayKey, partnerId]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { 
+    if (!dashboardData || !dashboardData.answers || dashboardData.answers.length === 0) {
+      loadData(); 
+    }
+  }, [loadData, dashboardData]);
 
   // --- RANKING INITIALIZATION ---
   useEffect(() => {
@@ -136,22 +154,54 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
 
   // --- SORTABLE CLEANUP ---
   useEffect(() => {
+    let container: HTMLDivElement | null = null;
+    let handleTouchStart: () => void;
+    let handleMouseDown: () => void;
+    let onDragMove: (() => void) | null = null;
+
     if (step === 1 && rankingOptions.length > 0 && sortableRef.current) {
+      container = sortableRef.current;
       try {
         if (sortableInstance.current) sortableInstance.current.destroy();
-        sortableInstance.current = new Sortable(sortableRef.current, {
-          animation: 250, 
-          ghostClass: 'bg-purple-50',
+        sortableInstance.current = new Sortable(container, {
+          animation: 200, 
+          ghostClass: 'sortable-ghost',
           chosenClass: 'sortable-chosen',
           dragClass: 'sortable-drag',
           forceFallback: true,
           fallbackClass: 'sortable-fallback',
           fallbackOnBody: true,
-          swapThreshold: 0.65,
-          delay: 150,
-          delayOnTouchOnly: true,
-          touchStartThreshold: 5,
+          swapThreshold: 0.4,
+          delay: 0,
+          touchStartThreshold: 3,
+          onStart: () => {
+            const updateRank = () => {
+              if (!container) return;
+              const ghost = container.querySelector('.sortable-ghost');
+              const fallback = document.querySelector('.sortable-fallback');
+              if (ghost && fallback) {
+                const children = Array.from(container.children);
+                const items = children.filter(c => !c.classList.contains('sortable-fallback'));
+                const ghostIndex = items.indexOf(ghost);
+                if (ghostIndex !== -1) {
+                  const badge = fallback.querySelector('.rank-badge');
+                  if (badge) {
+                    badge.setAttribute('data-live-rank', String(ghostIndex + 1));
+                  }
+                }
+              }
+            };
+            onDragMove = updateRank;
+            setTimeout(updateRank, 0);
+            document.addEventListener('mousemove', onDragMove, { passive: true });
+            document.addEventListener('touchmove', onDragMove, { passive: true });
+          },
           onEnd: (evt) => {
+            if (onDragMove) {
+              document.removeEventListener('mousemove', onDragMove);
+              document.removeEventListener('touchmove', onDragMove);
+              onDragMove = null;
+            }
             if (evt.oldIndex === undefined || evt.newIndex === undefined) return;
             setRankingOptions(prev => {
               const list = [...prev];
@@ -161,9 +211,39 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             });
           }
         });
+
+        handleTouchStart = () => {
+          if (sortableInstance.current) {
+            sortableInstance.current.option('delay', 120);
+          }
+        };
+        handleMouseDown = () => {
+          if (sortableInstance.current) {
+            sortableInstance.current.option('delay', 0);
+          }
+        };
+
+        container.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
+        container.addEventListener('mousedown', handleMouseDown, { capture: true });
       } catch (e) { console.error("Sortable error:", e); }
     }
-    return () => { if (sortableInstance.current) { try { sortableInstance.current.destroy(); } catch(e){} } };
+
+    return () => {
+      if (sortableInstance.current) {
+        try { sortableInstance.current.destroy(); } catch(e){}
+        sortableInstance.current = null;
+      }
+      if (container) {
+        try {
+          container.removeEventListener('touchstart', handleTouchStart, { capture: true });
+          container.removeEventListener('mousedown', handleMouseDown, { capture: true });
+        } catch(e){}
+      }
+      if (onDragMove) {
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('touchmove', onDragMove);
+      }
+    };
   }, [step, rankingOptions.length]);
 
   // --- SUBMISSION ---
@@ -201,6 +281,60 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
     }
   };
 
+  const touchStartRef = useRef<{x: number, y: number} | null>(null);
+
+  const onSwipeStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchStartRef.current.x - touchEndX;
+    const deltaY = Math.abs(touchStartRef.current.y - touchEndY);
+    
+    if (Math.abs(deltaX) > 50 && deltaY < 60) {
+      if (deltaX > 0) {
+        if (step + 1 <= myResults.length) handleDotClick(step + 1);
+      } else {
+        if (step > 0) handleDotClick(step - 1);
+      }
+    }
+    touchStartRef.current = null;
+  };
+
+  const handleDotClick = (targetStep: number) => {
+    if (targetStep === step || targetStep > myResults.length || targetStep > 3) return;
+
+    let val = '';
+    if (step === 0) val = selectedTot || '';
+    else if (step === 1) val = rankingOptions.length > 0 ? rankingOptions.join(" > ") : '';
+    else if (step === 2) val = textVal.trim();
+
+    const nextResults = [...myResults];
+    if (val) nextResults[step] = val;
+    setMyResults(nextResults);
+
+    setStep(targetStep);
+
+    if (targetStep < 3) {
+      if (nextResults[targetStep]) {
+        const saved = nextResults[targetStep];
+        if (targetStep === 0) setSelectedTot(saved);
+        else if (targetStep === 1) setRankingOptions(saved.split(" > "));
+        else if (targetStep === 2) setTextVal(saved);
+      } else {
+        if (targetStep === 0) setSelectedTot(null);
+        else if (targetStep === 1) setRankingOptions([...(dailyQs[1]?.o || [])]);
+        else if (targetStep === 2) setTextVal('');
+      }
+    }
+  };
+
   const handleNext = () => {
     try {
       if (step >= 3) return;
@@ -210,13 +344,21 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       else if (step === 2) val = textVal.trim();
       if (!val) return;
       
-      const nextResults = [...myResults, val];
+      const nextResults = [...myResults];
+      nextResults[step] = val;
+
       if (step < 2) {
         setMyResults(nextResults);
-        setStep(prev => prev + 1);
-        setSelectedTot(null);
-        setTextVal('');
-        setRankingOptions([]);
+        setStep(step + 1);
+        
+        if (nextResults[step + 1]) {
+          const saved = nextResults[step + 1];
+          if (step + 1 === 1) setRankingOptions(saved.split(" > "));
+          else if (step + 1 === 2) setTextVal(saved);
+        } else {
+          if (step + 1 === 1) setRankingOptions([...(dailyQs[1]?.o || [])]);
+          else if (step + 1 === 2) setTextVal('');
+        }
       } else {
         setMyResults(nextResults);
         handleSubmit(nextResults);
@@ -277,22 +419,22 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
     const q = dailyQs[step < 3 ? step : 0] || FALLBACK_QUESTIONS.tot;
 
     return (
-      <div className="flex flex-col flex-1 h-full overflow-hidden animate-entrance pt-12">
+      <div 
+        className={`flex flex-col flex-1 h-full overflow-hidden pt-0 will-change-transform ${step < 3 ? 'animate-entrance' : ''}`} 
+        onTouchStart={onSwipeStart} 
+        onTouchEnd={onSwipeEnd}
+      >
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden">
+          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4">
             <header className="mb-4">
               <div className="quiz-prog-dots">
-                {[0, 1, 2].map(i => (<div key={i} className={`quiz-dot ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
+                {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
               </div>
             </header>
             <div className="flex-1 overflow-y-auto pr-1 flex flex-col min-h-0">
-              <div className="info-hint mb-4 py-3 shrink-0 rounded-[1.5rem] border-purple-50 bg-white">
-                <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-[var(--secondary)]" />
-                <span className="text-[11px] font-bold text-[#5A5478]">{q.h}</span>
-              </div>
               <h2 className="text-[1.5rem] font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight">{q.q}</h2>
-              <div className="flex-1 flex flex-col min-h-0 pb-4">
+              <div className="flex-1 flex flex-col min-h-0 pb-44">
                 {step === 0 && (
                   <div className="flex flex-col gap-3">
                     {(q.o || []).map((o, i) => (
@@ -301,11 +443,13 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   </div>
                 )}
                 {step === 1 && (
-                  <div ref={sortableRef} className="flex flex-col gap-3">
+                  <div ref={sortableRef} className="flex flex-col gap-3 rank-list">
                     {rankingOptions.map((o, i) => (
-                      <div key={o} className="bg-white border-2 border-[var(--card-border)] p-5 rounded-[2rem] flex items-center gap-4 cursor-grab shadow-sm active:scale-95 transition-all">
-                        <span className="w-8 h-8 rounded-full bg-purple-50 text-[var(--secondary)] flex items-center justify-center text-[12px] font-black">{i + 1}</span>
-                        <span className="font-black text-[14px] text-[#2D264B] leading-snug line-clamp-2">{o}</span>
+                      <div key={o} className="cursor-grab select-none rank-item">
+                        <div className="bg-white border-2 border-[var(--card-border)] p-5 rounded-[2rem] flex items-center gap-4 shadow-sm transition-[border-color,background-color] duration-200 card-inner">
+                          <span className="w-8 h-8 rounded-full bg-purple-50 text-[var(--secondary)] flex items-center justify-center text-[12px] font-black rank-badge" data-rank={i + 1}></span>
+                          <span className="font-black text-[14px] text-[#2D264B] leading-snug line-clamp-2">{o}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -328,36 +472,53 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 )}
               </div>
             </div>
-            <div className="pb-32 pt-4 px-1">
-              <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-action py-5 shadow-lg disabled:opacity-40 font-black text-lg">
-                {isSubmitting ? 'Wird geteilt...' : (step === 2 ? 'Abschließen ✨' : 'Weiter')}
-              </button>
-            </div>
+            {createPortal(
+              <div className="fixed bottom-[calc(100px+var(--sab))] left-6 right-6 max-w-[calc(448px-3rem)] mx-auto z-[95]">
+                <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-action py-5 shadow-lg disabled:opacity-40 font-black text-lg group">
+                  {isSubmitting ? (
+                    'Wird geteilt...'
+                  ) : (
+                    <>
+                      {step === 2 ? (
+                        <>
+                          Antworten senden
+                          <Send className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </>
+                      ) : (
+                        <>
+                          Weiter
+                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </>
+                  )}
+                </button>
+              </div>,
+              document.body
+            )}
           </div>
         ) : (
           // --- RESULTS VIEW ---
           <div className="flex flex-col flex-1 h-full overflow-hidden">
-            <header className="mb-4 flex items-center justify-between">
-              <div className="quiz-prog-dots flex-1 justify-start">
-                {[0, 1, 2].map(i => (<div key={i} className="quiz-dot done"></div>))}
-              </div>
+            <header className="h-[40px] flex items-start justify-end shrink-0 mb-2">
               <button onClick={resetQuiz} className="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/50 rounded-full border border-red-100">
-                <RefreshCcw className="w-3 h-3" /> Antworten zurücksetzen
+                Antworten zurücksetzen <RefreshCcw className="w-3 h-3" />
               </button>
             </header>
-            <div className="flex-1 pr-1 overflow-y-auto scroll-smooth">
-              <div className="space-y-10 pb-32 pt-0">
+            <div 
+              className="flex-1 pr-1 overflow-y-auto scroll-smooth show-scrollbar"
+              style={{
+                maskImage: 'linear-gradient(to bottom, transparent 0px, black 12px, black 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0px, black 12px, black 100%)'
+              }}
+            >
+              <div className="space-y-10 pb-32 pt-1">
                 {dailyQs.map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
                   return (
-                    <div key={i} className="animate-in fade-in slide-in-from-bottom-3 duration-500" style={{ animationDelay: `${i * 150}ms` }}>
-                      <div className="flex items-center gap-2 mb-4 px-1">
-                        <div className="w-7 h-7 rounded-lg bg-white border-2 border-[var(--card-border)] flex items-center justify-center shadow-sm">
-                          {i === 0 && <ArrowRightLeft className="w-4 h-4 text-[var(--secondary)]" />}
-                          {i === 1 && <ListOrdered className="w-4 h-4 text-[var(--secondary)]" />}
-                          {i === 2 && <MessageCircle className="w-4 h-4 text-[var(--secondary)]" />}
-                        </div>
+                    <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+                      <div className="flex items-center mb-4 px-1">
                         <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
                       </div>
                       <div className="grid grid-cols-2 gap-4">

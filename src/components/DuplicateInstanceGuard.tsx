@@ -6,6 +6,10 @@ interface DuplicateInstanceGuardProps {
 }
 
 export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGuardProps) {
+  if (import.meta.env.DEV) {
+    return <>{children}</>;
+  }
+
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [clickCount, setClickCount] = useState(0);
   const [bypassed, setBypassed] = useState(false);

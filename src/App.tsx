@@ -76,7 +76,7 @@ function AppLayout({
       )}
 
       <main 
-        className={`flex-1 flex flex-col relative z-10 px-4 max-w-md mx-auto w-full overflow-hidden ${profile.onboarding_completed ? 'pb-32' : 'pb-8'}`}
+        className={`flex-1 flex flex-col relative z-10 px-4 max-w-md mx-auto w-full overflow-hidden ${profile.onboarding_completed ? 'pb-0' : 'pb-8'}`}
         style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
       >
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -86,33 +86,37 @@ function AppLayout({
 
       {/* Blurry fade transition at the bottom */}
       {profile.onboarding_completed && (
-        <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/90 to-transparent pointer-events-none z-[90] backdrop-blur-[1px]" />
+        <div className="fixed bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/90 to-transparent pointer-events-none z-[90] backdrop-blur-[1px]" />
       )}
 
       {profile.onboarding_completed && (
         <nav className="nav-dock">
           <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
             <Home className="w-6 h-6" />
+            <span className="nav-label">Dashboard</span>
           </NavLink>
 
           {profile.partner_id ? (
             <NavLink to="/questions" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
               <MessageCircle className="w-6 h-6" />
+              <span className="nav-label">Fragen&Antworten</span>
             </NavLink>
           ) : (
             <div 
               onClick={() => setShowLockedModal(true)}
-              className="nav-item opacity-40 cursor-pointer relative"
+              className="nav-item cursor-pointer relative"
             >
               <MessageCircle className="w-6 h-6" />
-              <div className="absolute top-2 right-2 bg-white rounded-full p-0.5 shadow-sm">
-                <Lock className="w-2 h-2 text-[var(--primary)]" />
+              <span className="nav-label">Fragen&Antworten</span>
+              <div className="absolute top-1 right-3 bg-white border border-purple-50 rounded-full p-0.5 shadow-sm">
+                <Lock className="w-2.5 h-2.5 text-[var(--primary)]" />
               </div>
             </div>
           )}
 
           <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
             <UserIcon className="w-6 h-6" />
+            <span className="nav-label">Profil</span>
           </NavLink>
         </nav>
       )}
