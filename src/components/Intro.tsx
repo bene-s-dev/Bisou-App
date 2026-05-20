@@ -315,8 +315,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         {displayState.previous !== null && <div key={'prev-' + displayState.previous} className="absolute inset-0 flex flex-col z-10 pointer-events-none">{renderStepContent(displayState.previous, true)}</div>}
       </div>
       <div className="px-6 mt-auto pt-6">
-        <button className="btn-static py-5 text-lg font-black group shadow-none" onClick={() => step < (isIntroOnly ? 4 : 5) ? setStep(step + 1) : onComplete()}>
-          {step === (isIntroOnly ? 4 : 5) ? (isIntroOnly ? 'Schließen' : 'Jetzt loslegen! 🚀') : 'Weiter'}
+        <button className="btn-static py-5 text-lg font-black group shadow-none" onClick={() => step < 5 ? setStep(step + 1) : onComplete()}>
+          {step === 5 ? 'Jetzt loslegen! 🚀' : 'Weiter'}
         </button>
       </div>
     </div>
