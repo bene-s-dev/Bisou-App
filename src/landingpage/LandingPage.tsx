@@ -55,7 +55,7 @@ export default function LandingPage() {
       <div className="pt-2">
         <button 
           onClick={() => navigate('/signup')} 
-          className="w-full btn-action py-5 text-sm font-black shadow-lg shadow-purple-200"
+          className="w-full btn-action-animated py-5 text-sm font-black shadow-lg shadow-purple-200"
         >
           Kostenlos starten ✨
         </button>
