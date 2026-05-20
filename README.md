@@ -2,8 +2,6 @@
   
   # Bisou - Jeden Tag ein Küsschen näher.
   
-  **Die App für dich und deinen Lieblingsmenschen.** <br>
-  Jeden Tag ein kleiner magischer Moment zu zweit.
 
   <br>
 
