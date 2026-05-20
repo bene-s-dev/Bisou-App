@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="[https://github.com/bene-s-dev/Bisou-App/blob/main/public/vorschau.png?raw=true](https://github.com/bene-s-dev/Bisou-App/blob/main/vorschaugross.png?raw=true)" alt="Bisou Logo" width="80" height="80">
+  <img src="https://github.com/bene-s-dev/Bisou-App/blob/main/public/vorschau.png?raw=true">
   
   # Bisou
   
