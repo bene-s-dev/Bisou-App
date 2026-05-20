@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   partner_code TEXT UNIQUE,
   avatar_url TEXT,
   intro_completed BOOLEAN DEFAULT FALSE,
+  partner_since TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -76,7 +77,10 @@ CREATE OR REPLACE FUNCTION public.link_partners(partner_code_to_link TEXT)
 RETURNS VOID AS $$
 DECLARE
     partner_id_found UUID;
+    now_ts TIMESTAMP WITH TIME ZONE;
 BEGIN
+    now_ts := now();
+
     -- 1. Find the partner
     SELECT id INTO partner_id_found
     FROM public.profiles
@@ -92,11 +96,13 @@ BEGIN
 
     -- 2. Update both profiles
     UPDATE public.profiles
-    SET partner_id = partner_id_found
+    SET partner_id = partner_id_found,
+        partner_since = now_ts
     WHERE id = auth.uid();
 
     UPDATE public.profiles
-    SET partner_id = auth.uid()
+    SET partner_id = auth.uid(),
+        partner_since = now_ts
     WHERE id = partner_id_found;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -115,11 +121,13 @@ BEGIN
     IF current_partner_id IS NOT NULL THEN
         -- 2. Set both to NULL
         UPDATE public.profiles
-        SET partner_id = NULL
+        SET partner_id = NULL,
+            partner_since = NULL
         WHERE id = auth.uid();
 
         UPDATE public.profiles
-        SET partner_id = NULL
+        SET partner_id = NULL,
+            partner_since = NULL
         WHERE id = current_partner_id;
     END IF;
 END;

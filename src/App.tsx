@@ -42,6 +42,7 @@ function AppLayout({
     return <Navigate to="/intro" replace />;
   }
 
+  const isPublic = location.pathname === '/';
   const showHeader = ['/profile', '/dashboard', '/questions', '/intro'].includes(location.pathname);
 
   return (
@@ -49,7 +50,7 @@ function AppLayout({
       <div className="bg-aura" />
       
       {showHeader && (
-        <header className="px-4 z-20 absolute left-0 right-0 top-0 max-w-md mx-auto w-full pointer-events-none" style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}>
+        <header className={`px-4 z-20 absolute left-0 right-0 top-0 mx-auto w-full pointer-events-none ${isPublic ? 'max-w-4xl' : 'max-w-md'}`} style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}>
           <div className="flex items-start justify-between">
             <button 
               onClick={() => navigate('/')}
@@ -77,7 +78,7 @@ function AppLayout({
       )}
 
       <main 
-        className={`flex-1 flex flex-col relative z-10 px-4 max-w-md mx-auto w-full overflow-hidden ${profile.intro_completed ? 'pb-0' : 'pb-8'}`}
+        className={`flex-1 flex flex-col relative z-10 px-4 mx-auto w-full overflow-hidden ${isPublic ? 'max-w-4xl' : 'max-w-md'} ${profile.intro_completed ? 'pb-0' : 'pb-8'}`}
         style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
       >
         <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -86,7 +87,7 @@ function AppLayout({
       </main>
 
       {/* Blurry fade transition at the bottom */}
-      {profile.intro_completed && !['/intro', '/dashboard'].includes(location.pathname) && !location.search.includes('tab=intro') && (
+      {profile.intro_completed && !['/intro'].includes(location.pathname) && !location.search.includes('tab=intro') && (
         <div 
           className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
           style={{ 
@@ -171,7 +172,14 @@ export default function App() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') setDeferredPrompt(null);
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+      // Mark intro as completed so the PWA doesn't restart the intro on first launch
+      if (session) {
+        setProfile(prev => prev ? { ...prev, intro_completed: true } : null);
+        await supabase.from('profiles').update({ intro_completed: true }).eq('id', session.user.id);
+      }
+    }
   };
 
   const fetchProfile = useCallback(async (userId: string, bypassLock = false) => {

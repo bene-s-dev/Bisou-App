@@ -413,14 +413,14 @@ export default function Profile({
 
                    <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Verknüpft seit</span>
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Verknüpft seit:</span>
                       <span className="text-xs font-black text-[#1F1939]">
                         {getDaysConnected() === 0 ? "Heute" : `${getDaysConnected()} Tage`}
                       </span>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Streak</span>
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Tage am Stück geantwortet:</span>
                       <div className="flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full border border-orange-100">
                         <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
                         <span className="text-xs font-black text-orange-600">{partnerDetails.streak}</span>
@@ -428,7 +428,7 @@ export default function Profile({
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Profil erstellt am</span>
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest">Profil erstellt am:</span>
                       <span className="text-xs font-black text-[#1F1939]">
                         {partnerDetails.createdAt ? new Date(partnerDetails.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
                       </span>
@@ -618,134 +618,133 @@ export default function Profile({
                 </button>
               )}
             </div>
-            <div className="bg-white/80 backdrop-blur-md rounded-[32px] px-2 py-5 border-2 border-blue-100 w-full max-w-xl overflow-hidden animate-all duration-300">
-              <div className="flex flex-col gap-2 pb-2">
-                <div className="flex items-center pb-2 border-b border-purple-50">
-                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Entwickler</span>
-                  <div className="flex-1 flex justify-end">
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] px-4 py-6 border-2 border-blue-100 w-full max-w-xl overflow-hidden animate-all duration-300 mx-auto">
+              <div className="grid grid-cols-[auto_1fr_12px] gap-x-4 gap-y-3 items-center">
+                {/* Entwickler */}
+                <div className="contents">
+                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Entwickler</span>
+                  <div className="flex justify-end border-b border-purple-50/50 pb-2">
                     <span className="text-xs font-black text-[#1F1939]">Benedikt S.</span>
                   </div>
+                  <div className="border-b border-purple-50/50 pb-2 h-full" />
                 </div>
 
-                <div 
-                  onClick={handleVersionClick}
-                  className="flex items-center pb-2 border-b border-purple-50 cursor-pointer select-none active:bg-purple-50/30 rounded-lg px-1 transition-all"
-                >
-                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Version</span>
-                  <div className="flex-1 flex justify-end">
+                {/* Version */}
+                <div className="contents cursor-pointer group" onClick={handleVersionClick}>
+                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap group-active:text-[var(--secondary)] transition-colors">Version</span>
+                  <div className="flex justify-end border-b border-purple-50/50 pb-2">
                     <span className="text-xs font-black text-[#1F1939]">1.0.0</span>
                   </div>
+                  <div className="border-b border-purple-50/50 pb-2 h-full" />
                 </div>
 
-                <div className="flex items-center pb-2 border-b border-purple-50">
-                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">App läuft gerade auf</span>
-                  <div className="flex-1 flex justify-end gap-1 items-center">
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${isDesktop ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                {/* Gerät */}
+                <div className="contents">
+                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Gerät</span>
+                  <div className="flex flex-wrap justify-end gap-1 border-b border-purple-50/50 pb-2">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isDesktop ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
                       Desktop
                     </span>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] tracking-wider transition-all whitespace-nowrap ${isIOS ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] tracking-wider transition-all ${isIOS ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
                       iOS
                     </span>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${isAndroid ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isAndroid ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
                       Android
                     </span>
                   </div>
+                  <div className="border-b border-purple-50/50 pb-2 h-full" />
                 </div>
 
-                <div className="flex items-center pb-2 border-b border-purple-50">
-                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">App läuft als</span>
-                  <div className="flex-1 flex justify-end gap-1 items-center">
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                      Progressive Web App
+                {/* Modus */}
+                <div className="contents">
+                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Modus</span>
+                  <div className="flex flex-wrap justify-end gap-1 border-b border-purple-50/50 pb-2">
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      PWA
                     </span>
-                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all whitespace-nowrap ${!isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                      Webseite
+                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${!isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                      Web
                     </span>
                   </div>
+                  <div className="border-b border-purple-50/50 pb-2 h-full" />
                 </div>
 
                 {isDevMode && (
                   <>
-                    <div className="flex items-center pb-2 border-b border-purple-50 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Server-Verbindung</span>
-                      <div className="w-[130px] flex items-center gap-2 shrink-0 pl-5">
-                        {(() => {
-                          let dotClass = 'bg-gray-400 shadow-gray-200';
-                          let statusText = 'nicht verbunden';
-                          
-                          if (systemStatus.online === 'checking') {
-                            dotClass = 'bg-amber-400 shadow-amber-200 animate-pulse';
-                            statusText = 'Verbinden...';
-                          } else if (systemStatus.online) {
-                            const latency = systemStatus.latency ?? 0;
-                            if (latency <= 150) {
-                              dotClass = 'bg-green-500 shadow-green-200 animate-pulse';
-                              statusText = 'schnell';
-                            } else if (latency <= 250) {
-                              dotClass = 'bg-yellow-500 shadow-yellow-200 animate-pulse';
-                              statusText = 'langsam';
-                            } else {
-                              dotClass = 'bg-red-500 shadow-red-200 animate-pulse';
-                              statusText = 'sehr langsam';
+                    {/* Server */}
+                    <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Server</span>
+                      <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2">
+                        <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider">
+                          {(() => {
+                            if (systemStatus.online === 'checking') return '...';
+                            if (systemStatus.online) {
+                              const latency = systemStatus.latency ?? 0;
+                              if (latency <= 150) return 'schnell';
+                              if (latency <= 250) return 'okay';
+                              return 'langsam';
                             }
-                          }
-                          
-                          return (
-                            <>
-                              <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] transition-all duration-500 shrink-0 ${dotClass}`} />
-                              <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
-                                {statusText}
-                              </span>
-                            </>
-                          );
-                        })()}
+                            return 'offline';
+                          })()}
+                        </span>
+                        {systemStatus.latency && (
+                          <span className="text-[9px] font-black tabular-nums tracking-wider text-blue-600">
+                            {systemStatus.latency}ms
+                          </span>
+                        )}
                       </div>
-                      
-                      <div className="flex-1 flex items-center justify-end">
-                        <div className="flex gap-1.5 items-center">
-                          {systemStatus.latency && (
-                            <>
-                              <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
-                                {systemStatus.latency}
-                              </span>
-                              <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider">
-                                ms
-                              </span>
-                            </>
-                          )}
-                        </div>
+                      <div className="flex justify-end border-b border-purple-50/50 pb-2">
+                        <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] transition-all duration-500 shrink-0 ${
+                          (() => {
+                            if (systemStatus.online === 'checking') return 'bg-amber-400 shadow-amber-200 animate-pulse';
+                            if (systemStatus.online) {
+                              const latency = systemStatus.latency ?? 0;
+                              if (latency <= 150) return 'bg-green-500 shadow-green-200 animate-pulse';
+                              if (latency <= 250) return 'bg-yellow-500 shadow-yellow-200 animate-pulse';
+                              return 'bg-red-500 shadow-red-200 animate-pulse';
+                            }
+                            return 'bg-gray-400 shadow-gray-200';
+                          })()
+                        }`} />
                       </div>
                     </div>
 
-                    <div className="flex items-center pb-2 border-b border-purple-50 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Lokaler Speicher</span>
-                      <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
-                        <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px] shadow-green-200 animate-pulse shrink-0" />
-                        <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">Zugriff</span>
+                    {/* Speicher */}
+                    <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Speicher</span>
+                      <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2">
+                        <span className="text-[9px] font-black tabular-nums tracking-wider text-blue-600">
+                          {(() => {
+                            const mb = systemStatus.storageItems;
+                            return mb < 0.1 ? (mb * 1024).toFixed(1) + 'KB' : mb.toFixed(2) + 'MB';
+                          })()}
+                        </span>
                       </div>
-
-                      <div className="flex-1 flex items-center justify-end">
-                        <div className="flex gap-1.5 items-center">
-                          <span className="text-[9px] font-black tabular-nums uppercase tracking-wider text-blue-600">
-                            {(() => {
-                              const mb = systemStatus.storageItems;
-                              if (mb < 0.1) {
-                                return (mb * 1024).toFixed(1) + ' KB';
-                              }
-                              return mb.toFixed(2) + ' MB';
-                            })()}
-                          </span>
-                          <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider">
-                            / 5.00 MB
-                          </span>
-                        </div>
+                      <div className="flex justify-end border-b border-purple-50/50 pb-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px] shadow-green-200 animate-pulse shrink-0" />
                       </div>
                     </div>
 
-                    <div className="flex items-center pb-2 border-b border-purple-50 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Cache-Alter</span>
-                      <div className="w-[130px] flex items-center gap-2 shrink-0 pl-5">
-                        <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
+                    {/* Sync */}
+                    <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Sync</span>
+                      <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2">
+                        <span className="text-[9px] font-black text-blue-600 tracking-wider">
+                          {(() => {
+                            const lastSync = localStorage.getItem('last_sync_timestamp');
+                            if (!lastSync) return '??';
+                            const diffMs = Date.now() - new Date(lastSync).getTime();
+                            const diffMins = Math.floor(diffMs / 60000);
+                            if (diffMins <= 5) return 'jetzt';
+                            if (diffMins < 60) return `${diffMins}m`;
+                            const diffHours = Math.floor(diffMins / 60);
+                            if (diffHours < 24) return `${diffHours}h`;
+                            return `${Math.floor(diffHours / 24)}d`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex justify-end border-b border-purple-50/50 pb-2">
+                        <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
                           (() => {
                             const lastSync = localStorage.getItem('last_sync_timestamp');
                             if (!lastSync) return 'bg-gray-400 shadow-gray-200';
@@ -755,40 +754,24 @@ export default function Profile({
                             return 'bg-red-500 shadow-red-200';
                           })()
                         }`} />
-                        <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
-                          {(() => {
-                            const lastSync = localStorage.getItem('last_sync_timestamp');
-                            if (!lastSync) return 'nicht verbunden';
-                            const diffMins = Math.floor((Date.now() - new Date(lastSync).getTime()) / 60000);
-                            if (diffMins <= 5) return 'neu';
-                            if (diffMins <= 10) return 'älter';
-                            return 'veraltet';
-                          })()}
-                        </span>
-                      </div>
-                      
-                      <div className="flex-1 flex items-center justify-end">
-                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider whitespace-nowrap">
-                          {(() => {
-                            const lastSync = localStorage.getItem('last_sync_timestamp');
-                            if (!lastSync) return 'Keine Info';
-                            const diffMs = Date.now() - new Date(lastSync).getTime();
-                            const diffMins = Math.floor(diffMs / 60000);
-                            
-                            if (diffMins <= 5) return 'gerade eben';
-                            if (diffMins < 60) return `vor ${diffMins} Minute${diffMins === 1 ? '' : 'n'}`;
-                            const diffHours = Math.floor(diffMins / 60);
-                            if (diffHours < 24) return `vor ${diffHours} Stunde${diffHours === 1 ? '' : 'n'}`;
-                            return `vor ${Math.floor(diffHours / 24)} Tag${Math.floor(diffHours / 24) === 1 ? '' : 'en'}`;
-                          })()}
-                        </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center pb-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Gemini API <span className="font-normal">(Fragen)</span></span>
-                      <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
-                        <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
+                    {/* AI Core */}
+                    <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
+                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">AI Core</span>
+                      <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2 last:border-0 last:pb-0">
+                        <span className="text-[9px] font-black text-blue-600 tracking-wider">
+                          {(() => {
+                            const lastFetch = localStorage.getItem('last_question_fetch');
+                            if (!lastFetch) return 'v3.5';
+                            const date = new Date(lastFetch);
+                            return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex justify-end border-b border-purple-50/50 pb-2 last:border-0 last:pb-0">
+                        <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
                           (() => {
                             const lastFetch = localStorage.getItem('last_question_fetch');
                             if (!lastFetch) return 'bg-gray-400 shadow-gray-200';
@@ -796,26 +779,6 @@ export default function Profile({
                             return hoursSince <= 24 ? 'bg-blue-500 shadow-blue-200' : 'bg-red-500 shadow-red-200';
                           })()
                         }`} />
-                        <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
-                          {(() => {
-                            const lastFetch = localStorage.getItem('last_question_fetch');
-                            if (!lastFetch) return 'keine info';
-                            const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
-                            return hoursSince <= 24 ? 'Aktuell' : 'Veraltet';
-                          })()}
-                        </span>
-                      </div>
-                      
-                      <div className="flex-1 flex items-center justify-end">
-                        <span className="text-[9px] font-black text-blue-600 uppercase tracking-wider whitespace-nowrap">
-                          {(() => {
-                            const lastFetch = localStorage.getItem('last_question_fetch');
-                            if (!lastFetch) return 'Noch nie geladen';
-                            const date = new Date(lastFetch);
-                            return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ', ' + 
-                                   date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                          })()}
-                        </span>
                       </div>
                     </div>
                   </>
@@ -1032,7 +995,7 @@ export default function Profile({
         <div className="w-[60%] h-[2px] bg-purple-100 mb-4 mx-auto" />
       </header>
 
-      <div className="flex-1 overflow-hidden scrollbar-hide pb-32">
+      <div className="flex-1 overflow-y-auto scrollbar-soft pb-32">
         {renderContent()}
       </div>
 

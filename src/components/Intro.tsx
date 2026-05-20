@@ -237,8 +237,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     const animationClass = isOutgoing ? 'animate-slide-out-left' : 'animate-slide-in-right';
     switch (s) {
       case 0: return (
-        <div className={"flex-1 flex flex-col items-center pt-24 text-center px-4 " + animationClass}>
-          <div className="h-40 flex items-center justify-center mb-4">
+        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-4 min-h-0 " + animationClass}>
+          <div className="h-36 sm:h-44 flex items-center justify-center mb-4 shrink-0">
             <div className="relative">
               <div className="w-32 h-32 rounded-[2.5rem] bg-white flex items-center justify-center border-2 border-white shadow-xl overflow-hidden">
                 {avatarPreview ? <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" /> : <UserCircle2 className="w-16 h-16 text-purple-100" />}
@@ -249,63 +249,98 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
               </label>
             </div>
           </div>
-          <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px]">
-            {avatarPreview 
-              ? "Tolles Bild! Das passt perfekt zu deinem Profil." 
-              : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
-          </p>
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+            <div className="pb-2">
+              <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
+              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
+                {avatarPreview 
+                  ? "Tolles Bild! Das passt perfekt zu deinem Profil." 
+                  : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
+              </p>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          </div>
         </div>
       );
       case 1: return (
-        <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
-          <div className="h-44 flex items-center justify-center mb-4"><ScramblingCode /></div>
-          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner finden</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Bisou ist für zwei gemacht. Tauscht nach der Einführung eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
+        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><ScramblingCode /></div>
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+            <div className="pb-2">
+              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner finden</h2>
+              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Bisou ist für zwei gemacht. Tauscht nach der Einführung eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          </div>
         </div>
       );
       case 2: return (
-        <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
-          <div className="h-44 flex items-center justify-center mb-4"><MagicClock /></div>
-          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
+        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><MagicClock /></div>
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+            <div className="pb-2">
+              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
+              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          </div>
         </div>
       );
       case 3: return (
-        <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
-          <div className="h-44 flex items-center justify-center mb-4"><TypingChatBubble /></div>
-          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
+        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><TypingChatBubble /></div>
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+            <div className="pb-2">
+              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
+              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          </div>
         </div>
       );
       case 4: return (
-        <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
-          <div className="h-44 flex items-center justify-center mb-4"><AnimatedFlame /></div>
-          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px]">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
+        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><AnimatedFlame /></div>
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+            <div className="pb-2">
+              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
+              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          </div>
         </div>
       );
       case 5: return (
-        <div className={"flex-1 flex flex-col items-center pt-24 text-center px-6 " + animationClass}>
-          <div className="h-44 flex items-center justify-center mb-4">
+        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0">
             <div className="relative w-24 h-24 bg-purple-100 rounded-[2.5rem] flex items-center justify-center border-[2px] border-white shadow-[inset_0_2px_6px_rgba(162,155,254,0.4)] overflow-hidden">
               <div className="flex items-center justify-center">
                 <HomeScreenGrid />
               </div>
             </div>
           </div>
-          <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
-          <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mb-6">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
-          
-          {!isIntroOnly && (deferredPrompt || isIOS) && (
-            <button 
-              onClick={onInstall}
-              className="bg-[var(--secondary)] text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-purple-500/30 flex items-center gap-2 active:scale-95 transition-transform"
-            >
-              <Download className="w-5 h-5" />
-              App installieren
-            </button>
-          )}
+          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+            <div className="pb-2 flex flex-col items-center">
+              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
+              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mb-6 mx-auto">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
+              {!isIntroOnly && (deferredPrompt || isIOS) && (
+                <button 
+                  onClick={onInstall}
+                  className="bg-[var(--secondary)] text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-purple-500/30 flex items-center gap-2 active:scale-95 transition-transform"
+                >
+                  <Download className="w-5 h-5" />
+                  App installieren
+                </button>
+              )}
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          </div>
         </div>
       );
       default: return null;
@@ -328,8 +363,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         <div key={'curr-' + displayState.current} className="flex-1 flex flex-col">{renderStepContent(displayState.current, false)}</div>
         {displayState.previous !== null && <div key={'prev-' + displayState.previous} className="absolute inset-0 flex flex-col z-10 pointer-events-none">{renderStepContent(displayState.previous, true)}</div>}
       </div>
-      <div className="px-6 mt-auto pt-6">
-        <button className="btn-static py-5 text-lg font-black group shadow-none" onClick={() => step < 5 ? setStep(step + 1) : onComplete()}>
+      <div className="px-6 mt-auto pt-3 sm:pt-6">
+        <button className="btn-static py-4 sm:py-5 text-lg font-black group shadow-none" onClick={() => step < 5 ? setStep(step + 1) : onComplete()}>
           {step === 5 ? 'Jetzt loslegen!' : 'Weiter'}
         </button>
       </div>

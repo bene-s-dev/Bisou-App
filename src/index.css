@@ -369,6 +369,33 @@ html, body {
   scrollbar-color: rgba(162, 155, 254, 0.4) transparent !important;
 }
 
+/* Soft visible scrollbar: thin, rounded, flush at right edge */
+.scrollbar-soft {
+  overflow-y: auto;
+  -ms-overflow-style: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(162, 155, 254, 0.35) transparent;
+}
+.scrollbar-soft::-webkit-scrollbar {
+  display: block;
+  width: 3px;
+}
+.scrollbar-soft::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+.scrollbar-soft::-webkit-scrollbar-thumb {
+  background: rgba(162, 155, 254, 0.35);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+.scrollbar-soft::-webkit-scrollbar-thumb:hover {
+  background: rgba(162, 155, 254, 0.65);
+}
+.scrollbar-soft::-webkit-scrollbar-button {
+  display: none;
+}
+
 .sortable-ghost .card-inner {
   opacity: 0.35 !important;
   border: 2.5px dashed var(--secondary) !important;

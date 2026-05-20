@@ -7,12 +7,22 @@ serve(async (req) => {
   const s = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
   const db = createClient(u, s)
   
-  // Get today's date in YYYY-MM-DD format
-  const day = new Date().toISOString().split('T')[0]
+  // Get dayKey from request body or fallback to current UTC date
+  let dayKey;
+  try {
+    const body = await req.json();
+    dayKey = body.day_key || body.dayKey;
+  } catch (e) {
+    // Fallback if no body or invalid JSON
+  }
+  
+  if (!dayKey) {
+    dayKey = new Date().toISOString().split('T')[0];
+  }
 
   try {
     // 1. Check if questions already exist for today
-    const { data: ex } = await db.from('daily_questions').select('questions').eq('day_key', day).maybeSingle()
+    const { data: ex } = await db.from('daily_questions').select('questions').eq('day_key', dayKey).maybeSingle()
     if (ex) {
       return new Response(JSON.stringify(ex), { 
         headers: { 'Content-Type': 'application/json' } 
@@ -73,7 +83,7 @@ serve(async (req) => {
 
     // 3. Insert the newly generated questions into the database
     const { error: insertError } = await db.from('daily_questions').insert({ 
-      day_key: day, 
+      day_key: dayKey, 
       questions: content 
     })
     

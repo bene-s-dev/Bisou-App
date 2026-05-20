@@ -457,10 +457,10 @@ export default function Dashboard({
           />
         </div>
       )}
-      <div className="flex-1 flex flex-col pt-[52px] pb-32">
+      <div className="flex-1 flex flex-col pt-[52px] pb-20 sm:pb-32 overflow-y-auto scrollbar-soft">
         
         {/* Header: Avatars and Streaks */}
-        <div className="flex flex-col items-center mb-6 shrink-0">
+        <div className="flex flex-col items-center mb-3 sm:mb-6 shrink-0">
           <div className="relative flex flex-col items-center">
             {/* Avatars Row with Flame Pills attached */}
             <div className="flex -space-x-4">
@@ -468,9 +468,9 @@ export default function Dashboard({
               <div className="relative z-20">
                 <div 
                   onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
-                  className={`w-20 h-20 rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-[1.8rem] sm:rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
                 >
-                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-7 h-7 sm:w-8 sm:h-8 text-[var(--secondary)]" />)}
                 </div>
                 {/* Partner Flame Pill (Bottom Left, slightly overlapping) */}
                 <div 
@@ -486,9 +486,9 @@ export default function Dashboard({
               <div className="relative z-10">
                 <div 
                   onClick={() => userAvatar && setFullscreenImage(userAvatar)}
-                  className="w-20 h-20 rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden shadow-md transition-transform active:scale-95 cursor-pointer"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.8rem] sm:rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden shadow-md transition-transform active:scale-95 cursor-pointer"
                 >
-                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 text-[var(--secondary)]" />)}
+                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-7 h-7 sm:w-8 sm:h-8 text-[var(--secondary)]" />)}
                 </div>
                 {/* User Flame Pill (Bottom Right, slightly overlapping) */}
                 <div 
@@ -501,15 +501,14 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Names Row */}
-            <div className="flex items-center justify-center w-full mt-3">
-              <div className="w-1/2 flex justify-end pr-3">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-right">
+            <div className="flex items-center justify-center w-full mt-3 px-2">
+              <div className="w-1/2 flex justify-end pr-3 min-w-0">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-right truncate max-w-full block">
                   {partnerName.split(' ')[0]}
                 </span>
               </div>
-              <div className="w-1/2 flex justify-start pl-3">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-left">
+              <div className="w-1/2 flex justify-start pl-3 min-w-0">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-left truncate max-w-full block">
                   {(userName || 'Ich').split(' ')[0]}
                 </span>
               </div>
