@@ -129,7 +129,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 <div className="flex justify-end pr-2">
                   <button type="button" onClick={() => setMode('magic-link')} className="text-xs font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Passwort vergessen?</button>
                 </div>
-                <button type="submit" disabled={loading} className="btn-action-animated w-full mt-2">
+                <button type="submit" disabled={loading} className="btn-static w-full mt-2">
                   {loading ? 'Lädt...' : 'Einloggen ✨'}
                 </button>
                 <button type="button" onClick={() => navigate('/signup')} className="btn-secondary w-full">Konto erstellen</button>
@@ -140,7 +140,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
               <form onSubmit={handleSubmit} className="space-y-6">
                 {message?.type === 'success' ? (
                   <div className="text-center py-4">
-                    <button type="button" onClick={() => { navigate('/signin'); setMode('login'); setMessage(null); }} className="btn-action-animated">Zum Login</button>
+                    <button type="button" onClick={() => { navigate('/signin'); setMode('login'); setMessage(null); }} className="btn-static">Zum Login</button>
                   </div>
                 ) : (
                   <>
@@ -149,7 +149,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                       <p className="text-sm text-[#4A4468]">Wir senden dir einen Link zum Einloggen.</p>
                     </div>
                     <input type="email" autoFocus className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    <button type="submit" disabled={loading} className="btn-action-animated">{loading ? 'Sende...' : 'Link senden ✨'}</button>
+                    <button type="submit" disabled={loading} className="btn-static">{loading ? 'Sende...' : 'Link senden ✨'}</button>
                     <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Zurück zum Login</button>
                   </>
                 )}
@@ -201,7 +201,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                           </button>
                         </div>
-                        <button disabled={!email || password.length < 6 || !displayName} onClick={() => setRegStep(2)} className="btn-action-animated w-full mt-2">Weiter <ArrowRight className="w-5 h-5" /></button>
+                        <button disabled={!email || password.length < 6 || !displayName} onClick={() => setRegStep(2)} className="btn-static w-full mt-2">Weiter <ArrowRight className="w-5 h-5" /></button>
                       </div>
                     )}
                     {regStep === 2 && (
@@ -232,7 +232,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                         </div>
 
                         <div className="space-y-3">
-                          <button type="submit" disabled={loading} className="btn-action-animated w-full">
+                          <button type="submit" disabled={loading} className="btn-static w-full">
                             {loading ? 'Wird erstellt...' : 'Konto erstellen ✨'}
                           </button>
                           <button type="button" onClick={() => setRegStep(1)} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Angaben korrigieren</button>

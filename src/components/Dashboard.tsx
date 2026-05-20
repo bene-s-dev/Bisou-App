@@ -529,7 +529,7 @@ export default function Dashboard({
           <div className="status-box flex flex-col items-center text-center p-6 mb-2">
             <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3 text-[var(--secondary)] border border-purple-100"><LinkIcon className="w-6 h-6" /></div>
             <p className="font-black text-base mb-1 text-[var(--text-main)]">Der erste Schritt</p>
-            <button onClick={() => navigate('/profile?tab=partner')} className="btn-action-animated py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
+            <button onClick={() => navigate('/profile?tab=partner')} className="btn-primary py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
           </div>
         ) : (
           <div className="status-box pt-4 px-4 pb-3 mb-2">
@@ -568,7 +568,7 @@ export default function Dashboard({
             <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-3">
               <button 
                 onClick={onStartQuestions} 
-                className="w-full btn-action-animated h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-lg"
+                className="w-full btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-lg"
               >
                 {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
               </button>

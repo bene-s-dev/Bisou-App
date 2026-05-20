@@ -95,7 +95,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
             <div className="flex flex-col gap-3">
               <button 
                 onClick={handleConfirm} 
-                className={`btn-action-animated py-4 text-sm ${
+                className={`btn-static py-4 text-sm ${
                   confirm.options?.type === 'error' 
                   ? 'bg-[var(--primary)] hover:bg-red-500' 
                   : ''

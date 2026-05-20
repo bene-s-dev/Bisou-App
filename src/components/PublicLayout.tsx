@@ -127,7 +127,7 @@ export default function PublicLayout() {
             </p>
             <button 
               onClick={() => setShowPrivacyModal(false)}
-              className="btn-action-animated"
+              className="btn-static"
             >
               Schließen
             </button>
@@ -149,7 +149,7 @@ export default function PublicLayout() {
             </p>
             <button 
               onClick={() => setShowImpressumModal(false)}
-              className="btn-action-animated"
+              className="btn-static"
             >
               Schließen
             </button>

@@ -475,7 +475,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             </div>
             {createPortal(
               <div className="fixed bottom-[calc(100px+var(--sab))] left-6 right-6 max-w-[calc(448px-3rem)] mx-auto z-[95]">
-                <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-action-animated py-5 shadow-lg disabled:opacity-40 font-black text-lg group">
+                <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-5 shadow-lg disabled:opacity-40 font-black text-lg group">
                   {isSubmitting ? (
                     'Wird geteilt...'
                   ) : (
