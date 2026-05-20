@@ -58,13 +58,13 @@ export default function LandingPage() {
           className="w-full btn-action-animated py-5 text-sm font-black shadow-lg shadow-purple-200"
         >
           Kostenlos starten ✨
-        </button>
-      </div>
-      <div className="text-center">
-        <p className="mt-4 text-[10px] font-bold text-[var(--muted)] opacity-60">
+          </button>
+          </div>
+          <div className="text-center">
+          <p className="mt-4 text-[10px] font-bold text-[var(--muted)] opacity-60">
           In 60 Sekunden bereit.
-        </p>
-      </div>
-    </section>
-  );
-}
+          </p>
+          </div>
+          </section>
+          );
+          }
