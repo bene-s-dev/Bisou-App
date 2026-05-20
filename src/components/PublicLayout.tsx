@@ -41,16 +41,15 @@ export default function PublicLayout() {
       {/* Header */}
       <header className="max-w-md mx-auto pt-12 pb-4 text-center select-none w-full relative shrink-0 z-20">
         {!isAuthPage && (
-          <div className="absolute top-6 right-4">
+          <div className="absolute top-2 right-4">
             <button 
-              onClick={() => navigate('/signin')}
+              onClick={() => navigate('/signin')} 
               className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white border-2 border-[var(--card-border)] text-[var(--secondary)] font-black text-[10px] uppercase tracking-widest shadow-sm active:scale-95 transition-all"
             >
               Login <LogIn className="w-3.5 h-3.5" />
             </button>
           </div>
-        )}
-        
+        )}        
         <button 
           onClick={() => navigate('/')}
           className="group transition-transform active:scale-95"
