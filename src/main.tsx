@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
+import DuplicateInstanceGuard from './components/DuplicateInstanceGuard'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -15,7 +16,9 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <DuplicateInstanceGuard>
+        <App />
+      </DuplicateInstanceGuard>
     </BrowserRouter>
   </StrictMode>,
 )

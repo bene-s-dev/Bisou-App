@@ -1,0 +1,106 @@
+import React, { useState, useEffect } from 'react';
+import { Smartphone, CloudOff } from 'lucide-react';
+
+interface DuplicateInstanceGuardProps {
+  children: React.ReactNode;
+}
+
+export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGuardProps) {
+  const [isDuplicate, setIsDuplicate] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    let releaseLock: (() => void) | null = null;
+
+    if ('locks' in navigator) {
+      navigator.locks.request('bisou_app_instance_lock', { ifAvailable: true }, async (lock) => {
+        if (!lock) {
+          if (isMounted) setIsDuplicate(true);
+          return;
+        }
+
+        await new Promise((resolve) => {
+          releaseLock = () => {
+            resolve(null);
+          };
+        });
+      }).catch(err => {
+        console.error('Lock request failed:', err);
+      });
+    } else {
+      const channel = new BroadcastChannel('bisou_instance_check');
+      const checkInstance = () => {
+        channel.postMessage({ type: 'CHECK_INSTANCES' });
+      };
+      channel.onmessage = (event) => {
+        if (event.data.type === 'CHECK_INSTANCES') {
+          channel.postMessage({ type: 'INSTANCE_ALREADY_EXISTS' });
+        } else if (event.data.type === 'INSTANCE_ALREADY_EXISTS') {
+          setIsDuplicate(true);
+        }
+      };
+      checkInstance();
+      return () => channel.close();
+    }
+
+    return () => {
+      isMounted = false;
+      if (releaseLock) releaseLock();
+    };
+  }, []);
+
+  if (isDuplicate) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#F8F7FF] flex items-center justify-center p-8 text-center overflow-hidden">
+        <div className="bg-aura grayscale opacity-50" />
+        
+        {/* Decorative elements in grayscale */}
+        <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-gray-200/30 rounded-full blur-3xl animate-pulse-slow" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-gray-300/30 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }} />
+
+        <div className="max-w-sm w-full animate-entrance relative z-10">
+
+          <h1 className="text-xl font-bold text-[#4A4468] mb-16 tracking-tight leading-[1.4]" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            Ups... Die App kann nicht laden, weil sie auf deinem Gerät mehrfach geöffnet ist.
+          </h1>
+          
+          {/* Connection missing animation - Stronger */}
+          <div className="flex flex-col items-center gap-5 mb-10">
+            <div className="flex items-center gap-4">
+              <Smartphone className="w-8 h-8 text-[#A29BFE] opacity-80" />
+              <div className="w-16 h-1 bg-[#A29BFE]/10 rounded-full relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#A29BFE]/40 animate-[loading-bar_3s_infinite]" />
+              </div>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center justify-center">
+                   <div className="w-2.5 h-2.5 bg-[#FF8A8A]/80 rounded-full animate-ping" />
+                </div>
+                <CloudOff className="w-10 h-10 text-[#4A4468] opacity-60 animate-pulse relative z-10" />
+              </div>
+            </div>
+            <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-[#4A4468]/50">
+              Zugriff auf Server blockiert
+            </span>
+          </div>
+
+          <p className="text-base text-[#6A6588] font-semibold px-8 leading-relaxed" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+            Bitte öffne Bisou nur einmal,<br />damit deine Daten sicher bleiben.
+          </p>
+        </div>
+
+        <style>{`
+          @keyframes loading-bar {
+            0% { transform: translateX(-100%); opacity: 1; }
+            40% { transform: translateX(-40%); opacity: 1; }
+            65% { transform: translateX(-25%); opacity: 1; }
+            85% { transform: translateX(-25%); opacity: 1; }
+            90% { transform: translateX(-25%); opacity: 0; }
+            100% { transform: translateX(-25%); opacity: 0; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
