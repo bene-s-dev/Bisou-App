@@ -7,17 +7,10 @@ interface DuplicateInstanceGuardProps {
 
 export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGuardProps) {
   const [isDuplicate, setIsDuplicate] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [clickCount, setClickCount] = useState(0);
   const [bypassed, setBypassed] = useState(false);
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
     let isMounted = true;
     let releaseLock: (() => void) | null = null;
 
@@ -55,8 +48,6 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
     return () => {
       isMounted = false;
       if (releaseLock) releaseLock();
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
     };
   }, []);
 
@@ -70,14 +61,16 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
     });
   };
 
-  if ((isDuplicate || isOffline) && !bypassed) {
-    const title = isOffline 
-      ? "Ups... Die App kann nicht laden, weil keine Internetverbindung besteht."
-      : "Ups... Die App kann nicht laden, weil sie auf deinem Gerät mehrfach geöffnet ist.";
-    
-    const subtext = isOffline
-      ? "Bitte überprüfe deine Verbindung, damit wir deine Daten synchronisieren können."
-      : "Bitte öffne Bisou nur einmal, damit deine Daten sicher bleiben.";
+  const isStandalone = typeof window !== 'undefined' && 
+    (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone);
+
+  if (isStandalone) return <>{children}</>;
+
+  if (isDuplicate && !bypassed) {
+    const title = "Ups... Die App kann nicht laden, weil sie auf deinem Gerät mehrfach geöffnet ist.";
+    const subtext = (
+      <>Bitte öffne Bisou nur einmal,<br />damit deine Daten sicher bleiben.</>
+    );
 
     return (
       <div className="fixed inset-0 z-[9999] bg-[#F8F7FF] flex items-center justify-center p-8 text-center overflow-hidden">
