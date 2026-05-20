@@ -546,38 +546,6 @@ export default function Profile({
                 </div>
 
                 <div className="flex items-center pb-2 border-b border-purple-50">
-                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Gemini API</span>
-                  <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
-                    <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
-                      (() => {
-                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
-                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
-                        if (hoursSince > 24) return 'bg-red-500 shadow-red-200';
-                        return 'bg-green-500 shadow-green-200';
-                      })()
-                    }`} />
-                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
-                      {(() => {
-                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
-                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
-                        return hoursSince > 24 ? 'Stale' : 'Active';
-                      })()}
-                    </span>
-                  </div>
-                  
-                  <div className="flex-1 flex items-center justify-end">
-                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
-                      {(() => {
-                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
-                        const date = new Date(lastFetch);
-                        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' • ' + 
-                               date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                      })()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center pb-2 border-b border-purple-50">
                   <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Lokaler Speicher</span>
                   <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
                     <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_6px] shadow-green-200 animate-pulse shrink-0" />
@@ -595,6 +563,38 @@ export default function Profile({
                     </div>
                     <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider whitespace-nowrap ml-auto">
                       Datensätze
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center pb-2 border-b border-purple-50">
+                  <span className="w-[120px] text-[10px] font-black text-[var(--muted)] uppercase tracking-widest shrink-0 whitespace-nowrap">Gemini API <span className="font-normal">(Fragen)</span></span>
+                  <div className="w-[90px] flex items-center gap-2 shrink-0 pl-5">
+                    <div className={`w-2 h-2 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
+                      (() => {
+                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
+                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
+                        if (hoursSince > 24) return 'bg-red-500 shadow-red-200';
+                        return 'bg-green-500 shadow-green-200';
+                      })()
+                    }`} />
+                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                      {(() => {
+                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
+                        const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
+                        return hoursSince > 24 ? 'Veraltet' : 'Aktiv';
+                      })()}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 flex items-center justify-end">
+                    <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                      {(() => {
+                        const lastFetch = localStorage.getItem('last_question_fetch') || new Date().toISOString();
+                        const date = new Date(lastFetch);
+                        return date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' • ' + 
+                               date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                      })()}
                     </span>
                   </div>
                 </div>
