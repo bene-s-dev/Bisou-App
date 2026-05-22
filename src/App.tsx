@@ -15,6 +15,7 @@ import Questions from './components/Questions';
 import Profile from './components/Profile';
 import ResetPassword from './components/ResetPassword';
 import LoadingSkeleton from './components/LoadingSkeleton';
+import ScalingContainer from './components/ScalingContainer';
 import { getDailyKey } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider } from './components/DialogProvider';
@@ -82,7 +83,9 @@ function AppLayout({
         style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
       >
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          {children}
+          <ScalingContainer maxWidth={isPublic ? 1000 : 450}>
+            {children}
+          </ScalingContainer>
         </div>
       </main>
 

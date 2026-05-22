@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, BarChart3, UserCircle2, Clock, MessageCircle, X, Phone, Settings, Mail, Music, Map, Camera as CameraIcon, Calendar
+  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, MessageSquare, 
+  Send, UserCircle2, ShieldCheck, Zap, Lock, Info, Clock, Check
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import ImageCropper from './ImageCropper';
-import { useDialog } from './DialogProvider';
-import { translateError } from '../lib/translations';
 import { useNavigate, useLocation } from 'react-router-dom';
-import confetti from 'canvas-confetti';
+import { supabase } from '../lib/supabase';
+import { useDialog } from './DialogProvider';
+import ImageCropper from './ImageCropper';
 
 interface IntroProps {
   onComplete: () => void;
@@ -18,136 +17,45 @@ interface IntroProps {
 }
 
 const ScramblingCode = () => {
-  const [code, setCode] = useState('XXXXXX');
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  
+  const [code, setCode] = useState('CB-123456');
   useEffect(() => {
+    const chars = 'ABCDEFGHJKLMNOPQRSTUVWXYZ0123456789';
     const interval = setInterval(() => {
-      let result = '';
-      for (let i = 0; i < 6; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      setCode(result);
-    }, 250);
+      let res = 'CB-';
+      for (let i = 0; i < 6; i++) res += chars[Math.floor(Math.random() * chars.length)];
+      setCode(res);
+    }, 120);
     return () => clearInterval(interval);
   }, []);
-
   return (
-    <div className="w-48 h-20 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-[2rem] flex items-center justify-center shadow-inner border-2 border-white font-mono text-xl font-black text-[var(--secondary)]">
-      <span className="mr-1">CB-</span>
-      <span className="tracking-widest">{code}</span>
+    <div className="bg-white px-8 py-5 rounded-[2.5rem] border-2 border-purple-100 shadow-xl scale-110 active:scale-95 transition-all">
+      <span className="text-3xl font-black text-[var(--secondary)] tracking-[0.2em] font-mono">{code}</span>
     </div>
   );
 };
 
 const MagicClock = () => {
-  const [stopped, setStopped] = useState(false);
-  const isMounted = useRef(true);
-  
+  const [time, setTime] = useState('02:59');
+  const [isAM, setIsAM] = useState(true);
   useEffect(() => {
-    isMounted.current = true;
-    const timer = setTimeout(() => {
-      if (isMounted.current) {
-        setStopped(true);
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.4 },
-          colors: ['#FF8A8A', '#A29BFE', '#FFD700'],
-          zIndex: 1000
-        });
-      }
-    }, 2000); 
-    
-    return () => {
-      isMounted.current = false;
-      clearTimeout(timer);
-    };
+    const interval = setInterval(() => {
+      setTime(prev => prev === '02:59' ? '03:00' : '02:59');
+    }, 1500);
+    return () => clearInterval(interval);
   }, []);
-
   return (
-    <div className="relative w-24 h-24">
-      <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center shadow-inner border-2 border-white relative z-10 overflow-hidden">
-        <div className="relative w-12 h-12 border-2 border-orange-200 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm">
-          <div className={'absolute w-1 h-4 bg-orange-400 rounded-full origin-bottom transition-all duration-[2000ms] ' + (stopped ? 'rotate-90' : 'animate-[spin_1.5s_linear_infinite]')} style={{ bottom: '50%' }} />
-          <div className={'absolute w-1 h-5 bg-orange-300 rounded-full origin-bottom transition-all duration-[2000ms] ' + (stopped ? 'rotate-0' : 'animate-[spin_0.4s_linear_infinite]')} style={{ bottom: '50%' }} />
-          <div className="w-1.5 h-1.5 bg-orange-500 rounded-full z-10" />
-        </div>
+    <div className="w-40 h-40 bg-white rounded-full border-[3px] border-white shadow-2xl flex flex-col items-center justify-center gap-1 scale-110">
+      <div className="w-32 h-32 rounded-full border-2 border-purple-50 flex flex-col items-center justify-center relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1/2 bg-purple-50/30" />
+        <span className="text-4xl font-black text-[var(--secondary)] tracking-tight tabular-nums z-10">{time}</span>
+        <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest z-10">System Sync</span>
       </div>
     </div>
   );
 };
 
 const TypingChatBubble = () => {
-  const [text, setText] = useState('');
-  const phrases = ['Liebes Tagebuch...', 'Heute war...', 'Wir beide...'];
-  const [phraseIndex, setPhraseIndex] = useState(0);
-  
-  useEffect(() => {
-    let currentText = '';
-    let isDeleting = false;
-    let charIndex = 0;
-    
-    const interval = setInterval(() => {
-      const currentPhrase = phrases[phraseIndex];
-      if (!isDeleting) {
-        currentText = currentPhrase.slice(0, charIndex + 1);
-        charIndex++;
-        if (charIndex === currentPhrase.length) {
-          isDeleting = true;
-          clearInterval(interval);
-          setTimeout(() => {
-            const newInterval = setInterval(() => {
-              if (isDeleting) {
-                currentText = currentPhrase.slice(0, charIndex - 1);
-                charIndex--;
-                if (charIndex === 0) {
-                  isDeleting = false;
-                  setPhraseIndex((prev) => (prev + 1) % phrases.length);
-                  clearInterval(newInterval);
-                }
-                setText(currentText);
-              }
-            }, 40);
-          }, 2000);
-        }
-      }
-      setText(currentText);
-    }, 120);
-    
-    return () => clearInterval(interval);
-  }, [phraseIndex]);
-
-  return (
-    <div className="w-24 h-24 bg-gradient-to-br from-rose-50 to-pink-50 rounded-[2.5rem] flex items-center justify-center shadow-inner border-2 border-white relative overflow-hidden">
-      <div className="relative bg-white p-3 rounded-2xl shadow-sm border border-rose-100 min-w-[80px] min-h-[44px] flex items-center justify-center">
-        <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-tight text-center px-1">{text}<span className="animate-pulse">|</span></span>
-      </div>
-    </div>
-  );
-};
-
-
-const HomeScreenGrid = () => {
-  const icons = [
-    <Phone className="w-2.5 h-2.5 text-white" />,
-    <Settings className="w-2.5 h-2.5 text-white" />,
-    <Mail className="w-2.5 h-2.5 text-white" />,
-    <Music className="w-2.5 h-2.5 text-white" />,
-    <Map className="w-2.5 h-2.5 text-white" />,
-    <CameraIcon className="w-2.5 h-2.5 text-white" />,
-    <Calendar className="w-2.5 h-2.5 text-white" />,
-    <Heart className="w-2.5 h-2.5 text-white" />,
-    <Clock className="w-2.5 h-2.5 text-white" />,
-    <Users className="w-2.5 h-2.5 text-white" />,
-    null, // Center spot for B
-    <Sparkles className="w-2.5 h-2.5 text-white" />,
-    <Moon className="w-2.5 h-2.5 text-white" />,
-    <Eye className="w-2.5 h-2.5 text-white" />,
-    <BarChart3 className="w-2.5 h-2.5 text-white" />,
-    <CheckCircle2 className="w-2.5 h-2.5 text-white" />
-  ];
-
+  const icons = [<Heart className="w-3 h-3 text-red-400 fill-red-400" />, <Sparkles className="w-3 h-3 text-amber-400 fill-amber-400" />, <MessageSquare className="w-3 h-3 text-blue-400 fill-blue-400" />, <Zap className="w-3 h-3 text-yellow-400 fill-yellow-400" />];
   return (
     <div className="w-24 h-24 grid grid-cols-4 grid-rows-4 gap-0 p-0 bg-transparent place-items-center">
       {icons.map((icon, i) => (
@@ -237,8 +145,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     const animationClass = isOutgoing ? 'animate-slide-out-left' : 'animate-slide-in-right';
     switch (s) {
       case 0: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-4 min-h-0 " + animationClass}>
-          <div className="h-36 sm:h-44 flex items-center justify-center mb-4 shrink-0">
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-4 min-h-0 " + animationClass}>
+          <div className="h-36 sm:h-44 flex items-center justify-center mb-6 shrink-0">
             <div className="relative">
               <div className="w-32 h-32 rounded-[2.5rem] bg-white flex items-center justify-center border-2 border-white shadow-xl overflow-hidden">
                 {avatarPreview ? <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" /> : <UserCircle2 className="w-16 h-16 text-purple-100" />}
@@ -249,97 +157,64 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
               </label>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
-                {avatarPreview 
-                  ? "Tolles Bild! Das passt perfekt zu deinem Profil." 
-                  : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
-              </p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          <div className="pb-8">
+            <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
+              {avatarPreview
+                ? "Tolles Bild! Das passt perfekt zu deinem Profil."
+                : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
+            </p>
           </div>
         </div>
       );
       case 1: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><ScramblingCode /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner finden</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Bisou ist für zwei gemacht. Tauscht nach der Einführung eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><ScramblingCode /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner verbinden</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Bisou ist für zwei gemacht. Tauscht nach dem Intro eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
           </div>
         </div>
       );
       case 2: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><MagicClock /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><MagicClock /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
           </div>
         </div>
       );
       case 3: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><TypingChatBubble /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><TypingChatBubble /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
           </div>
         </div>
       );
       case 4: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><AnimatedFlame /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><AnimatedFlame /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
           </div>
         </div>
       );
       case 5: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0">
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0">
             <div className="relative w-24 h-24 bg-purple-100 rounded-[2.5rem] flex items-center justify-center border-[2px] border-white shadow-[inset_0_2px_6px_rgba(162,155,254,0.4)] overflow-hidden">
               <div className="flex items-center justify-center">
-                <HomeScreenGrid />
+                <Smartphone className="w-10 h-10 text-[var(--secondary)] animate-bounce" />
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2 flex flex-col items-center">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mb-6 mx-auto">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
-              {!isIntroOnly && (deferredPrompt || isIOS) && (
-                <button 
-                  onClick={onInstall}
-                  className="bg-[var(--secondary)] text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-purple-500/30 flex items-center gap-2 active:scale-95 transition-transform"
-                >
-                  <Download className="w-5 h-5" />
-                  App installieren
-                </button>
-              )}
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App-Erlebnis</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Installiere Bisou über deinen Browser auf dem Homescreen, um das volle App-Erlebnis ohne Browserleiste zu genießen.</p>
           </div>
         </div>
       );
@@ -348,26 +223,48 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 pb-6 overflow-hidden h-full bg-transparent relative">
-      <style>{`
-        @keyframes pop {
-          0% { transform: scale(0); opacity: 0; }
-          10% { transform: scale(1.2); opacity: 1; }
-          80% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(0); opacity: 0; }
-        }
-      `}</style>
-      
-      {/* Step Content with Animation Wrapper */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
-        <div key={'curr-' + displayState.current} className="flex-1 flex flex-col">{renderStepContent(displayState.current, false)}</div>
-        {displayState.previous !== null && <div key={'prev-' + displayState.previous} className="absolute inset-0 flex flex-col z-10 pointer-events-none">{renderStepContent(displayState.previous, true)}</div>}
+    <div className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#F8F7FF]">
+      <div className="flex-1 flex flex-col relative min-h-0">
+        {displayState.previous !== null && renderStepContent(displayState.previous, true)}
+        {renderStepContent(displayState.current)}
       </div>
-      <div className="px-6 mt-auto pt-3 sm:pt-6">
+      
+      <div className="px-6 pb-[calc(2rem+var(--sab))] pt-4 shrink-0 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF] to-transparent z-20">
+        <div className="quiz-prog-dots mb-8">
+          {[0,1,2,3,4,5].map(i => <div key={i} className={`quiz-prog-dot ${i === step ? 'quiz-prog-dot-active' : ''}`} />)}
+        </div>
+        
         <button className="btn-static py-4 sm:py-5 text-lg font-black group shadow-none" onClick={() => step < 5 ? setStep(step + 1) : onComplete()}>
           {step === 5 ? 'Jetzt loslegen!' : 'Weiter'}
         </button>
       </div>
+
+      {selectedImage && createPortal(<ImageCropper image={selectedImage} onCropComplete={handleCropComplete} onCancel={() => setSelectedImage(null)} />, document.body)}
+      {loading && createPortal(<div className="fixed inset-0 z-[1000] bg-white/60 backdrop-blur-sm flex items-center justify-center"><div className="w-12 h-12 border-4 border-purple-100 border-t-[var(--secondary)] rounded-full animate-spin" /></div>, document.body)}
+      
+      <style>{`
+        @keyframes pop {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+        }
+        .animate-slide-in-right {
+          animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .animate-slide-out-left {
+          animation: slideOutLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutLeft {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(-100%); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
