@@ -292,6 +292,7 @@ export default function Profile({
       if (updateError) throw updateError;
 
       setProfile({ ...profile, avatar_url: publicUrl });
+      setAvatarPreview(publicUrl);
       showAlert("Profilbild aktualisiert!", "success");
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -962,6 +963,89 @@ export default function Profile({
             </div>
 
             
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showServices && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowServices(false)} />
+          <div className="modal-content p-8" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center gap-4 mb-6">
+              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 border-2 border-white shadow-sm">
+                <Settings className="w-8 h-8" />
+              </div>
+              <h3 className="text-lg font-black text-[#1F1939] uppercase tracking-widest">Verwendete Dienste</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Infrastruktur & Auth</span>
+                <span className="text-xs font-bold text-[#1F1939]">Supabase (PostgreSQL, Storage, Auth)</span>
+              </div>
+              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Künstliche Intelligenz</span>
+                <span className="text-xs font-bold text-[#1F1939]">Google Gemini AI (Textgenerierung)</span>
+              </div>
+              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Hosting & Deployment</span>
+                <span className="text-xs font-bold text-[#1F1939]">Vercel (Edge Network)</span>
+              </div>
+            </div>
+
+            <button onClick={() => setShowServices(false)} className="w-full mt-8 py-4 bg-blue-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all shadow-lg shadow-blue-100">Schließen</button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showSecurityModal && createPortal(
+        <div className="modal-backdrop px-4">
+          <div className="absolute inset-0" onClick={() => setShowSecurityModal(false)} />
+          <div className="modal-content p-8 max-h-[85vh] overflow-y-auto show-scrollbar" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowSecurityModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all">
+              <X className="w-4 h-4 text-[var(--secondary)]" />
+            </button>
+
+            <div className="flex flex-col items-center text-center gap-4 mb-8 pt-4">
+              <div className="w-16 h-16 bg-emerald-50 rounded-[2rem] flex items-center justify-center border-2 border-white shadow-sm">
+                <Shield className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h3 className="text-xl font-black text-[#1F1939] leading-tight">Cyber-Sicherheitsarchitektur & Infrastruktur</h3>
+            </div>
+
+            <div className="space-y-6 text-left">
+              <div className="flex gap-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
+                <p className="text-sm text-[#4A4468] leading-relaxed">
+                  <span className="font-black text-[#1F1939]">Strikte Datensparsamkeit:</span> Vollständiger Verzicht auf persistente Cookies, Tracking-Pixel oder Analytics-Tools. Es werden keinerlei personenbezogene Stammdaten (wie Nachnamen, Telefonnummern oder Adressen) erhoben.
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
+                <p className="text-sm text-[#4A4468] leading-relaxed">
+                  <span className="font-black text-[#1F1939]">Standardkonforme Verschlüsselung:</span> End-zu-End-verschlüsselte Datenübertragung via TLS 1.3 gemäß den Richtlinien des <a href="https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Publikationen/TechnischeRichtlinien/TR02102/BSI-TR-02102-2.html" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline underline-offset-2 decoration-2 decoration-emerald-200 hover:decoration-emerald-400 transition-all font-black">BSI (TR-02102-2)</a>, fortlaufend unabhängig überprüft und mit Bestnoten validiert.
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
+                <p className="text-sm text-[#4A4468] leading-relaxed">
+                  <span className="font-black text-[#1F1939]">Isolierte Datenspeicherung:</span> Kryptographisch abgesicherte Speicherung von Datensätzen direkt auf Datenbankebene, strikt voneinander isoliert durch den Einsatz von Row-Level-Security (RLS).
+                </p>
+              </div>
+
+              <div className="flex gap-4">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
+                <p className="text-sm text-[#4A4468] leading-relaxed">
+                  <span className="font-black text-[#1F1939]">Verfügbarkeit & Netzwerksicherheit:</span> Georedundantes Hosting auf zertifizierten Tier-IV-Servern mit maximaler Ausfallsicherheit und umfassendem Schutz gegen DDoS- und Brute-Force-Angriffe über globale Gateways. Die gesamte Infrastruktur ist nach ISO 27001 und SOC2 Type II zertifiziert.
+                </p>
+              </div>
+            </div>
+
+            <button onClick={() => setShowSecurityModal(false)} className="w-full mt-10 py-5 bg-emerald-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-lg shadow-emerald-200">Verstanden</button>
           </div>
         </div>,
         document.body

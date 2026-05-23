@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, BarChart3, UserCircle2, Clock, MessageCircle, X, Phone, Settings, Mail, Music, Map, Camera as CameraIcon, Calendar
+  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, MessageSquare, 
+  Send, UserCircle2, ShieldCheck, Zap, Lock, Info, Clock, Check
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import ImageCropper from './ImageCropper';
-import { useDialog } from './DialogProvider';
-import { translateError } from '../lib/translations';
 import { useNavigate, useLocation } from 'react-router-dom';
-import confetti from 'canvas-confetti';
+import { supabase } from '../lib/supabase';
+import { useDialog } from './DialogProvider';
+import ImageCropper from './ImageCropper';
 
 interface IntroProps {
   onComplete: () => void;
@@ -18,20 +17,16 @@ interface IntroProps {
 }
 
 const ScramblingCode = () => {
-  const [code, setCode] = useState('XXXXXX');
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  
+  const [code, setCode] = useState('CB-123456');
   useEffect(() => {
+    const chars = 'ABCDEFGHJKLMNOPQRSTUVWXYZ0123456789';
     const interval = setInterval(() => {
-      let result = '';
-      for (let i = 0; i < 6; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      setCode(result);
-    }, 250);
+      let res = 'CB-';
+      for (let i = 0; i < 6; i++) res += chars[Math.floor(Math.random() * chars.length)];
+      setCode(res);
+    }, 120);
     return () => clearInterval(interval);
   }, []);
-
   return (
     <div className="w-48 h-20 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-[2rem] flex items-center justify-center border-2 border-white font-mono text-xl font-black text-[var(--secondary)]">
       <span className="mr-1">CB-</span>
@@ -41,30 +36,14 @@ const ScramblingCode = () => {
 };
 
 const MagicClock = () => {
-  const [stopped, setStopped] = useState(false);
-  const isMounted = useRef(true);
-  
+  const [time, setTime] = useState('02:59');
+  const [isAM, setIsAM] = useState(true);
   useEffect(() => {
-    isMounted.current = true;
-    const timer = setTimeout(() => {
-      if (isMounted.current) {
-        setStopped(true);
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.4 },
-          colors: ['#FF8A8A', '#A29BFE', '#FFD700'],
-          zIndex: 1000
-        });
-      }
-    }, 2000); 
-    
-    return () => {
-      isMounted.current = false;
-      clearTimeout(timer);
-    };
+    const interval = setInterval(() => {
+      setTime(prev => prev === '02:59' ? '03:00' : '02:59');
+    }, 1500);
+    return () => clearInterval(interval);
   }, []);
-
   return (
     <div className="relative w-24 h-24">
       <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center border-2 border-white relative z-10 overflow-hidden">
@@ -299,7 +278,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0">
             <div className="relative w-24 h-24 bg-purple-100 rounded-[2.5rem] flex items-center justify-center border-[2px] border-white overflow-hidden">
               <div className="flex items-center justify-center">
-                <HomeScreenGrid />
+                <Smartphone className="w-10 h-10 text-[var(--secondary)] animate-bounce" />
               </div>
             </div>
           </div>
@@ -363,6 +342,33 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           {step === 5 ? 'Jetzt loslegen!' : 'Weiter'}
         </button>
       </div>
+
+      {selectedImage && createPortal(<ImageCropper image={selectedImage} onCropComplete={handleCropComplete} onCancel={() => setSelectedImage(null)} />, document.body)}
+      {loading && createPortal(<div className="fixed inset-0 z-[1000] bg-white/60 backdrop-blur-sm flex items-center justify-center"><div className="w-12 h-12 border-4 border-purple-100 border-t-[var(--secondary)] rounded-full animate-spin" /></div>, document.body)}
+      
+      <style>{`
+        @keyframes pop {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.15); }
+        }
+        .animate-slide-in-right {
+          animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .animate-slide-out-left {
+          animation: slideOutLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutLeft {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(-100%); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

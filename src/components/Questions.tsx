@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send } from 'lucide-react';
+import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, Lock } from 'lucide-react';
 import { getDailyKey } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 
@@ -14,6 +14,76 @@ interface QuestionsProps {
   dashboardData?: any;
   onComplete: () => void;
 }
+
+const EncryptionOverlay = () => {
+  const [phase, setPhase] = useState(1);
+  const [scrambledText, setScrambledText] = useState("Meine Antworten");
+  
+  useEffect(() => {
+    // Sequence
+    const t1 = setTimeout(() => setPhase(2), 800);
+    const t2 = setTimeout(() => setPhase(3), 2200);
+    const t3 = setTimeout(() => setPhase(4), 3000);
+    const t4 = setTimeout(() => setPhase(5), 3800);
+    
+    return () => { [t1, t2, t3, t4].forEach(clearTimeout); };
+  }, []);
+
+  useEffect(() => {
+    if (phase === 2) {
+      const chars = "ABCDEFGHiJKLMNOPQRSTUVWXYZ0123456789$&#@?%";
+      const original = "Meine Antworten";
+      let iteration = 0;
+      const interval = setInterval(() => {
+        setScrambledText(original.split("").map((_, i) => {
+          if (i < iteration / 3) return original[i];
+          return chars[Math.floor(Math.random() * chars.length)];
+        }).join(""));
+        iteration++;
+        if (iteration > original.length * 3) clearInterval(interval);
+      }, 40);
+      return () => clearInterval(interval);
+    }
+  }, [phase]);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-sm overflow-hidden">
+      <div className={`relative flex items-center justify-center transition-all duration-1000 ease-in-out ${phase === 5 ? '-translate-y-[120vh] opacity-0' : 'translate-y-0 opacity-100'}`}>
+        
+        {/* The Letter */}
+        <div className={`absolute w-40 h-52 bg-white rounded-xl shadow-2xl border-2 border-purple-100 p-6 flex flex-col gap-3 transition-all duration-700 ease-in-out z-20 ${phase >= 3 ? 'scale-50 opacity-0 translate-y-12' : 'scale-100 opacity-100'}`}>
+          <div className="w-full h-2 bg-purple-50 rounded-full" />
+          <div className="w-3/4 h-2 bg-purple-50 rounded-full" />
+          <p className="mt-4 font-mono text-[10px] font-black text-[var(--secondary)] break-words leading-relaxed text-center">
+            {scrambledText}
+          </p>
+          <div className="mt-auto flex flex-col gap-2">
+            <div className="w-full h-1.5 bg-purple-50/50 rounded-full" />
+            <div className="w-full h-1.5 bg-purple-50/50 rounded-full" />
+          </div>
+        </div>
+
+        {/* The Envelope */}
+        <div className={`relative transition-all duration-700 ease-in-out ${phase >= 3 ? 'scale-110' : 'scale-90 opacity-60'}`}>
+          <Mail className={`w-48 h-48 text-[var(--secondary)] fill-white stroke-[1.5px] transition-all duration-500 ${phase >= 4 ? 'text-purple-400' : ''}`} />
+          
+          {/* The Lock */}
+          <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 delay-300 ${phase >= 4 ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
+            <div className="bg-white p-3 rounded-2xl shadow-xl border-2 border-purple-100 animate-float">
+              <Lock className="w-8 h-8 text-[var(--secondary)] fill-[var(--secondary)]/10" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+      
+      <div className="absolute bottom-24 left-0 right-0 text-center animate-pulse">
+        <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.4em]">Verschlüsselung aktiv...</span>
+      </div>
+    </div>,
+    document.body
+  );
+};
 
 // --- HELPERS ---
 const safeSplit = (val: any, delimiter: string) => {
@@ -53,6 +123,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const [selectedTot, setSelectedTot] = useState<string | null>(null);
   const [textVal, setTextVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEncrypting, setIsEncrypting] = useState(false);
   const [rankingOptions, setRankingOptions] = useState<string[]>([]);
   const [internalError, setInternalError] = useState<string | null>(null);
   
@@ -269,7 +340,14 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         if (myS) myS.current_streak = (myS.current_streak || 0) + 1;
       }
 
+      // TRIGGER ANIMATION
+      setIsEncrypting(true);
+      
+      // Wait for animation to finish (approx 4.5s total to be safe)
+      await new Promise(resolve => setTimeout(resolve, 4800));
+
       setMyResults(finalResults);
+      setIsEncrypting(false);
       setStep(3);
       // Delayed notification to parent to prevent sync render issues
       setTimeout(() => onComplete(), 200);
@@ -425,6 +503,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         onTouchStart={onSwipeStart} 
         onTouchEnd={onSwipeEnd}
       >
+        {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
           <div className="flex flex-col flex-1 h-full overflow-y-auto scrollbar-soft pt-4 pb-20">
@@ -473,30 +552,27 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 )}
               </div>
             </div>
-            {createPortal(
-              <div className="fixed bottom-[calc(100px+var(--sab))] left-6 right-6 max-w-[calc(448px-3rem)] mx-auto z-[95]">
-                <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-5 shadow-none disabled:opacity-40 font-black text-lg group">
-                  {isSubmitting ? (
-                    'Wird geteilt...'
-                  ) : (
-                    <>
-                      {step === 2 ? (
-                        <>
-                          Antworten senden
-                          <Send className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                        </>
-                      ) : (
-                        <>
-                          Weiter
-                          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
-                    </>
-                  )}
-                </button>
-              </div>,
-              document.body
-            )}
+            <div className="mt-auto pt-6 pb-6">
+              <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-5 shadow-none disabled:opacity-40 font-black text-lg group">
+                {isSubmitting ? (
+                  'Wird geteilt...'
+                ) : (
+                  <>
+                    {step === 2 ? (
+                      <>
+                        Antworten senden
+                        <Send className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                      </>
+                    ) : (
+                      <>
+                        Weiter
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         ) : (
           // --- RESULTS VIEW ---
