@@ -457,7 +457,7 @@ export default function Dashboard({
           />
         </div>
       )}
-      <div className="flex-1 flex flex-col pt-[52px] pb-20 sm:pb-32 overflow-y-auto scrollbar-soft">
+      <div className="flex-1 flex flex-col pt-[52px] pb-20 sm:pb-32 overflow-hidden">
         
         {/* Header: Avatars and Streaks */}
         <div className="flex flex-col items-center mb-3 sm:mb-6 shrink-0">
@@ -468,17 +468,17 @@ export default function Dashboard({
               <div className="relative z-20">
                 <div 
                   onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
-                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-[1.8rem] sm:rounded-[2.2rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.4rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
                 >
-                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-7 h-7 sm:w-8 sm:h-8 text-[var(--secondary)]" />)}
+                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--secondary)]" />)}
                 </div>
                 {/* Partner Flame Pill (Bottom Left, slightly overlapping) */}
                 <div 
                   onClick={() => hasPartner && setShowStreakModal('partner')}
-                  className={`absolute bottom-0 right-[85%] z-30 flex items-center gap-1 px-2 py-0.5 bg-orange-50 border-2 border-orange-100 rounded-full transition-all shadow-sm ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-100' : 'opacity-40'}`}
+                  className={`absolute bottom-0 right-[85%] z-30 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-100 rounded-full transition-all shadow-sm ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-100' : 'opacity-40'}`}
                 >
-                  <span className="text-[10px] font-black text-orange-600">{hasPartner ? (partnerStreak?.current_streak || 0) : 0}</span>
-                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[11px] font-black text-orange-600">{hasPartner ? (partnerStreak?.current_streak || 0) : 0}</span>
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
                 </div>
               </div>
 
@@ -486,17 +486,17 @@ export default function Dashboard({
               <div className="relative z-10">
                 <div 
                   onClick={() => userAvatar && setFullscreenImage(userAvatar)}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.8rem] sm:rounded-[2.2rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden shadow-md transition-transform active:scale-95 cursor-pointer"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.4rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden shadow-md transition-transform active:scale-95 cursor-pointer"
                 >
-                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-7 h-7 sm:w-8 sm:h-8 text-[var(--secondary)]" />)}
+                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--secondary)]" />)}
                 </div>
                 {/* User Flame Pill (Bottom Right, slightly overlapping) */}
                 <div 
                   onClick={() => setShowStreakModal('user')}
-                  className="absolute bottom-0 left-[85%] z-30 flex items-center gap-1 px-2 py-0.5 bg-orange-50 border-2 border-orange-100 rounded-full active:scale-95 cursor-pointer hover:bg-orange-100 transition-all shadow-sm"
+                  className="absolute bottom-0 left-[85%] z-30 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-100 rounded-full active:scale-95 cursor-pointer hover:bg-orange-100 transition-all shadow-sm"
                 >
-                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
-                  <span className="text-[10px] font-black text-orange-600">{myStreak?.current_streak || 0}</span>
+                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[11px] font-black text-orange-600">{myStreak?.current_streak || 0}</span>
                 </div>
               </div>
             </div>
@@ -517,9 +517,9 @@ export default function Dashboard({
         </div>
 
         {/* Greeting Section */}
-        <div className="mb-6 pl-1 pr-6 relative overflow-hidden">
-          <div className="float-right w-1/2 h-[1.1em] pointer-events-none" />
-          <h2 className="text-xl font-black text-[#1F1939] tracking-tight text-left leading-[1.1]">
+        <div className="mb-6 pl-1 pr-6 relative">
+          <div className="float-right w-1/2 h-[1.2em] pointer-events-none" />
+          <h2 className="text-xl font-black text-[#1F1939] tracking-tight text-left leading-[1.2]">
             {rawGreeting}, <span className="text-[var(--secondary)]">{userName}</span>{isQuestion ? '?' : '!'} ❤️
           </h2>
         </div>

@@ -15,6 +15,7 @@ import Questions from './components/Questions';
 import Profile from './components/Profile';
 import ResetPassword from './components/ResetPassword';
 import LoadingSkeleton from './components/LoadingSkeleton';
+import ScalingContainer from './components/ScalingContainer';
 import { getDailyKey } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider } from './components/DialogProvider';
@@ -46,7 +47,7 @@ function AppLayout({
   const showHeader = ['/profile', '/dashboard', '/questions', '/intro'].includes(location.pathname);
 
   return (
-    <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] select-none bg-[#F8F7FF] flex flex-col">
+    <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[#F8F7FF] flex flex-col">
       <div className="bg-aura" />
       
       {showHeader && (
@@ -78,12 +79,14 @@ function AppLayout({
       )}
 
       <main 
-        className={`flex-1 flex flex-col relative z-10 px-4 mx-auto w-full overflow-hidden ${isPublic ? 'max-w-4xl' : 'max-w-md'} ${profile.intro_completed ? 'pb-0' : 'pb-8'}`}
-        style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
+        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
+        style={{ paddingTop: 'calc(0.5rem + var(--sat))' }}
       >
-        <div className="flex-1 flex flex-col overflow-hidden relative">
-          {children}
-        </div>
+        <ScalingContainer targetWidth={400} align="top">
+          <div className="flex-1 flex flex-col relative w-full h-full px-4">
+            {children}
+          </div>
+        </ScalingContainer>
       </main>
 
       {/* Blurry fade transition at the bottom */}
@@ -437,7 +440,16 @@ export default function App() {
           <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="register" />} />
         </Route>
         
-        <Route path="/reset-password" element={<div className="h-screen w-screen relative bg-[#F8F7FF] overflow-y-auto pt-12 px-4"><div className="bg-aura" /><ResetPassword onComplete={() => navigate('/signin')} /></div>} />
+        <Route path="/reset-password" element={
+          <div className="h-screen w-screen relative bg-[#F8F7FF] overflow-hidden flex flex-col">
+            <div className="bg-aura" />
+            <ScalingContainer targetWidth={400}>
+              <div className="flex-1 overflow-y-auto pt-12 px-4">
+                <ResetPassword onComplete={() => navigate('/signin')} />
+              </div>
+            </ScalingContainer>
+          </div>
+        } />
         
         {/* Protected Routes Wrapper */}
         {session && profile ? (

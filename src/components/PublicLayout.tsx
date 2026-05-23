@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { ShieldCheck, LogIn } from 'lucide-react';
 
+import ScalingContainer from './ScalingContainer';
+
 export default function PublicLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,13 +35,14 @@ export default function PublicLayout() {
   }, []);
 
   const isAuthPage = ['/signin', '/signup'].includes(location.pathname);
+  const isLandingPage = location.pathname === '/';
 
   return (
     <div className="h-[100svh] w-screen overflow-hidden bg-[#F8F7FF] text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative">
       <div className="bg-aura" />
 
       {/* Header */}
-      <header className="max-w-md mx-auto pt-12 pb-4 text-center select-none w-full relative shrink-0 z-20">
+      <header className={`mx-auto pt-12 pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 max-w-md`}>
         {!isAuthPage && (
           <div className="absolute top-4 right-4">
             <button 
@@ -80,12 +83,20 @@ export default function PublicLayout() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-md mx-auto flex-1 flex flex-col justify-center w-full px-4 overflow-hidden relative z-10">
-        <Outlet />
+      <main className={`mx-auto flex-1 flex flex-col w-full relative z-10 max-w-md px-4 ${isLandingPage ? 'overflow-y-auto scrollbar-soft' : ''}`}>
+        {isLandingPage ? (
+          <div className="pt-0 pb-0">
+            <Outlet />
+          </div>
+        ) : (
+          <div className="w-full flex-1 flex flex-col pt-0 pb-4">
+            <Outlet />
+          </div>
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="pb-8 pt-4 w-full text-center z-10 shrink-0">
+      <footer className="pb-2 pt-2 w-full text-center z-10 shrink-0">
         <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
           <a 
             href="https://github.com/bene-s-dev" 

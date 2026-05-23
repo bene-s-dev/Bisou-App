@@ -33,7 +33,7 @@ const ScramblingCode = () => {
   }, []);
 
   return (
-    <div className="w-48 h-20 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-[2rem] flex items-center justify-center shadow-inner border-2 border-white font-mono text-xl font-black text-[var(--secondary)]">
+    <div className="w-48 h-20 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-[2rem] flex items-center justify-center border-2 border-white font-mono text-xl font-black text-[var(--secondary)]">
       <span className="mr-1">CB-</span>
       <span className="tracking-widest">{code}</span>
     </div>
@@ -67,7 +67,7 @@ const MagicClock = () => {
 
   return (
     <div className="relative w-24 h-24">
-      <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center shadow-inner border-2 border-white relative z-10 overflow-hidden">
+      <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center border-2 border-white relative z-10 overflow-hidden">
         <div className="relative w-12 h-12 border-2 border-orange-200 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm">
           <div className={'absolute w-1 h-4 bg-orange-400 rounded-full origin-bottom transition-all duration-[2000ms] ' + (stopped ? 'rotate-90' : 'animate-[spin_1.5s_linear_infinite]')} style={{ bottom: '50%' }} />
           <div className={'absolute w-1 h-5 bg-orange-300 rounded-full origin-bottom transition-all duration-[2000ms] ' + (stopped ? 'rotate-0' : 'animate-[spin_0.4s_linear_infinite]')} style={{ bottom: '50%' }} />
@@ -119,8 +119,8 @@ const TypingChatBubble = () => {
   }, [phraseIndex]);
 
   return (
-    <div className="w-24 h-24 bg-gradient-to-br from-rose-50 to-pink-50 rounded-[2.5rem] flex items-center justify-center shadow-inner border-2 border-white relative overflow-hidden">
-      <div className="relative bg-white p-3 rounded-2xl shadow-sm border border-rose-100 min-w-[80px] min-h-[44px] flex items-center justify-center">
+    <div className="w-24 h-24 bg-gradient-to-br from-rose-50 to-pink-50 rounded-[2.5rem] flex items-center justify-center border-2 border-white relative overflow-hidden">
+      <div className="relative bg-white p-3 rounded-2xl border border-rose-100 min-w-[80px] min-h-[44px] flex items-center justify-center">
         <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-tight text-center px-1">{text}<span className="animate-pulse">|</span></span>
       </div>
     </div>
@@ -182,7 +182,7 @@ const AnimatedFlame = () => {
     return () => { cancelAnimationFrame(animationFrameId); clearTimeout(timeoutId); };
   }, []);
   return (
-    <div className="flex items-center gap-3.5 px-6 py-3 bg-white border-[2px] border-white rounded-full shadow-[inset_0_2px_6px_rgba(249,115,22,0.15)] active:scale-95 transition-all select-none scale-110 mb-8">
+    <div className="flex items-center gap-3.5 px-6 py-3 bg-white border-[2px] border-white rounded-full active:scale-95 transition-all select-none scale-110 mb-8">
       <Flame className="w-9 h-9 text-orange-500 fill-orange-500 shrink-0" />
       <span className="text-3xl font-black text-orange-600 tracking-tight tabular-nums min-w-[65px] text-left">{count}</span>
     </div>
@@ -202,7 +202,6 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [displayState, setDisplayState] = useState({ current: step, previous: null as number | null });
 
-  // Quick fix: define isIOS here to be accessible in renderStepContent
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
 
   if (step !== displayState.current) setDisplayState({ current: step, previous: displayState.current });
@@ -237,109 +236,85 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     const animationClass = isOutgoing ? 'animate-slide-out-left' : 'animate-slide-in-right';
     switch (s) {
       case 0: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-4 min-h-0 " + animationClass}>
-          <div className="h-36 sm:h-44 flex items-center justify-center mb-4 shrink-0">
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-4 min-h-0 " + animationClass}>
+          <div className="h-36 sm:h-44 flex items-center justify-center mb-6 shrink-0">
             <div className="relative">
-              <div className="w-32 h-32 rounded-[2.5rem] bg-white flex items-center justify-center border-2 border-white shadow-xl overflow-hidden">
+              <div className="w-32 h-32 rounded-[2.5rem] bg-white flex items-center justify-center border-2 border-white overflow-hidden">
                 {avatarPreview ? <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" /> : <UserCircle2 className="w-16 h-16 text-purple-100" />}
               </div>
-              <label className="absolute -right-2 -bottom-2 w-12 h-12 rounded-full bg-[var(--secondary)] text-white flex items-center justify-center shadow-lg border-4 border-[#F8F7FF] cursor-pointer">
+              <label className="absolute -right-2 -bottom-2 w-12 h-12 rounded-full bg-[var(--secondary)] text-white flex items-center justify-center border-4 border-[#F8F7FF] cursor-pointer">
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => { if(e.target.files) { const reader = new FileReader(); reader.onload = () => setSelectedImage(reader.result as string); reader.readAsDataURL(e.target.files[0]); } }} />
                 <Camera className="w-5 h-5" />
               </label>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
-                {avatarPreview 
-                  ? "Tolles Bild! Das passt perfekt zu deinem Profil." 
-                  : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
-              </p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          <div className="pb-8">
+            <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
+              {avatarPreview 
+                ? "Tolles Bild! Das passt perfekt zu deinem profil." 
+                : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
+            </p>
           </div>
         </div>
       );
       case 1: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><ScramblingCode /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner finden</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Bisou ist für zwei gemacht. Tauscht nach der Einführung eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><ScramblingCode /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Partner verbinden</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Bisou ist für zwei gemacht. Tauscht nach dem Intro eure persönlichen Codes aus, um eure Konten sicher miteinander zu verknüpfen.</p>
           </div>
         </div>
       );
       case 2: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><MagicClock /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><MagicClock /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
           </div>
         </div>
       );
       case 3: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><TypingChatBubble /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><TypingChatBubble /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Gemeinsam teilen</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Erst wenn ihr beide fertig seid, könnt ihr die Antworten von eurem Bisou-Partner sehen.</p>
           </div>
         </div>
       );
       case 4: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0"><AnimatedFlame /></div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0"><AnimatedFlame /></div>
+          <div className="pb-8">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Täglich reinschauen</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Baut eure Serie auf und sammelt tägliche Flammen. Antworten werden in Statistiken und Einblicken in eurem Profil festgehalten.</p>
           </div>
         </div>
       );
       case 5: return (
-        <div className={"flex-1 flex flex-col items-center pt-10 sm:pt-20 text-center px-6 min-h-0 " + animationClass}>
-          <div className="h-32 sm:h-44 flex items-center justify-center mb-4 shrink-0">
-            <div className="relative w-24 h-24 bg-purple-100 rounded-[2.5rem] flex items-center justify-center border-[2px] border-white shadow-[inset_0_2px_6px_rgba(162,155,254,0.4)] overflow-hidden">
+        <div className={"flex-1 flex flex-col items-center justify-center text-center px-6 min-h-0 " + animationClass}>
+          <div className="h-32 sm:h-44 flex items-center justify-center mb-6 shrink-0">
+            <div className="relative w-24 h-24 bg-purple-100 rounded-[2.5rem] flex items-center justify-center border-[2px] border-white overflow-hidden">
               <div className="flex items-center justify-center">
                 <HomeScreenGrid />
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto scrollbar-hide min-h-0 relative">
-            <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none z-10" />
-            <div className="pb-2 flex flex-col items-center">
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mb-6 mx-auto">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
-              {!isIntroOnly && (deferredPrompt || isIOS) && (
-                <button 
-                  onClick={onInstall}
-                  className="bg-[var(--secondary)] text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-purple-500/30 flex items-center gap-2 active:scale-95 transition-transform"
-                >
-                  <Download className="w-5 h-5" />
-                  App installieren
-                </button>
-              )}
-            </div>
-            <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none z-10" />
+          <div className="pb-8 flex flex-col items-center">
+            <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mb-6 mx-auto">Installiere die Bisou-App für einen blitzschnellen Zugriff direkt von deinem Startbildschirm.</p>
+            {!isIntroOnly && (deferredPrompt || isIOS) && (
+              <button 
+                onClick={onInstall}
+                className="bg-[var(--secondary)] text-white px-8 py-3 rounded-full font-bold flex items-center gap-2 active:scale-95 transition-transform"
+              >
+                <Download className="w-5 h-5" />
+                App installieren
+              </button>
+            )}
           </div>
         </div>
       );
@@ -348,7 +323,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   };
 
   return (
-    <div className="flex-1 flex flex-col pt-6 pb-6 overflow-hidden h-full bg-transparent relative">
+    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden h-full bg-[#F8F7FF] relative">
       <style>{`
         @keyframes pop {
           0% { transform: scale(0); opacity: 0; }
@@ -356,14 +331,34 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           80% { transform: scale(1); opacity: 1; }
           100% { transform: scale(0); opacity: 0; }
         }
+        .animate-slide-in-right {
+          animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .animate-slide-out-left {
+          animation: slideOutLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutLeft {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(-100%); opacity: 0; }
+        }
       `}</style>
-      
+      <div className="bg-aura" />
       {/* Step Content with Animation Wrapper */}
-      <div className="flex-1 flex flex-col relative overflow-hidden">
-        <div key={'curr-' + displayState.current} className="flex-1 flex flex-col">{renderStepContent(displayState.current, false)}</div>
-        {displayState.previous !== null && <div key={'prev-' + displayState.previous} className="absolute inset-0 flex flex-col z-10 pointer-events-none">{renderStepContent(displayState.previous, true)}</div>}
+      <div className="flex-1 flex flex-col relative overflow-hidden w-full max-w-md">
+        <div key={'curr-' + displayState.current} className="flex-1 flex flex-col justify-center">{renderStepContent(displayState.current, false)}</div>
+        {displayState.previous !== null && <div key={'prev-' + displayState.previous} className="absolute inset-0 flex flex-col z-10 pointer-events-none justify-center">{renderStepContent(displayState.previous, true)}</div>}
       </div>
-      <div className="px-6 mt-auto pt-3 sm:pt-6">
+      <div className="px-6 pb-8 w-full max-w-md shrink-0 z-20">
+        <div className="quiz-prog-dots mb-8">
+          {[0,1,2,3,4,5].map(i => <div key={i} className={`quiz-prog-dot ${i === step ? 'quiz-prog-dot-active' : ''}`} />)}
+        </div>
         <button className="btn-static py-4 sm:py-5 text-lg font-black group shadow-none" onClick={() => step < 5 ? setStep(step + 1) : onComplete()}>
           {step === 5 ? 'Jetzt loslegen!' : 'Weiter'}
         </button>
