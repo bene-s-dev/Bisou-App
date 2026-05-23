@@ -96,32 +96,34 @@ export default function PublicLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="pb-2 pt-2 w-full text-center z-10 shrink-0">
-        <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
-          <a 
-            href="https://github.com/bene-s-dev" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="underline hover:text-[var(--secondary)] transition-colors"
-          >
-            Benedikt S.
-          </a> &copy; 2026
-        </p>
-        <div className="flex justify-center gap-6 mt-2">
-          <button 
-            onClick={() => setShowPrivacyModal(true)}
-            className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
-          >
-            Datenschutz
-          </button>
-          <button 
-            onClick={() => setShowImpressumModal(true)}
-            className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
-          >
-            Impressum
-          </button>
-        </div>
-      </footer>
+      {!isLandingPage && (
+        <footer className="pb-2 pt-2 w-full text-center z-10 shrink-0">
+          <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
+            <a 
+              href="https://github.com/bene-s-dev" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="underline hover:text-[var(--secondary)] transition-colors"
+            >
+              Benedikt S.
+            </a> &copy; 2026
+          </p>
+          <div className="flex justify-center gap-6 mt-2">
+            <button 
+              onClick={() => setShowPrivacyModal(true)}
+              className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
+            >
+              Datenschutz
+            </button>
+            <button 
+              onClick={() => setShowImpressumModal(true)}
+              className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
+            >
+              Impressum
+            </button>
+          </div>
+        </footer>
+      )}
 
       {/* Modals */}
       {showPrivacyModal && createPortal(

@@ -87,17 +87,3 @@ export default function LandingPage() {
     </section>
   );
 }
-
-      <style>{`
-        @keyframes ticker {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-ticker {
-          animation: ticker 30s linear infinite;
-          width: fit-content;
-        }
-      `}</style>
-    </section>
-  );
-}
