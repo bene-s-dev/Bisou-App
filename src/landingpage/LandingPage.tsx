@@ -10,14 +10,14 @@ export default function LandingPage() {
     { icon: <Heart className="w-5 h-5 text-red-500" />, text: "Sagt Tschüss zu Doom-Scrollen: Diese App stärkt eure Beziehung" },
     { icon: <MessageCircle className="w-5 h-5 text-blue-500" />, text: "Jeden Tag neue, spannende Fragen" },
     { icon: <MessageCircle className="w-5 h-5 text-purple-500" />, text: "Antworten erst sichtbar, wenn beide geantwortet haben" },
-    { icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, text: "Deine Daten werden auf NATO-Niveau verschlüsselt und nach strengen BSI-Richtlinien übertragen (unabhängig validiert mit dem Höchstprädikat A+).¹" },
+    { icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, text: "Deine Daten werden auf NATO-Niveau verschlüsselt und nach strengen BSI-Richtlinien übertragen." },
   ];
 
   const tickerItems = [
-    "Für immer kostenlos²",
+    "Für immer kostenlos",
     "Personen aus deinem privaten Umfeld verwenden Bisou",
     "Privacy by Design: Keine Tracker, keine Cookies.",
-    "Für immer kostenlos²",
+    "Für immer kostenlos",
     "Personen aus deinem privaten Umfeld verwenden Bisou",
     "Privacy by Design: Keine Tracker, keine Cookies."
   ];
@@ -74,17 +74,19 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* Footer at the bottom */}
-      <footer className="w-full py-0 mt-2">
-        <div className="space-y-1 opacity-60">
-          <p className="text-[7px] font-medium leading-relaxed text-[var(--muted)] text-center italic">
-            ¹ Datenverbindung zum Server standardmäßig geschützt mittels TLS 1.2/1.3 inkl. Perfect Forward Secrecy & AES-256-Bit-Verschlüsselung.
-          </p>
-          <p className="text-[7px] font-medium leading-relaxed text-[var(--muted)] text-center italic">
-            ² Außer das ändert sich.
-          </p>
-        </div>
-      </footer>
+      <style>{`
+        @keyframes ticker {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-ticker {
+          animation: ticker 30s linear infinite;
+          width: fit-content;
+        }
+      `}</style>
+    </section>
+  );
+}
 
       <style>{`
         @keyframes ticker {
