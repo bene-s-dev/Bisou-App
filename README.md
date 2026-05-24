@@ -16,7 +16,7 @@
 
 ## ✨ Was ist Bisou?
 
-Bisou ist eine liebevoll gestaltete Web-App (PWA) für Paare, die jeden Tag eine kleine, gemeinsame Routine schaffen möchten. 
+Bisou ist eine liebevoll gestaltete App für Paare, die jeden Tag eine kleine, gemeinsame Routine schaffen möchten. 
 Täglich gibt es drei neue Fragen für euch beide. Aber pssst: Die Antworten des jeweils anderen seht ihr erst, wenn ihr beide eure eigenen Antworten abgeschickt habt!
 
 ### 🚀 Features
