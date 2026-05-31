@@ -160,17 +160,17 @@ html, body {
   
   .status-green-dot { 
     @apply bg-[var(--accent-green)]; 
-    animation: dot-pulse-green 2.5s ease-in-out infinite;
+    animation: dot-pulse-green 2s ease-in-out infinite;
   }
   
   .status-red-dot { 
     @apply bg-[var(--primary)]; 
-    animation: dot-pulse-red 2.5s ease-in-out infinite;
+    animation: dot-pulse-red 2s ease-in-out infinite;
   }
   
   .status-orange-dot { 
     @apply bg-orange-400; 
-    animation: dot-pulse-orange 2.5s ease-in-out infinite;
+    animation: dot-pulse-orange 2s ease-in-out infinite;
   }
 
   .status-pill { 
@@ -187,82 +187,82 @@ html, body {
     background: #fff1f1; 
     color: var(--primary); 
     border: 1px solid rgba(255, 138, 138, 0.1);
-    animation: ripple-red 2.5s ease-in-out infinite;
+    animation: ripple-red 2s ease-in-out infinite;
   }
 
   .pill-orange { 
     background: #fff7ed; 
     color: #f97316; 
     border: 1px solid rgba(249, 115, 22, 0.1);
-    animation: ripple-orange 2.5s ease-in-out infinite;
+    animation: ripple-orange 2s ease-in-out infinite;
   }
 
   @keyframes dot-pulse-green {
     0% {
-      transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.65), 0 0 0 0 rgba(0, 184, 148, 0.3);
+      transform: scale(0.96);
+      box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.75);
     }
-    50% {
-      transform: scale(1.22);
-      box-shadow: 0 0 0 5px rgba(0, 184, 148, 0.3), 0 0 0 10px rgba(0, 184, 148, 0.15);
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 5px rgba(0, 184, 148, 0);
     }
     100% {
-      transform: scale(1);
-      box-shadow: 0 0 0 10px rgba(0, 184, 148, 0), 0 0 0 16px rgba(0, 184, 148, 0);
+      transform: scale(0.96);
+      box-shadow: 0 0 0 0 rgba(0, 184, 148, 0);
     }
   }
 
   @keyframes dot-pulse-red {
     0% {
-      transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.65), 0 0 0 0 rgba(255, 138, 138, 0.3);
+      transform: scale(0.96);
+      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.75);
     }
-    50% {
-      transform: scale(1.22);
-      box-shadow: 0 0 0 5px rgba(255, 138, 138, 0.3), 0 0 0 10px rgba(255, 138, 138, 0.15);
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 5px rgba(255, 138, 138, 0);
     }
     100% {
-      transform: scale(1);
-      box-shadow: 0 0 0 10px rgba(255, 138, 138, 0), 0 0 0 16px rgba(255, 138, 138, 0);
+      transform: scale(0.96);
+      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0);
     }
   }
 
   @keyframes dot-pulse-orange {
     0% {
-      transform: scale(1);
-      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.65), 0 0 0 0 rgba(249, 115, 22, 0.3);
+      transform: scale(0.96);
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.75);
     }
-    50% {
-      transform: scale(1.22);
-      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.3), 0 0 0 10px rgba(249, 115, 22, 0.15);
+    70% {
+      transform: scale(1);
+      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0);
     }
     100% {
-      transform: scale(1);
-      box-shadow: 0 0 0 10px rgba(249, 115, 22, 0), 0 0 0 16px rgba(249, 115, 22, 0);
+      transform: scale(0.96);
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
     }
   }
 
   @keyframes ripple-red {
     0% {
-      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.5), 0 0 0 0 rgba(255, 138, 138, 0.25);
+      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.5);
     }
-    50% {
-      box-shadow: 0 0 0 5px rgba(255, 138, 138, 0.25), 0 0 0 10px rgba(255, 138, 138, 0.1);
+    70% {
+      box-shadow: 0 0 0 5px rgba(255, 138, 138, 0);
     }
     100% {
-      box-shadow: 0 0 0 10px rgba(255, 138, 138, 0), 0 0 0 15px rgba(255, 138, 138, 0);
+      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0);
     }
   }
 
   @keyframes ripple-orange {
     0% {
-      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5), 0 0 0 0 rgba(249, 115, 22, 0.25);
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5);
     }
-    50% {
-      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.25), 0 0 0 10px rgba(249, 115, 22, 0.1);
+    70% {
+      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0);
     }
     100% {
-      box-shadow: 0 0 0 10px rgba(249, 115, 22, 0), 0 0 0 15px rgba(249, 115, 22, 0);
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
     }
   }
 }

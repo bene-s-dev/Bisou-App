@@ -483,7 +483,7 @@ export default function Profile({
     switch (activeTab) {
       case 'partner':
         return (
-          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full" key="partner">
+          <div className="flex flex-col items-center gap-2 animate-entrance w-full" key="partner">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-center mb-1">
               {profile?.partner_id ? 'BISOU-PARTNER' : 'BISOU-PARTNER VERBINDEN'}
             </h2>
@@ -509,11 +509,11 @@ export default function Profile({
                   
                   <div className="grid grid-cols-2 gap-2">
                     <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
-                      <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Zusammen seit</span>
+                      <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou verbunden seit:</span>
                       <span className="text-[11px] font-black text-[var(--secondary)]">{getDaysConnected()} Tagen</span>
                     </div>
                     <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
-                      <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Mit dabei seit</span>
+                      <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou seit:</span>
                       <span className="text-[11px] font-black text-[var(--secondary)]">
                         {partnerDetails.createdAt ? new Date(partnerDetails.createdAt).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' }) : '-'}
                       </span>
@@ -584,7 +584,7 @@ export default function Profile({
         );
       case 'notifications':
         return (
-          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full" key="notifications">
+          <div className="flex flex-col items-center gap-2 animate-entrance w-full" key="notifications">
              <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">Mitteilungen</h2>
              <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col items-center text-center gap-4 shadow-sm w-full">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
@@ -619,7 +619,7 @@ export default function Profile({
         const isAndroidLocalInstall = /android/.test(navigator.userAgent.toLowerCase());
         
         return (
-          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full max-w-md mx-auto" key="install">
+          <div className="flex flex-col items-center gap-2 animate-entrance w-full max-w-md mx-auto" key="install">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">App Installation</h2>
             <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col items-center text-center gap-4 shadow-sm w-full">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
@@ -677,7 +677,7 @@ export default function Profile({
         );
       case 'app-info':
         return (
-          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-in fade-in zoom-in-95 duration-300" key="app-info">
+          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="app-info">
             {[
               { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
               { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
@@ -707,7 +707,7 @@ export default function Profile({
         );
       default:
         return (
-          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-in fade-in zoom-in-95 duration-300" key="main">
+          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="main">
             {[
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },

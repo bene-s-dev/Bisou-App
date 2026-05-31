@@ -45,13 +45,11 @@ function AppLayout({
 
   const isPublic = location.pathname === '/';
   const showHeader = ['/profile', '/dashboard', '/questions', '/intro', '/intro-replay'].includes(location.pathname);
-
   return (
     <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[#F8F7FF] flex flex-col">
       <div className="bg-aura" />
-
       <main 
-        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
+        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
         style={{ paddingTop: 'calc(0.5rem + var(--sat))' }}
       >
         <ScalingContainer targetWidth={400} align="top">

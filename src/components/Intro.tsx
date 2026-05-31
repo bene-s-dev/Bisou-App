@@ -412,7 +412,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         <div key={'curr-' + displayState.current} className="flex-1 flex flex-col justify-center">{renderStepContent(displayState.current, false)}</div>
         {displayState.previous !== null && <div key={'prev-' + displayState.previous} className="absolute inset-0 flex flex-col z-10 pointer-events-none justify-center">{renderStepContent(displayState.previous, true)}</div>}
       </div>
-      <div className="px-6 pb-4 w-full max-w-md shrink-0 z-20">
+      <div className="px-6 w-full max-w-md shrink-0 z-20" style={{ paddingBottom: 'calc(1.5rem + var(--sab))' }}>
         <div className="quiz-prog-dots mb-5">
           {(isReplay ? [1,2,3,4,5] : [0,1,2,3,4,5]).map(i => <div key={i} className={`quiz-prog-dot ${i === step ? 'quiz-prog-dot-active' : ''}`} />)}
         </div>
