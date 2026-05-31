@@ -38,7 +38,10 @@ export default function LandingPage() {
         </div>
 
         {/* Feature List (Vertical List) */}
-        <div className="w-full flex flex-col gap-2 sm:gap-3 px-2 sm:px-6 flex-1 min-h-0 justify-center">
+        <div className="w-full flex flex-col gap-2 sm:gap-3 px-2 sm:px-6 shrink-0">
+          <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.15em] mb-2.5 px-2 text-left">
+            Bisou ist jetzt mit diesen Funktionen verfügbar:
+          </p>
           {features.map((f, i) => (
             <div 
               key={i} 
@@ -55,7 +58,7 @@ export default function LandingPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="flex flex-col items-center gap-2 sm:gap-3 w-full shrink-0">
+        <div className="flex-1 flex flex-col items-center justify-center gap-2 sm:gap-3 w-full min-h-0">
           <button 
             onClick={() => navigate('/signup')} 
             className="btn-primary py-3 sm:py-4 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
