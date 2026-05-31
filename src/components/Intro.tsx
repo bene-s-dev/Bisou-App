@@ -49,11 +49,11 @@ const MagicClock = ({ onStop }: { onStop?: (el: HTMLElement) => void }) => {
     const spinDuration = 2400; // total animation time in ms
 
     // Target positions: hour at 90° (3 o'clock), minute at 360° (12 o'clock / 0 o'clock)
-    // To make it look like a real time-lapse, the minute hand must spin EXACTLY 12 times faster than the hour hand!
-    // Let's have the hour hand make 2 full rotations plus the 90° (810° total target)
-    // The minute hand will make exactly 27 full rotations (810° * 12 = 9720° total target)
-    const hourTarget = 90 + 2 * 360; // 810 degrees
-    const minuteTarget = hourTarget * 12; // 9720 degrees
+    // To make it look like a real time-lapse from 12:00 to 03:00:
+    // The hour hand goes from 0° to 90° (3 hours).
+    // The minute hand makes exactly 3 full rotations (3 * 360 = 1080°).
+    const hourTarget = 90; // 3 o'clock
+    const minuteTarget = 3 * 360; // 1080 degrees
 
     // Smooth Ease-In-Out Cubic profile for time-lapse acceleration and deceleration
     const easeInOutCubic = (t: number): number => 
@@ -111,7 +111,7 @@ const MagicClock = ({ onStop }: { onStop?: (el: HTMLElement) => void }) => {
           {/* Minute Hand – longer, thinner, centered perfectly */}
           <div
             ref={minuteRef}
-            className="absolute w-[2px] h-5.5 bg-orange-400 rounded-full"
+            className="absolute w-[2px] h-[22px] bg-orange-400 rounded-full"
             style={{ 
               bottom: '50%', 
               left: 'calc(50% - 1px)', 
@@ -187,13 +187,6 @@ const AnimatedPhoneInstall = () => {
             <Download className="w-5 h-5 text-[var(--secondary)] animate-bounce" style={{ animationDuration: '1.5s' }} />
           </div>
         </div>
-      </div>
-      {/* Sparkle particles */}
-      <div className="absolute -top-1 -right-1 w-3 h-3 text-[var(--secondary)] animate-ping" style={{ animationDuration: '2s' }}>
-        <Sparkles className="w-3 h-3" />
-      </div>
-      <div className="absolute -bottom-1 -left-1 w-2.5 h-2.5 text-purple-300 animate-ping" style={{ animationDuration: '3s', animationDelay: '0.5s' }}>
-        <Sparkles className="w-2.5 h-2.5" />
       </div>
     </div>
   );
@@ -280,7 +273,9 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         particleCount: 150,
         spread: 100,
         origin: { x, y },
-        colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#8b5cf6', '#c4b5fd']
+        colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#8b5cf6', '#c4b5fd'],
+        gravity: 2.5,
+        ticks: 250
       });
     }
   }, []);
@@ -355,7 +350,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           <div className="flex flex-col items-center">
             <div className="h-36 flex items-center justify-center mb-6 shrink-0"><MagicClock onStop={handleClockStop} /></div>
             <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">Tägliche Magie</h2>
-            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jeden Morgen um 3 Uhr nachts kreiert Gemini drei Fragen für euch. Sie warten darauf, von euch entdeckt zu werden.</p>
+            <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">Jede Nacht werden drei Fragen für euch erstellt. Sie warten darauf, von euch entdeckt zu werden.</p>
           </div>
         </div>
       );
@@ -484,7 +479,6 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           to { transform: translateX(-100%); opacity: 0; }
         }
       `}</style>
-      <div className="bg-aura" />
       <canvas ref={confettiCanvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-10" />
       {/* Step Content with Animation Wrapper */}
       <div className="flex-1 flex flex-col relative overflow-hidden w-full max-w-md z-20">

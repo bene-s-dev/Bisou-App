@@ -60,7 +60,7 @@ body.modal-open #root {
 }
 
 .bg-aura {
-  position: absolute; inset: 0; z-index: -1; overflow: hidden; 
+  position: absolute; inset: 0; z-index: 0; overflow: hidden; 
   background: radial-gradient(circle at top right, #FFF0F0 0%, transparent 45%),
               radial-gradient(circle at bottom left, #F0F3FF 0%, transparent 45%),
               #F8F7FF; 
@@ -69,7 +69,7 @@ body.modal-open #root {
 .bg-public-gradient {
   position: absolute; 
   inset: 0; 
-  z-index: -1; 
+  z-index: 0; 
   overflow: hidden; 
   background: linear-gradient(135deg, #FFE3E3 0%, #F4F1FF 50%, #E2DDFF 100%);
 }

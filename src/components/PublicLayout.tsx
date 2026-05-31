@@ -92,8 +92,7 @@ export default function PublicLayout() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="pb-2 pt-2 w-full text-center z-10 shrink-0">
+      <footer className="pb-2 pt-2 w-full text-center relative z-10 shrink-0">
         <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
           Bisou-App &bull; Benedikt S. &copy; 2026
         </p>

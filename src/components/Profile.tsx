@@ -90,7 +90,6 @@ export default function Profile({
   const devTimeoutRef = useRef<any>(null);
 
   const [showAboutAppModal, setShowAboutAppModal] = useState(false); // New state for About App modal
-  const [modalTouchStart, setModalTouchStart] = useState<number | null>(null);
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
   const isIOSLocal = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
@@ -683,9 +682,9 @@ export default function Profile({
                   {pushPermission === 'granted' && pushEnabled ? <Bell className="w-6 h-6" /> : <BellOff className="w-6 h-6" />}
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-black text-[#1F1939]">Push-Benachrichtigungen</h3>
+                  <h3 className="text-sm font-black text-[#1F1939]">Benachrichtigungen</h3>
                   <p className="text-[10px] font-bold text-[#4A4468] leading-tight opacity-70">
-                    Lass dich benachrichtigen, wenn dein Partner geantwortet hat.
+                    Lass dich benachrichtigen,<br /> wenn dein Bisou-Partner geantwortet hat.
                   </p>
                 </div>
 
@@ -878,7 +877,7 @@ export default function Profile({
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
               { id: 'install', label: isPWA ? 'App installiert' : 'App installieren', icon: Smartphone },
-              { id: 'app-info', label: 'Info', icon: Info }
+              { id: 'app-info', label: 'Info & Mehr', icon: Info }
             ].map(item => {
               const isDisabled = false;
               const isPwaInstalled = item.id === 'install' && isPWA;
@@ -941,14 +940,6 @@ export default function Profile({
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
           <div className="flex items-center justify-center w-full relative h-[40px]">
             {/* The heading and back button were removed per request, preserving height to avoid shifting */}
-            {activeTab !== 'main' && (
-              <button 
-                onClick={() => setActiveTab('main')}
-                className="absolute left-4 p-2 rounded-full bg-white border border-purple-100 text-[var(--secondary)] active:scale-95 transition-all shadow-sm z-50 hover:bg-purple-50"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
           </div>
 
           {/* Profile Avatar */}
@@ -1062,13 +1053,6 @@ export default function Profile({
           <div 
             className="modal-content p-8 h-[calc(100svh-32px)] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
             onClick={e => e.stopPropagation()}
-            onTouchStart={(e) => setModalTouchStart(e.targetTouches[0].clientX)}
-            onTouchEnd={(e) => {
-              if (modalTouchStart !== null && e.changedTouches[0].clientX - modalTouchStart > 75) {
-                setShowAboutAppModal(false);
-                setModalTouchStart(null);
-              }
-            }}
           >
              <button onClick={() => setShowAboutAppModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
                <X className="w-4 h-4 text-[var(--secondary)]" />
@@ -1263,13 +1247,6 @@ export default function Profile({
           <div 
             className="modal-content p-8 h-[calc(100svh-32px)] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
             onClick={e => e.stopPropagation()}
-            onTouchStart={(e) => setModalTouchStart(e.targetTouches[0].clientX)}
-            onTouchEnd={(e) => {
-              if (modalTouchStart !== null && e.changedTouches[0].clientX - modalTouchStart > 75) {
-                setShowServices(false);
-                setModalTouchStart(null);
-              }
-            }}
           >
             <button onClick={() => setShowServices(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
               <X className="w-4 h-4 text-[var(--secondary)]" />
@@ -1329,13 +1306,6 @@ export default function Profile({
           <div 
             className="modal-content p-8 h-[calc(100svh-32px)] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
             onClick={e => e.stopPropagation()}
-            onTouchStart={(e) => setModalTouchStart(e.targetTouches[0].clientX)}
-            onTouchEnd={(e) => {
-              if (modalTouchStart !== null && e.changedTouches[0].clientX - modalTouchStart > 75) {
-                setShowSecurityModal(false);
-                setModalTouchStart(null);
-              }
-            }}
           >
             <button onClick={() => setShowSecurityModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
               <X className="w-4 h-4 text-[var(--secondary)]" />
