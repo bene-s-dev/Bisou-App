@@ -44,39 +44,11 @@ function AppLayout({
   }
 
   const isPublic = location.pathname === '/';
-  const showHeader = ['/profile', '/dashboard', '/questions', '/intro'].includes(location.pathname);
+  const showHeader = ['/profile', '/dashboard', '/questions', '/intro', '/intro-replay'].includes(location.pathname);
 
   return (
     <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[#F8F7FF] flex flex-col">
       <div className="bg-aura" />
-      
-      {showHeader && (
-        <header className={`px-4 z-20 absolute left-0 right-0 top-0 mx-auto w-full pointer-events-none ${isPublic ? 'max-w-4xl' : 'max-w-md'}`} style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}>
-          <div className="flex items-start justify-between">
-            <button 
-              onClick={() => navigate('/')}
-              className="group transition-transform active:scale-95 pointer-events-auto"
-            >
-              <h1 className="text-2xl font-semibold text-[var(--text-main)] tracking-tight group-hover:text-[var(--primary)] transition-colors select-none" style={{ fontFamily: 'Fraunces, serif' }}>
-                Bisou
-              </h1>
-            </button>
-
-            {location.pathname === '/profile' && (
-              <button 
-                onClick={onLogout} 
-                className="flex flex-col items-center gap-1 group pointer-events-auto"
-                title="Abmelden"
-              >
-                <div className="p-2 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90">
-                    <LogOut className="w-4 h-4" />
-                </div>
-                <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600 leading-none">Logout</span>
-              </button>
-            )}
-          </div>
-        </header>
-      )}
 
       <main 
         className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
@@ -84,13 +56,55 @@ function AppLayout({
       >
         <ScalingContainer targetWidth={400} align="top">
           <div className="flex-1 flex flex-col relative w-full h-full px-4">
+            {showHeader && (
+              <>
+                {/* Global Top Blur Fade for Header */}
+                {location.pathname !== '/questions' && (
+                  <div 
+                    className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none"
+                  style={{
+                    background: 'linear-gradient(to bottom, rgba(248,247,255,1) 0%, rgba(248,247,255,0.8) 40%, rgba(248,247,255,0) 100%)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)'
+                  }}
+                />
+                )}
+                <header className="absolute left-0 right-0 top-0 z-20 px-2 pointer-events-none" style={{ paddingTop: 'calc(1rem + var(--sat))' }}>
+                  <div className="flex items-start justify-between">
+                    <button 
+                      onClick={() => navigate('/')}
+                      className="group transition-transform active:scale-95 pointer-events-auto"
+                    >
+                      <h1 className="text-2xl font-semibold text-[var(--text-main)] tracking-tight group-hover:text-[var(--primary)] transition-colors select-none" style={{ fontFamily: 'Fraunces, serif' }}>
+                        Bisou
+                      </h1>
+                    </button>
+
+                    {location.pathname === '/profile' && (
+                      <button 
+                        onClick={onLogout} 
+                        className="flex flex-col items-center gap-1 group pointer-events-auto"
+                        title="Abmelden"
+                      >
+                        <div className="p-2 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90">
+                            <LogOut className="w-4 h-4" />
+                        </div>
+                        <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600 leading-none">Logout</span>
+                      </button>
+                    )}
+                  </div>
+                </header>
+              </>
+            )}
             {children}
           </div>
         </ScalingContainer>
       </main>
 
       {/* Blurry fade transition at the bottom */}
-      {profile.intro_completed && !['/intro', '/questions'].includes(location.pathname) && !location.search.includes('tab=intro') && (
+      {profile.intro_completed && !['/intro', '/intro-replay', '/questions'].includes(location.pathname) && (
         <div 
           className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
           style={{ 
@@ -100,7 +114,7 @@ function AppLayout({
         />
       )}
 
-      {profile.intro_completed && location.pathname !== '/intro' && !location.search.includes('tab=intro') && (
+      {profile.intro_completed && !['/intro', '/intro-replay'].includes(location.pathname) && (
         <nav className="nav-dock">
           <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
             <Home className="w-6 h-6" />
@@ -457,6 +471,7 @@ export default function App() {
             <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
               <Routes>
                 <Route path="intro" element={<Intro onComplete={handleIntroComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
+                <Route path="intro-replay" element={<Intro onComplete={() => navigate('/profile')} deferredPrompt={null} onInstall={() => {}} isReplay={true} />} />
                 <Route path="dashboard" element={<Dashboard 
                   userName={profile.display_name} 
                   userAvatar={profile.avatar_url} 

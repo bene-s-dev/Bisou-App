@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, Lock } from 'lucide-react';
+import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, MailOpen, Lock } from 'lucide-react';
 import { getDailyKey } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 
@@ -19,14 +19,20 @@ const EncryptionOverlay = () => {
   const [phase, setPhase] = useState(1);
   const [scrambledText, setScrambledText] = useState("Meine Antworten");
   
+  const targetScrambled = useMemo(() => {
+    const chars = "ABCDEFGHiJKLMNOPQRSTUVWXYZ0123456789$&#@?%";
+    return "Meine Antworten".split("").map(() => chars[Math.floor(Math.random() * chars.length)]).join("");
+  }, []);
+
   useEffect(() => {
     // Sequence
-    const t1 = setTimeout(() => setPhase(2), 800);
-    const t2 = setTimeout(() => setPhase(3), 2200);
-    const t3 = setTimeout(() => setPhase(4), 3000);
-    const t4 = setTimeout(() => setPhase(5), 3800);
+    const t1 = setTimeout(() => setPhase(2), 500);   // Start encrypting
+    const t2 = setTimeout(() => setPhase(3), 2000);  // Letter moves into envelope
+    const t3 = setTimeout(() => setPhase(4), 2600);  // Envelope closes
+    const t4 = setTimeout(() => setPhase(5), 3100);  // Seal (Lock) appears
+    const t5 = setTimeout(() => setPhase(6), 3800);  // Move up and disappear
     
-    return () => { [t1, t2, t3, t4].forEach(clearTimeout); };
+    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
   }, []);
 
   useEffect(() => {
@@ -36,49 +42,58 @@ const EncryptionOverlay = () => {
       let iteration = 0;
       const interval = setInterval(() => {
         setScrambledText(original.split("").map((_, i) => {
-          if (i < iteration / 3) return original[i];
+          if (i < iteration / 2) return targetScrambled[i];
           return chars[Math.floor(Math.random() * chars.length)];
         }).join(""));
         iteration++;
-        if (iteration > original.length * 3) clearInterval(interval);
+        if (iteration > original.length * 2) clearInterval(interval);
       }, 40);
       return () => clearInterval(interval);
     }
-  }, [phase]);
+  }, [phase, targetScrambled]);
 
   return createPortal(
     <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-sm overflow-hidden">
-      <div className={`relative flex items-center justify-center transition-all duration-1000 ease-in-out ${phase === 5 ? '-translate-y-[120vh] opacity-0' : 'translate-y-0 opacity-100'}`}>
+      <div className={`relative flex items-center justify-center transition-all duration-700 ease-in-out ${phase === 6 ? '-translate-y-[120vh] opacity-0' : 'translate-y-0 opacity-100'}`}>
         
         {/* The Letter */}
-        <div className={`absolute w-40 h-52 bg-white rounded-xl shadow-2xl border-2 border-purple-100 p-6 flex flex-col gap-3 transition-all duration-700 ease-in-out z-20 ${phase >= 3 ? 'scale-50 opacity-0 translate-y-12' : 'scale-100 opacity-100'}`}>
-          <div className="w-full h-2 bg-purple-50 rounded-full" />
-          <div className="w-3/4 h-2 bg-purple-50 rounded-full" />
+        <div 
+          className={`absolute w-40 h-52 bg-white rounded-xl shadow-2xl border-2 border-[var(--secondary)] p-6 flex flex-col gap-3 transition-all duration-700 ease-in-out z-40 
+            ${phase >= 3 ? 'translate-y-20 scale-50 opacity-0' : 'translate-y-[-80px] scale-100 opacity-100'}`}
+        >
+          <div className="w-full h-2 bg-[var(--secondary)] rounded-full opacity-30" />
+          <div className="w-3/4 h-2 bg-[var(--secondary)] rounded-full opacity-30" />
           <p className="mt-4 font-mono text-[10px] font-black text-[var(--secondary)] break-words leading-relaxed text-center">
             {scrambledText}
           </p>
           <div className="mt-auto flex flex-col gap-2">
-            <div className="w-full h-1.5 bg-purple-50/50 rounded-full" />
-            <div className="w-full h-1.5 bg-purple-50/50 rounded-full" />
+            <div className="w-full h-1.5 bg-[var(--secondary)] rounded-full opacity-20" />
+            <div className="w-full h-1.5 bg-[var(--secondary)] rounded-full opacity-20" />
           </div>
         </div>
 
         {/* The Envelope */}
-        <div className={`relative transition-all duration-700 ease-in-out ${phase >= 3 ? 'scale-110' : 'scale-90 opacity-60'}`}>
-          <Mail className={`w-48 h-48 text-[var(--secondary)] fill-white stroke-[1.5px] transition-all duration-500 ${phase >= 4 ? 'text-purple-400' : ''}`} />
+        <div className={`relative transition-all duration-700 ease-in-out z-30 ${phase >= 3 ? 'scale-110' : 'scale-100'}`}>
+          {phase < 4 ? (
+            <MailOpen className="w-48 h-48 text-[var(--secondary)] fill-white stroke-[2px]" />
+          ) : (
+            <Mail className="w-48 h-48 text-[var(--secondary)] fill-white stroke-[2px]" />
+          )}
           
-          {/* The Lock */}
-          <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 delay-300 ${phase >= 4 ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
-            <div className="bg-white p-3 rounded-2xl shadow-xl border-2 border-purple-100 animate-float">
-              <Lock className="w-8 h-8 text-[var(--secondary)] fill-[var(--secondary)]/10" />
+          {/* The Lock / Seal */}
+          <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${phase >= 5 ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
+            <div className="bg-[var(--secondary)] p-4 rounded-full shadow-2xl border-4 border-white">
+              <Lock className="w-8 h-8 text-white fill-white" />
             </div>
           </div>
         </div>
 
       </div>
       
-      <div className="absolute bottom-24 left-0 right-0 text-center animate-pulse">
-        <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.4em]">Verschlüsselung aktiv...</span>
+      <div className="absolute bottom-24 left-0 right-0 text-center">
+        <span className="text-[12px] font-black text-[var(--secondary)] uppercase tracking-[0.4em] animate-pulse">
+          {phase < 5 ? "Verschlüsseln..." : "Gesichert"}
+        </span>
       </div>
     </div>,
     document.body
@@ -499,7 +514,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
 
     return (
       <div 
-        className={`flex flex-col flex-1 h-full overflow-hidden pt-0 will-change-transform ${step < 3 ? 'animate-entrance' : ''}`} 
+        className="animate-entrance flex flex-col flex-1 h-full overflow-hidden pt-0 will-change-transform"
         onTouchStart={onSwipeStart} 
         onTouchEnd={onSwipeEnd}
       >
@@ -576,7 +591,18 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           </div>
         ) : (
           // --- RESULTS VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden">
+          <div className="flex flex-col flex-1 h-full overflow-hidden relative">
+            <div 
+              className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none"
+              style={{
+                background: 'linear-gradient(to bottom, rgba(248,247,255,1) 0%, rgba(248,247,255,0.8) 40%, rgba(248,247,255,0) 100%)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+                margin: '0 -16px'
+              }}
+            />
             <div className="flex-1 relative min-h-0">
               <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
                 <div className="space-y-10 pb-72 pt-28">
@@ -611,13 +637,6 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
               </div>
               
               {/* Overlays on top */}
-              <div 
-                className="absolute top-0 left-0 right-0 h-5 z-20 pointer-events-none bg-gradient-to-b from-[#F8F7FF] to-transparent"
-                style={{ 
-                  maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)'
-                }}
-              />
               <div 
                 className="absolute bottom-0 left-0 right-0 h-56 z-20 pointer-events-none bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent"
                 style={{ 

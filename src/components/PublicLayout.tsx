@@ -8,8 +8,7 @@ import ScalingContainer from './ScalingContainer';
 export default function PublicLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const [showImpressumModal, setShowImpressumModal] = useState(false);
+
   const [isKuss, setIsKuss] = useState(false);
   const words = ['Küsschen', 'bisschen'];
   const [wordIndex, setWordIndex] = useState(0);
@@ -37,12 +36,20 @@ export default function PublicLayout() {
   const isAuthPage = ['/signin', '/signup'].includes(location.pathname);
   const isLandingPage = location.pathname === '/';
 
-  return (
-    <div className="h-[100svh] w-screen overflow-hidden bg-[#F8F7FF] text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative">
-      <div className="bg-aura" />
+  const content = (
+    <div className={`${isAuthPage ? 'w-full h-full overflow-y-auto scrollbar-soft' : 'h-[100svh] w-screen overflow-hidden'} bg-[#F8F7FF] text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative`}>
+      {isLandingPage ? (
+        <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#FFE3E3] via-[#F4F1FF] to-[#E2DDFF] pointer-events-none overflow-hidden">
+          {/* Glowing ambient blobs */}
+          <div className="absolute top-[-15%] right-[-15%] w-[60vw] h-[60vw] rounded-full bg-[#FF6B6B]/25 blur-[100px] sm:blur-[140px] animate-pulse-slow" />
+          <div className="absolute bottom-[-15%] left-[-15%] w-[70vw] h-[70vw] rounded-full bg-[#8179E0]/25 blur-[120px] sm:blur-[170px] animate-pulse-slow" />
+        </div>
+      ) : (
+        !isAuthPage && <div className="bg-aura" />
+      )}
 
       {/* Header */}
-      <header className={`mx-auto pt-12 pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 max-w-md`}>
+      <header className={`mx-auto pt-12 pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 ${isLandingPage ? 'max-w-5xl' : 'max-w-md'}`}>
         {!isAuthPage && (
           <div className="absolute top-4 right-4">
             <button 
@@ -83,93 +90,34 @@ export default function PublicLayout() {
       </header>
 
       {/* Main Content Area */}
-      <main className={`mx-auto flex-1 flex flex-col w-full relative z-10 max-w-md px-4 ${isLandingPage ? 'overflow-y-auto scrollbar-soft' : ''}`}>
+      <main className={`mx-auto flex-1 flex flex-col w-full relative z-10 px-4 ${isLandingPage ? 'max-w-5xl overflow-hidden' : `max-w-md ${isAuthPage ? '' : 'overflow-hidden'}`}`}>
         {isLandingPage ? (
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <Outlet />
           </div>
         ) : (
-          <div className="w-full flex-1 flex flex-col pt-0 pb-4">
+          <div className={`w-full flex-1 flex flex-col pt-0 pb-4 ${isAuthPage ? '' : 'overflow-hidden'}`}>
             <Outlet />
           </div>
         )}
       </main>
 
       {/* Footer */}
-      {!isLandingPage && (
-        <footer className="pb-2 pt-2 w-full text-center z-10 shrink-0">
-          <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
-            <a 
-              href="https://github.com/bene-s-dev" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="underline hover:text-[var(--secondary)] transition-colors"
-            >
-              Benedikt S.
-            </a> &copy; 2026
-          </p>
-          <div className="flex justify-center gap-6 mt-2">
-            <button 
-              onClick={() => setShowPrivacyModal(true)}
-              className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
-            >
-              Datenschutz
-            </button>
-            <button 
-              onClick={() => setShowImpressumModal(true)}
-              className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest opacity-50 underline hover:opacity-100 transition-opacity"
-            >
-              Impressum
-            </button>
-          </div>
-        </footer>
-      )}
-
-      {/* Modals */}
-      {showPrivacyModal && createPortal(
-        <div className="modal-backdrop px-4">
-          <div className="absolute inset-0" onClick={() => setShowPrivacyModal(false)} />
-          <div className="modal-content p-8 text-center">
-            <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-              <ShieldCheck className="w-8 h-8 text-[var(--secondary)]" />
-            </div>
-            <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Datenschutz</h3>
-            <p className="text-sm text-[#4A4468] font-semibold leading-relaxed mb-8">
-              Die Verarbeitung von Daten durch diese Anwendung erfolgt ausschließlich für persönliche oder familiäre Zwecke. Sie fällt daher gemäß Art. 2 Abs. 2 lit. c DSGVO unter das sogenannte Haushaltsprivileg, weshalb die Bestimmungen der DSGVO keine Anwendung finden.<br /><br />
-              <span className="opacity-80">Dein Bene</span>
-            </p>
-            <button 
-              onClick={() => setShowPrivacyModal(false)}
-              className="btn-static"
-            >
-              Schließen
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {showImpressumModal && createPortal(
-        <div className="modal-backdrop px-4">
-          <div className="absolute inset-0" onClick={() => setShowImpressumModal(false)} />
-          <div className="modal-content p-8 text-center">
-            <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-              <span className="text-3xl font-black text-[var(--secondary)]">§</span>
-            </div>
-            <h3 className="text-xl font-black text-[#1F1939] mb-4 tracking-tight">Impressum</h3>
-            <p className="text-sm text-[#4A4468] font-bold leading-relaxed mb-8">
-              Made with ❤️ in Freiburg
-            </p>
-            <button 
-              onClick={() => setShowImpressumModal(false)}
-              className="btn-static"
-            >
-              Schließen
-            </button>
-          </div>
-        </div>,
-        document.body
-      )}
+      <footer className="pb-2 pt-2 w-full text-center z-10 shrink-0">
+        <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
+          Bisou-App &bull; Benedikt S. &copy; 2026
+        </p>
+      </footer>
     </div>
   );
+
+  if (isAuthPage) {
+    return (
+      <ScalingContainer targetWidth={400} targetHeight={844} onlyScaleWidth={true} align="center">
+        {content}
+      </ScalingContainer>
+    );
+  }
+
+  return content;
 }

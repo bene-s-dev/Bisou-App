@@ -160,17 +160,17 @@ html, body {
   
   .status-green-dot { 
     @apply bg-[var(--accent-green)]; 
-    animation: ripple-green 2s infinite;
+    animation: dot-pulse-green 2.5s ease-in-out infinite;
   }
   
   .status-red-dot { 
     @apply bg-[var(--primary)]; 
-    animation: ripple-red 2s infinite;
+    animation: dot-pulse-red 2.5s ease-in-out infinite;
   }
   
   .status-orange-dot { 
     @apply bg-orange-400; 
-    animation: ripple-orange 2s infinite;
+    animation: dot-pulse-orange 2.5s ease-in-out infinite;
   }
 
   .status-pill { 
@@ -187,32 +187,83 @@ html, body {
     background: #fff1f1; 
     color: var(--primary); 
     border: 1px solid rgba(255, 138, 138, 0.1);
-    animation: ripple-red 2s infinite;
+    animation: ripple-red 2.5s ease-in-out infinite;
   }
 
   .pill-orange { 
     background: #fff7ed; 
     color: #f97316; 
     border: 1px solid rgba(249, 115, 22, 0.1);
-    animation: ripple-orange 2s infinite;
+    animation: ripple-orange 2.5s ease-in-out infinite;
   }
 
-  @keyframes ripple-green {
-    0% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.4); }
-    70% { box-shadow: 0 0 0 8px rgba(0, 184, 148, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 184, 148, 0); }
+  @keyframes dot-pulse-green {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(0, 184, 148, 0.65), 0 0 0 0 rgba(0, 184, 148, 0.3);
+    }
+    50% {
+      transform: scale(1.22);
+      box-shadow: 0 0 0 5px rgba(0, 184, 148, 0.3), 0 0 0 10px rgba(0, 184, 148, 0.15);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(0, 184, 148, 0), 0 0 0 16px rgba(0, 184, 148, 0);
+    }
+  }
+
+  @keyframes dot-pulse-red {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.65), 0 0 0 0 rgba(255, 138, 138, 0.3);
+    }
+    50% {
+      transform: scale(1.22);
+      box-shadow: 0 0 0 5px rgba(255, 138, 138, 0.3), 0 0 0 10px rgba(255, 138, 138, 0.15);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(255, 138, 138, 0), 0 0 0 16px rgba(255, 138, 138, 0);
+    }
+  }
+
+  @keyframes dot-pulse-orange {
+    0% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.65), 0 0 0 0 rgba(249, 115, 22, 0.3);
+    }
+    50% {
+      transform: scale(1.22);
+      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.3), 0 0 0 10px rgba(249, 115, 22, 0.15);
+    }
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 10px rgba(249, 115, 22, 0), 0 0 0 16px rgba(249, 115, 22, 0);
+    }
   }
 
   @keyframes ripple-red {
-    0% { box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.4); }
-    70% { box-shadow: 0 0 0 8px rgba(255, 138, 138, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 138, 138, 0); }
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 138, 138, 0.5), 0 0 0 0 rgba(255, 138, 138, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 0 5px rgba(255, 138, 138, 0.25), 0 0 0 10px rgba(255, 138, 138, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 0 10px rgba(255, 138, 138, 0), 0 0 0 15px rgba(255, 138, 138, 0);
+    }
   }
 
   @keyframes ripple-orange {
-    0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
-    70% { box-shadow: 0 0 0 8px rgba(249, 115, 22, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+    0% {
+      box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.5), 0 0 0 0 rgba(249, 115, 22, 0.25);
+    }
+    50% {
+      box-shadow: 0 0 0 5px rgba(249, 115, 22, 0.25), 0 0 0 10px rgba(249, 115, 22, 0.1);
+    }
+    100% {
+      box-shadow: 0 0 0 10px rgba(249, 115, 22, 0), 0 0 0 15px rgba(249, 115, 22, 0);
+    }
   }
 }
 
@@ -444,4 +495,29 @@ html, body {
 
 .sortable-fallback .rank-badge::before {
   content: attr(data-live-rank) !important;
+}
+
+/* High-visibility scrollbar for the security popup */
+.security-scrollbar::-webkit-scrollbar {
+  -webkit-appearance: none !important;
+  display: block !important;
+  width: 6px !important;
+}
+.security-scrollbar::-webkit-scrollbar-track {
+  -webkit-appearance: none !important;
+  background: rgba(162, 155, 254, 0.08) !important;
+  border-radius: 10px !important;
+}
+.security-scrollbar::-webkit-scrollbar-thumb {
+  -webkit-appearance: none !important;
+  background: rgba(162, 155, 254, 0.85) !important;
+  border-radius: 10px !important;
+}
+.security-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(162, 155, 254, 1) !important;
+}
+.security-scrollbar {
+  -ms-overflow-style: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(162, 155, 254, 0.85) rgba(162, 155, 254, 0.08) !important;
 }

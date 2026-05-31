@@ -214,7 +214,10 @@ function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boo
   
   const isDateActive = (day: number) => {
     const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-    const dateStr = d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${date}`;
     return history.includes(dateStr);
   };
 
@@ -382,7 +385,7 @@ export default function Dashboard({
 
   if (showComparison) {
     return (
-      <div className="animate-entrance flex flex-col h-full overflow-visible relative">
+      <div className="animate-entrance flex flex-col h-full overflow-hidden relative">
         {userAvatar && (
           <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
             <img 
@@ -392,55 +395,57 @@ export default function Dashboard({
             />
           </div>
         )}
-        <div className="flex-1 overflow-visible flex flex-col">
-          <button onClick={() => setShowComparison(false)} className="mb-8 text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] flex items-center gap-2 group">
-            <span className="group-active:-translate-x-1 transition-transform">←</span> Zurück zum Dashboard
-          </button>
-          <h2 className="text-3xl font-black mb-8 text-[#1F1939] tracking-tight">Unsere Gedanken</h2>
-          <div className="flex-1 relative min-h-0">
-            <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
-              <div className="space-y-8 pb-72 pt-10">
-                {dailyQs.map((q, i) => (
-                  <div key={i} className="animate-in fade-in slide-in-from-bottom-2">
-                    <div className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-3 px-1">{q.q}</div>
-                    <div className="grid grid-cols-2 gap-3.5">
-                      <div className="res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm">
-                        <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>
-                        <span className="font-bold text-xs text-[var(--text-main)] leading-relaxed">{myAnswers[i] || '—'}</span>
-                      </div>
-                      <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${!partnerAnswered ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
-                        <b className="text-[9px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
-                        <span className={`font-bold text-xs text-[var(--text-main)] leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
-                          {partnerAnswered ? partnerAnswers?.[i] : 'Wartet...'}
-                        </span>
-                      </div>
+
+        {/* Header area with solid background + soft bottom edge */}
+        <div className="relative z-20 shrink-0">
+          <div className="bg-[#F8F7FF] pt-2 pb-2 px-1">
+            <button onClick={() => setShowComparison(false)} className="mb-4 text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] flex items-center gap-2 group">
+              <span className="group-active:-translate-x-1 transition-transform">←</span> Zurück zum Dashboard
+            </button>
+            <h2 className="text-3xl font-black text-[#1F1939] tracking-tight">Unsere Gedanken</h2>
+          </div>
+          {/* Soft fade-out edge below header */}
+          <div 
+            className="h-8 bg-gradient-to-b from-[#F8F7FF] to-transparent pointer-events-none"
+          />
+        </div>
+
+        {/* Scrollable content area */}
+        <div className="flex-1 min-h-0 relative -mt-8">
+          <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
+            <div className="space-y-8 pb-40 pt-8">
+              {dailyQs.map((q, i) => (
+                <div key={i} className="animate-in fade-in slide-in-from-bottom-2">
+                  <div className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-3 px-1">{q.q}</div>
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm">
+                      <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>
+                      <span className="font-bold text-xs text-[var(--text-main)] leading-relaxed">{myAnswers[i] || '—'}</span>
+                    </div>
+                    <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${!partnerAnswered ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
+                      <b className="text-[9px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
+                      <span className={`font-bold text-xs text-[var(--text-main)] leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
+                        {partnerAnswered ? partnerAnswers?.[i] : 'Wartet...'}
+                      </span>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-
-            {/* Overlays on top */}
-            <div 
-              className="absolute top-0 left-0 right-0 h-5 z-20 pointer-events-none bg-gradient-to-b from-[#F8F7FF] to-transparent"
-              style={{ 
-                maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)'
-              }}
-            />
-            <div 
-              className="absolute bottom-0 left-0 right-0 h-56 z-20 pointer-events-none bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent"
-              style={{ 
-                maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)'
-              }}
-            />
           </div>
         </div>
-        <div className="pb-6 pt-6">
-          <button onClick={deleteMyOwn} className="btn-secondary w-full text-xs font-black uppercase tracking-widest py-4 border-2 border-[var(--card-border)]">
-            Antworten korrigieren 📝
-          </button>
+
+        {/* Bottom button area with solid background + soft top edge */}
+        <div className="relative z-20 shrink-0">
+          {/* Soft fade-in edge above button */}
+          <div 
+            className="h-12 bg-gradient-to-t from-[#F8F7FF] to-transparent pointer-events-none"
+          />
+          <div className="bg-[#F8F7FF] pb-6 pt-2 px-1">
+            <button onClick={deleteMyOwn} className="btn-secondary w-full text-xs font-black uppercase tracking-widest py-4 border-2 border-[var(--card-border)]">
+              Antworten korrigieren 📝
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -593,22 +598,6 @@ export default function Dashboard({
             </div>
           </div>
         )}
-
-        {/* Placeholder for future features - merged into one card */}
-        <div 
-          className="w-full max-w-md mx-auto mt-2 bg-white border-2 border-dashed border-[var(--card-border)] rounded-[2.5rem] overflow-hidden shadow-[var(--shadow-soft)]"
-        >
-          <div className="flex flex-col">
-            <div className="h-14 flex items-center justify-between px-6">
-              <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-widest blur-[3px] select-none opacity-50">Weitere Funktionen</span>
-              <span className="text-[8px] font-black text-gray-400/60 uppercase tracking-wider bg-white/40 px-3 py-1.5 rounded-full border border-gray-100/30 shadow-sm">Bald verfügbar</span>
-            </div>
-            <div className="h-14 flex items-center justify-between px-6">
-              <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-widest blur-[3px] select-none opacity-50">Geheime Überraschung</span>
-              <span className="text-[8px] font-black text-gray-400/60 uppercase tracking-wider bg-white/40 px-3 py-1.5 rounded-full border border-gray-100/30 shadow-sm">Bald verfügbar</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <StatsModal 

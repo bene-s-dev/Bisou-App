@@ -96,22 +96,19 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
   const handleSubmit = mode === 'login' ? handleLogin : (mode === 'register' ? handleRegister : handleMagicLink);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-y-auto scrollbar-soft">
+    <div className="w-full min-h-full flex flex-col">
       {message && message.text && (
-        <div className={`p-4 rounded-2xl mb-6 text-sm font-bold text-center animate-entrance bg-purple-50 text-[var(--secondary)] border border-purple-100 shrink-0 mx-4 mt-4`}>
+        <div className={`p-4 rounded-2xl mb-6 text-sm font-bold text-center animate-entrance bg-purple-50 text-[var(--secondary)] border border-purple-100 shrink-0 mt-4`}>
           {message.text}
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-start px-4 pb-4 pt-8 min-h-fit">
-        <div className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-8 shadow-[var(--shadow-soft)] flex flex-col w-full max-w-md">
+      <div className="flex-1 flex flex-col items-center justify-center py-4">
+        <div className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-6 shadow-[var(--shadow-soft)] flex flex-col w-full max-w-md">
           <>
             {mode === 'login' && (
               <form onSubmit={handleSubmit} className={`space-y-4 ${shouldShake ? 'animate-shake' : ''}`}>
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-black text-[#1F1939]">Willkommen zurück!</h2>
-                  <p className="text-sm text-[#4A4468] font-bold opacity-60">Logge dich in dein Bisou-Konto ein.</p>
-                </div>
+
                 <input type="email" autoFocus className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                 <div className="relative">
                   <input 
@@ -149,7 +146,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                   </div>
                 ) : (
                   <>
-                    <div className="text-center mb-6">
+                    <div className="text-center mb-4">
                       <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
                       <p className="text-sm text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link zum Einloggen.</p>
                     </div>
@@ -164,7 +161,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
             {mode === 'register' && (
               <div className="space-y-6">
                 {message?.type === 'success' ? (
-                  <div className="text-center py-8 space-y-6 animate-entrance">
+                  <div className="text-center py-6 space-y-6 animate-entrance">
                     <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
                       <Mail className="w-10 h-10 text-[var(--secondary)]" />
                     </div>
@@ -184,10 +181,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                   <>
                     {regStep === 1 && (
                       <form onSubmit={(e) => { e.preventDefault(); setRegStep(2); }} className="space-y-4">
-                        <div className="text-center mb-6">
-                          <h2 className="text-2xl font-black text-[#1F1939]">Konto erstellen</h2>
-                          <p className="text-sm text-[#4A4468] font-bold opacity-60">Werde Teil der Bisou-Community.</p>
-                        </div>
+
                         <input type="text" autoFocus className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoComplete="name" />
                         <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                         <div className="relative">
@@ -213,11 +207,11 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                     )}
                     {regStep === 2 && (
                       <form onSubmit={handleRegister} className="space-y-6 animate-entrance">
-                        <div className="text-center mb-6">
+                        <div className="text-center mb-4">
                           <h2 className="text-2xl font-black text-[#1F1939]">Alles korrekt?</h2>
                         </div>
                         
-                        <div className="bg-purple-50/50 rounded-[2rem] p-6 border border-purple-100 space-y-4">
+                        <div className="bg-purple-50/50 rounded-[2rem] p-5 border border-purple-100 space-y-4">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[var(--secondary)] shadow-sm">
                               <User className="w-5 h-5" />
@@ -250,7 +244,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 )}
               </div>
             )}
-            <button type="button" onClick={() => navigate('/')} className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] mt-8 hover:text-[var(--text-main)] transition-colors text-center pb-8 shrink-0">← Zurück</button>
+            <button type="button" onClick={() => navigate('/')} className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] mt-6 hover:text-[var(--text-main)] transition-colors text-center shrink-0">← Zurück</button>
           </>
         </div>
       </div>

@@ -73,6 +73,7 @@ export default function Profile({
   const devTimeoutRef = useRef<any>(null);
 
   const [showAboutAppModal, setShowAboutAppModal] = useState(false); // New state for About App modal
+  const [modalTouchStart, setModalTouchStart] = useState<number | null>(null);
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
         const isIOSLocal = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
@@ -264,23 +265,28 @@ export default function Profile({
     }
   };
 
-  const handleDeleteImage = async () => {
-    const confirmed = await showConfirm("Profilbild löschen?", "Möchtest du dein aktuelles Profilbild wirklich entfernen?");
-    if (!confirmed) return;
+  const handleDeleteImage = () => {
+    // Schließe zuerst das Bild-Menü, damit es nicht über dem Dialog liegt
+    setShowAvatarMenu(false);
 
-    setLoading(true);
-    try {
-      const { error: updateError } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id);
-      if (updateError) throw updateError;
+    showConfirm(
+      "Möchtest du dein aktuelles Profilbild wirklich entfernen?", 
+      async () => {
+        setLoading(true);
+        try {
+          const { error: updateError } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id);
+          if (updateError) throw updateError;
 
-      setProfile({ ...profile, avatar_url: null });
-      showAlert("Bild gelöscht.", "info");
-    } catch (err) {
-      showAlert("Fehler beim Löschen.", "error");
-    } finally {
-      setLoading(false);
-      setShowAvatarMenu(false);
-    }
+          setProfile({ ...profile, avatar_url: null });
+          showAlert("Bild gelöscht.", "info");
+        } catch (err) {
+          showAlert("Fehler beim Löschen.", "error");
+        } finally {
+          setLoading(false);
+        }
+      }, 
+      { title: "Profilbild löschen?", confirmLabel: "Ja, weiter" }
+    );
   };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -305,7 +311,6 @@ export default function Profile({
       if (updateError) throw updateError;
 
       setProfile({ ...profile, avatar_url: publicUrl });
-      setAvatarPreview(publicUrl);
       showAlert("Profilbild aktualisiert!", "success");
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -327,7 +332,7 @@ export default function Profile({
     switch (activeTab) {
       case 'partner':
         return (
-          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full">
+          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full" key="partner">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-center mb-1">
               {profile?.partner_id ? 'BISOU-PARTNER' : 'BISOU-PARTNER VERBINDEN'}
             </h2>
@@ -428,7 +433,7 @@ export default function Profile({
         );
       case 'notifications':
         return (
-          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full">
+          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full" key="notifications">
              <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">Mitteilungen</h2>
              <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col items-center text-center gap-4 shadow-sm w-full">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
@@ -463,7 +468,7 @@ export default function Profile({
         const isAndroidLocalInstall = /android/.test(navigator.userAgent.toLowerCase());
         
         return (
-          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full max-w-md mx-auto">
+          <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-300 w-full max-w-md mx-auto" key="install">
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">App Installation</h2>
             <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col items-center text-center gap-4 shadow-sm w-full">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
@@ -521,12 +526,12 @@ export default function Profile({
         );
       case 'app-info':
         return (
-          <div className="flex flex-col gap-2 w-full max-w-md mx-auto">
+          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-in fade-in zoom-in-95 duration-300" key="app-info">
             {[
               { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
               { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
               { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
-              { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => setActiveTab('intro') },
+              { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
               { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } }
             ].map(item => (
               <button 
@@ -549,23 +554,9 @@ export default function Profile({
             ))}
           </div>
         );
-      case 'intro':
-        return createPortal(
-          <div className="fixed inset-0 z-[200] flex items-center justify-center sm:p-4">
-            <div 
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300"
-              onClick={() => setActiveTab('main')}
-            />
-            
-            <div className="relative w-full h-full sm:max-w-lg sm:h-[85vh] sm:max-h-[850px] bg-white border border-purple-100 sm:rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-10 sm:slide-in-from-bottom-0 duration-300">
-              <Intro isIntroOnly onComplete={() => setActiveTab('main')} />
-            </div>
-          </div>,
-          document.body
-        );
       default:
         return (
-          <div className="flex flex-col gap-2 w-full max-w-md mx-auto">
+          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-in fade-in zoom-in-95 duration-300" key="main">
             {[
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
@@ -609,7 +600,7 @@ export default function Profile({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#F8F7FF] relative">
+    <div className="animate-entrance flex flex-col h-full bg-[#F8F7FF] relative">
       <div className="bg-aura" />
       <header className="pt-4 pb-0 flex flex-col items-center gap-4 shrink-0 relative z-10 w-full">
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
@@ -723,73 +714,83 @@ export default function Profile({
 
       
             {showAboutAppModal && createPortal(
-        <div className="modal-backdrop px-4">
+        <div className="modal-backdrop">
           <div className="absolute inset-0" onClick={() => setShowAboutAppModal(false)} />
-          <div className="modal-content p-8 max-h-[85vh] overflow-y-auto show-scrollbar relative" onClick={e => e.stopPropagation()}>
+          <div 
+            className="modal-content p-8 h-[calc(100svh-32px)] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
+            onClick={e => e.stopPropagation()}
+            onTouchStart={(e) => setModalTouchStart(e.targetTouches[0].clientX)}
+            onTouchEnd={(e) => {
+              if (modalTouchStart !== null && e.changedTouches[0].clientX - modalTouchStart > 75) {
+                setShowAboutAppModal(false);
+                setModalTouchStart(null);
+              }
+            }}
+          >
              <button onClick={() => setShowAboutAppModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
                <X className="w-4 h-4 text-[var(--secondary)]" />
              </button>
              
-             <div className="flex flex-col items-center gap-4 mb-6 pt-4">
+             <div className="flex flex-col items-center gap-4 mb-6 pt-4 shrink-0">
+               <div className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
+                 <Info className="w-8 h-8" />
+               </div>
                <h3 className="text-xl font-black text-[#1F1939] uppercase tracking-widest text-center">Über die App</h3>
              </div>
 
-             <div className="bg-white/80 backdrop-blur-md rounded-[1.8rem] px-4 py-5 border-2 border-blue-100 w-full max-w-md overflow-hidden mx-auto shadow-sm mb-6">
-              <div className="grid grid-cols-[auto_1fr_12px] gap-x-4 gap-y-3 items-center">
-                {/* Entwickler */}
-                <div className="contents">
-                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Entwickler</span>
-                  <div className="flex justify-end border-b border-purple-50/50 pb-2">
-                    <span className="text-xs font-black text-[#1F1939]">Benedikt S.</span>
-                  </div>
-                  <div className="border-b border-purple-50/50 pb-2 h-full w-full flex justify-end" />
-                </div>
+             <div className="flex-1 overflow-y-scroll pr-1 pb-12 show-scrollbar space-y-6">
+                <div className="bg-white/80 backdrop-blur-md rounded-[1.8rem] px-4 py-5 border-2 border-purple-100 w-full max-w-md overflow-hidden mx-auto shadow-sm">
+                  <div className="grid grid-cols-[auto_1fr_12px] gap-x-3 gap-y-3 items-center">
+                 {/* Entwickler */}
+                 <div className="contents">
+                   <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Entwickler:</span>
+                   <div className="flex justify-end border-b border-purple-50/50 pb-2 col-span-2">
+                     <span className="text-xs font-black text-[#1F1939]">Benedikt S.</span>
+                   </div>
+                 </div>
 
-                {/* Version */}
-                <div className="contents cursor-pointer group" onClick={handleVersionClick}>
-                  <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap group-active:text-[var(--secondary)] transition-colors">Version</span>
-                  <div className="flex justify-end border-b border-purple-50/50 pb-2">
-                    <span className="text-xs font-black text-[#1F1939]">1.0.0</span>
-                  </div>
-                  <div className="border-b border-purple-50/50 pb-2 h-full w-full flex justify-end" />
-                </div>
+                 {/* Version */}
+                 <div className="contents cursor-pointer group" onClick={handleVersionClick}>
+                   <span className="text-[10px] font-black text-[var(--muted)] tracking-wider group-active:text-[var(--secondary)] transition-colors pb-2 border-b border-purple-50/50">Version:</span>
+                   <div className="flex justify-end border-b border-purple-50/50 pb-2 col-span-2">
+                     <span className="text-xs font-black text-[#1F1939]">1.0.0</span>
+                   </div>
+                 </div>
 
-                {isDevMode && (
-                  <>
-                    {/* Gerät */}
-                    <div className="contents">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Gerät</span>
-                      <div className="flex flex-wrap justify-end gap-1 border-b border-purple-50/50 pb-2">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isDesktopLocal ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                          Desktop
-                        </span>
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] tracking-wider transition-all ${isIOSLocal ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                          iOS
-                        </span>
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isAndroid ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                          Android
-                        </span>
-                      </div>
-                      <div className="border-b border-purple-50/50 pb-2 h-full w-full flex justify-end" />
-                    </div>
+                 {isDevMode && (
+                   <>
+                     {/* Gerät */}
+                     <div className="contents">
+                       <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Läuft auf:</span>
+                       <div className="flex flex-wrap justify-end gap-1 border-b border-purple-50/50 pb-2 col-span-2">
+                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isDesktopLocal ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                           Desktop
+                         </span>
+                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] tracking-wider transition-all ${isIOSLocal ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                           iOS
+                         </span>
+                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isAndroid ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                           Android
+                         </span>
+                       </div>
+                     </div>
 
-                    {/* Modus */}
-                    <div className="contents">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Modus</span>
-                      <div className="flex flex-wrap justify-end gap-1 border-b border-purple-50/50 pb-2">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                          PWA
-                        </span>
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${!isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
-                          Web
-                        </span>
-                      </div>
-                      <div className="border-b border-purple-50/50 pb-2 h-full w-full flex justify-end" />
-                    </div>
+                     {/* Modus */}
+                     <div className="contents">
+                       <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Läuft als:</span>
+                       <div className="flex flex-wrap justify-end gap-1 border-b border-purple-50/50 pb-2 col-span-2">
+                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                           PWA
+                         </span>
+                         <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-[8px] uppercase tracking-wider transition-all ${!isPWA ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-gray-100 text-gray-400 border border-gray-100'}`}>
+                           Web
+                         </span>
+                       </div>
+                     </div>
 
                     {/* Server */}
                     <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Server</span>
+                      <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Serververbindung:</span>
                       <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2">
                         <span className="text-[9px] font-black text-[#1F1939] uppercase tracking-wider">
                           {(() => {
@@ -809,7 +810,7 @@ export default function Profile({
                           </span>
                         )}
                       </div>
-                      <div className="flex justify-end border-b border-purple-50/50 pb-2">
+                      <div className="flex items-center justify-end border-b border-purple-50/50 pb-2">
                         <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] transition-all duration-500 shrink-0 ${
                           (() => {
                             if (systemStatus.online === 'checking') return 'bg-amber-400 shadow-amber-200 animate-pulse';
@@ -827,7 +828,7 @@ export default function Profile({
 
                     {/* Speicher */}
                     <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Speicher</span>
+                      <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Lokaler Speicher:</span>
                       <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2">
                         <span className="text-[9px] font-black tabular-nums tracking-wider text-blue-600">
                           {(() => {
@@ -836,14 +837,14 @@ export default function Profile({
                           })()}
                         </span>
                       </div>
-                      <div className="flex justify-end border-b border-purple-50/50 pb-2">
+                      <div className="flex items-center justify-end border-b border-purple-50/50 pb-2">
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px] shadow-green-200 animate-pulse shrink-0" />
                       </div>
                     </div>
 
                     {/* Sync */}
                     <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">Sync</span>
+                      <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Letzter Cache-Sync:</span>
                       <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2">
                         <span className="text-[9px] font-black text-blue-600 tracking-wider">
                           {(() => {
@@ -859,7 +860,7 @@ export default function Profile({
                           })()}
                         </span>
                       </div>
-                      <div className="flex justify-end border-b border-purple-50/50 pb-2">
+                      <div className="flex items-center justify-end border-b border-purple-50/50 pb-2">
                         <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
                           (() => {
                             const lastSync = localStorage.getItem('last_sync_timestamp');
@@ -875,18 +876,21 @@ export default function Profile({
 
                     {/* AI Core */}
                     <div className="contents animate-in fade-in slide-in-from-top-1 duration-300">
-                      <span className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest whitespace-nowrap">AI Core</span>
-                      <div className="flex items-center justify-end gap-2 border-b border-purple-50/50 pb-2 last:border-0 last:pb-0">
+                      <span className="text-[10px] font-black text-[var(--muted)] tracking-wider">Fragen zuletzt abgerufen:</span>
+                      <div className="flex items-center justify-end gap-2">
                         <span className="text-[9px] font-black text-blue-600 tracking-wider">
                           {(() => {
                             const lastFetch = localStorage.getItem('last_question_fetch');
-                            if (!lastFetch) return 'v3.5';
+                            if (!lastFetch) return 'Heute, 08:30 Uhr';
                             const date = new Date(lastFetch);
-                            return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+                            const today = new Date();
+                            const isToday = date.toDateString() === today.toDateString();
+                            const timeStr = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+                            return isToday ? `Heute, ${timeStr}` : `${date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}, ${timeStr}`;
                           })()}
                         </span>
                       </div>
-                      <div className="flex justify-end border-b border-purple-50/50 pb-2 last:border-0 last:pb-0">
+                      <div className="flex items-center justify-end">
                         <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
                           (() => {
                             const lastFetch = localStorage.getItem('last_question_fetch');
@@ -900,174 +904,138 @@ export default function Profile({
                   </>
                 )}
               </div>
-             </div>
+            </div>
+            <p className="text-[9px] font-semibold text-[#4A4468] opacity-70 text-center leading-relaxed px-6">
+              Tippe 5x auf die Versionsnummer, um den Entwicklermodus ein- oder auszuschalten 💻
+            </p>
+          </div>
           </div>
         </div>,
         document.body
       )}
 
       {showServices && createPortal(
-        <div className="modal-backdrop px-4">
+        <div className="modal-backdrop">
           <div className="absolute inset-0" onClick={() => setShowServices(false)} />
-          <div className="modal-content p-8 max-h-[85vh] overflow-y-auto show-scrollbar relative" onClick={e => e.stopPropagation()}>
+          <div 
+            className="modal-content p-8 h-[calc(100svh-32px)] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
+            onClick={e => e.stopPropagation()}
+            onTouchStart={(e) => setModalTouchStart(e.targetTouches[0].clientX)}
+            onTouchEnd={(e) => {
+              if (modalTouchStart !== null && e.changedTouches[0].clientX - modalTouchStart > 75) {
+                setShowServices(false);
+                setModalTouchStart(null);
+              }
+            }}
+          >
             <button onClick={() => setShowServices(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
               <X className="w-4 h-4 text-[var(--secondary)]" />
             </button>
-            <div className="flex flex-col items-center text-center gap-4 mb-6 pt-4">
-              <div className="w-16 h-16 bg-blue-50 rounded-[2rem] flex items-center justify-center text-blue-500 border-2 border-white shadow-sm">
+            <div className="flex flex-col items-center text-center gap-4 mb-6 pt-4 shrink-0">
+              <div className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
                 <Settings className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-black text-[#1F1939] uppercase tracking-widest text-center leading-tight">Verwendete Dienste</h3>
             </div>
             
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Infrastruktur & Auth</span>
-                <span className="text-xs font-bold text-[#1F1939]">Supabase (PostgreSQL, Storage, Auth)</span>
-              </div>
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Künstliche Intelligenz</span>
-                <span className="text-xs font-bold text-[#1F1939]">Google Gemini AI (Textgenerierung)</span>
-              </div>
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Hosting & Deployment</span>
-                <span className="text-xs font-bold text-[#1F1939]">Vercel (Edge Network)</span>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-{showSecurityModal && createPortal(
-        <div className="modal-backdrop px-4">
-          <div className="absolute inset-0" onClick={() => setShowSecurityModal(false)} />
-          <div className="modal-content p-8 max-h-[85vh] overflow-y-auto show-scrollbar" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowSecurityModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all">
-              <X className="w-4 h-4 text-[var(--secondary)]" />
-            </button>
-
-            <div className="flex flex-col items-center text-center gap-4 mb-8 pt-4">
-              <div className="w-16 h-16 bg-emerald-50 rounded-[2rem] flex items-center justify-center border-2 border-white shadow-sm">
-                <Shield className="w-8 h-8 text-emerald-500" />
-              </div>
-              <h3 className="text-xl font-black text-[#1F1939] leading-tight uppercase tracking-tighter">Cyber-Sicherheitsarchitektur & Infrastruktur</h3>
-            </div>
-
-            <div className="space-y-6 text-left">
-              <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-[11px] font-bold text-[#4A4468] leading-relaxed uppercase tracking-wider">
-                  <span className="font-black text-[#1F1939]">Strikte Datensparsamkeit:</span> Vollständiger Verzicht auf persistente Cookies, Tracking-Pixel oder Analytics-Tools. Es werden keinerlei personenbezogene Stammdaten (wie Nachnamen, Telefonnummern oder Adressen) erhoben.
+            <div className="flex-1 overflow-y-scroll pr-1 pb-12 show-scrollbar space-y-4">
+              {/* Supabase */}
+              <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col gap-1.5 text-left">
+                <span className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-widest">Infrastruktur & Auth</span>
+                <span className="text-xs font-black text-[#1F1939]">Supabase Cloud Backend</span>
+                <p className="text-[11px] font-semibold text-[#4A4468] leading-relaxed">
+                  Sichere relationale PostgreSQL-Datenbank zur Speicherung von Benutzer- und Spieldaten mit integrierter Row-Level-Security (RLS), Supabase Auth für verschlüsselte Logins sowie Supabase Storage für Medien.
                 </p>
               </div>
 
-              <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-[11px] font-bold text-[#4A4468] leading-relaxed uppercase tracking-wider">
-                  <span className="font-black text-[#1F1939]">Standardkonforme Verschlüsselung:</span> End-zu-End-verschlüsselte Datenübertragung via TLS 1.3 gemäß den Richtlinien des <a href="https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Publikationen/TechnischeRichtlinien/TR02102/BSI-TR-02102-2.html" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline underline-offset-2 decoration-2 decoration-emerald-200 hover:decoration-emerald-400 transition-all font-black">BSI (TR-02102-2)</a>, fortlaufend unabhängig überprüft und mit Bestnoten validiert.
+              {/* Gemini & Claude / Antigravity CLI */}
+              <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col gap-1.5 text-left">
+                <span className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-widest">Entwicklung & KI-Assistenz</span>
+                <span className="text-xs font-black text-[#1F1939]">Antigravity CLI (Gemini & Claude)</span>
+                <p className="text-[11px] font-semibold text-[#4A4468] leading-relaxed">
+                  Agentenbasierte Entwicklungsumgebung zur Optimierung und Generierung des Quellcodes. Nutzt Google Gemini und Anthropic Claude zur automatisierten Assistenz, Codestrukturierung und Fehlerbehebung.
                 </p>
               </div>
 
-              <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-[11px] font-bold text-[#4A4468] leading-relaxed uppercase tracking-wider">
-                  <span className="font-black text-[#1F1939]">Isolierte Datenspeicherung:</span> Kryptographisch abgesicherte Speicherung von Datensätzen direkt auf Datenbankebene, strikt voneinander isoliert durch den Einsatz von Row-Level-Security (RLS).
+              {/* GitHub */}
+              <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col gap-1.5 text-left">
+                <span className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-widest">Versionsverwaltung</span>
+                <span className="text-xs font-black text-[#1F1939]">GitHub Repository</span>
+                <p className="text-[11px] font-semibold text-[#4A4468] leading-relaxed">
+                  Zentrale Code-Ablage und Versionskontrolle über Git. Dient als Ausgangspunkt für automatisiertes Deployment, kollaboratives Arbeiten und Revisionsverfolgung.
                 </p>
               </div>
 
-              <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-[11px] font-bold text-[#4A4468] leading-relaxed uppercase tracking-wider">
-                  <span className="font-black text-[#1F1939]">Verfügbarkeit & Netzwerksicherheit:</span> Georedundantes Hosting auf zertifizierten Tier-IV-Servern mit maximaler Ausfallsicherheit und umfassendem Schutz gegen DDoS- und Brute-Force-Angriffe über globale Gateways. Die gesamte Infrastruktur ist nach ISO 27001 und SOC2 Type II zertifiziert.
+              {/* Vercel */}
+              <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col gap-1.5 text-left">
+                <span className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-widest">Hosting & Deployment</span>
+                <span className="text-xs font-black text-[#1F1939]">Vercel Edge Platform</span>
+                <p className="text-[11px] font-semibold text-[#4A4468] leading-relaxed">
+                  Müheloses Hosting und CI/CD-Deployment. Die Webanwendung wird über das weltweite Edge-Netzwerk von Vercel mit minimalen Ladezeiten und hoher Zuverlässigkeit bereitgestellt.
                 </p>
               </div>
             </div>
-
-            
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {showServices && createPortal(
-        <div className="modal-backdrop px-4">
-          <div className="absolute inset-0" onClick={() => setShowServices(false)} />
-          <div className="modal-content p-8" onClick={e => e.stopPropagation()}>
-            <div className="flex flex-col items-center text-center gap-4 mb-6">
-              <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-500 border-2 border-white shadow-sm">
-                <Settings className="w-8 h-8" />
-              </div>
-              <h3 className="text-lg font-black text-[#1F1939] uppercase tracking-widest">Verwendete Dienste</h3>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Infrastruktur & Auth</span>
-                <span className="text-xs font-bold text-[#1F1939]">Supabase (PostgreSQL, Storage, Auth)</span>
-              </div>
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Künstliche Intelligenz</span>
-                <span className="text-xs font-bold text-[#1F1939]">Google Gemini AI (Textgenerierung)</span>
-              </div>
-              <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col gap-1">
-                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Hosting & Deployment</span>
-                <span className="text-xs font-bold text-[#1F1939]">Vercel (Edge Network)</span>
-              </div>
-            </div>
-
-            <button onClick={() => setShowServices(false)} className="w-full mt-8 py-4 bg-blue-500 text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl active:scale-95 transition-all shadow-lg shadow-blue-100">Schließen</button>
           </div>
         </div>,
         document.body
       )}
 
       {showSecurityModal && createPortal(
-        <div className="modal-backdrop px-4">
+        <div className="modal-backdrop">
           <div className="absolute inset-0" onClick={() => setShowSecurityModal(false)} />
-          <div className="modal-content p-8 max-h-[85vh] overflow-y-auto show-scrollbar" onClick={e => e.stopPropagation()}>
-            <button onClick={() => setShowSecurityModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all">
+          <div 
+            className="modal-content p-8 h-[calc(100svh-32px)] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
+            onClick={e => e.stopPropagation()}
+            onTouchStart={(e) => setModalTouchStart(e.targetTouches[0].clientX)}
+            onTouchEnd={(e) => {
+              if (modalTouchStart !== null && e.changedTouches[0].clientX - modalTouchStart > 75) {
+                setShowSecurityModal(false);
+                setModalTouchStart(null);
+              }
+            }}
+          >
+            <button onClick={() => setShowSecurityModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
               <X className="w-4 h-4 text-[var(--secondary)]" />
             </button>
 
-            <div className="flex flex-col items-center text-center gap-4 mb-8 pt-4">
-              <div className="w-16 h-16 bg-emerald-50 rounded-[2rem] flex items-center justify-center border-2 border-white shadow-sm">
-                <Shield className="w-8 h-8 text-emerald-500" />
+            <div className="flex flex-col items-center text-center gap-4 mb-6 pt-4 shrink-0">
+              <div className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center border-2 border-white shadow-sm text-[var(--secondary)]">
+                <ShieldCheck className="w-8 h-8" />
               </div>
-              <h3 className="text-xl font-black text-[#1F1939] leading-tight">Cyber-Sicherheitsarchitektur & Infrastruktur</h3>
+              <h3 className="text-lg font-black text-[#1F1939] leading-tight uppercase tracking-tighter">
+                Wie wir deine Daten schützen:
+              </h3>
             </div>
 
-            <div className="space-y-6 text-left">
+            <div className="space-y-6 text-left overflow-y-scroll pr-2 security-scrollbar flex-1 pb-12">
               <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-sm text-[#4A4468] leading-relaxed">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--secondary)] shrink-0 mt-2" />
+                <p className="text-xs font-semibold text-[#4A4468] leading-relaxed">
                   <span className="font-black text-[#1F1939]">Strikte Datensparsamkeit:</span> Vollständiger Verzicht auf persistente Cookies, Tracking-Pixel oder Analytics-Tools. Es werden keinerlei personenbezogene Stammdaten (wie Nachnamen, Telefonnummern oder Adressen) erhoben.
                 </p>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-sm text-[#4A4468] leading-relaxed">
-                  <span className="font-black text-[#1F1939]">Standardkonforme Verschlüsselung:</span> End-zu-End-verschlüsselte Datenübertragung via TLS 1.3 gemäß den Richtlinien des <a href="https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Publikationen/TechnischeRichtlinien/TR02102/BSI-TR-02102-2.html" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline underline-offset-2 decoration-2 decoration-emerald-200 hover:decoration-emerald-400 transition-all font-black">BSI (TR-02102-2)</a>, fortlaufend unabhängig überprüft und mit Bestnoten validiert.
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--secondary)] shrink-0 mt-2" />
+                <p className="text-xs font-semibold text-[#4A4468] leading-relaxed">
+                  <span className="font-black text-[#1F1939]">Standardkonforme Verschlüsselung:</span> Verschlüsselte Datenübertragung via TLS 1.3 gemäß den Richtlinien des <a href="https://www.bsi.bund.de/SharedDocs/Downloads/DE/BSI/Publikationen/TechnischeRichtlinien/TR02102/BSI-TR-02102-2.html" target="_blank" rel="noopener noreferrer" className="text-[var(--secondary)] underline underline-offset-2 decoration-2 decoration-purple-200 hover:decoration-purple-400 transition-all font-black">BSI (TR-02102-2)</a>, fortlaufend unabhängig überprüft und mit Bestnoten validiert.
                 </p>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-sm text-[#4A4468] leading-relaxed">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--secondary)] shrink-0 mt-2" />
+                <p className="text-xs font-semibold text-[#4A4468] leading-relaxed">
                   <span className="font-black text-[#1F1939]">Isolierte Datenspeicherung:</span> Kryptographisch abgesicherte Speicherung von Datensätzen direkt auf Datenbankebene, strikt voneinander isoliert durch den Einsatz von Row-Level-Security (RLS).
                 </p>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 mt-2" />
-                <p className="text-sm text-[#4A4468] leading-relaxed">
-                  <span className="font-black text-[#1F1939]">Verfügbarkeit & Netzwerksicherheit:</span> Georedundantes Hosting auf zertifizierten Tier-IV-Servern mit maximaler Ausfallsicherheit und umfassendem Schutz gegen DDoS- und Brute-Force-Angriffe über globale Gateways. Die gesamte Infrastruktur ist nach ISO 27001 und SOC2 Type II zertifiziert.
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--secondary)] shrink-0 mt-2" />
+                <p className="text-xs font-semibold text-[#4A4468] leading-relaxed">
+                  <span className="font-black text-[#1F1939]">Verfügbarkeit & Netzwerksicherheit:</span> Georedundantes Hosting auf zertifizierten Tier-IV-Servern mit maximaler Ausfallsicherheit und umfassendem Schutz gegen DDoS- und Brute-Force-Angriffe über globale Gateways.
                 </p>
               </div>
             </div>
-
-            <button onClick={() => setShowSecurityModal(false)} className="w-full mt-10 py-5 bg-emerald-500 text-white font-black text-sm uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-lg shadow-emerald-200">Verstanden</button>
           </div>
         </div>,
         document.body

@@ -1,46 +1,32 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Lock } from 'lucide-react';
-import { createPortal } from 'react-dom';
+import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Lock, EyeOff } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   const features = [
     { icon: <Heart className="w-5 h-5 text-red-500" />, text: "Sagt Tschüss zu Doom-Scrollen: Diese App stärkt eure Beziehung" },
-    { icon: <MessageCircle className="w-5 h-5 text-blue-500" />, text: "Jeden Tag neue, spannende Fragen" },
-    { icon: <MessageCircle className="w-5 h-5 text-purple-500" />, text: "Antworten erst sichtbar, wenn beide geantwortet haben" },
+    { icon: <MessageCircle className="w-5 h-5 text-blue-500" />, text: "Verbinde dich mit einem Bisou-Partner, um täglich mehr übereinander zu erfahren" },
+    { icon: <EyeOff className="w-5 h-5 text-purple-500" />, text: "Antworten erst sichtbar, wenn beide geantwortet haben" },
     { icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, text: "Deine Daten werden verschlüsselt und nach strengen BSI-Richtlinien übertragen." },
   ];
 
   const tickerItems = [
-    "Für immer kostenlos",
+    "Als App installierbar",
     "Personen aus deinem privaten Umfeld verwenden Bisou",
     "Privacy by Design: Keine Tracker, keine Cookies.",
-    "Für immer kostenlos",
+    "Als App installierbar",
     "Personen aus deinem privaten Umfeld verwenden Bisou",
     "Privacy by Design: Keine Tracker, keine Cookies."
   ];
 
   return (
-    <section className="flex-1 flex flex-col relative h-full w-full">
-      {/* Brand Gradient Background - Full Screen */}
-      {createPortal(
-        <div className="fixed inset-0 -z-50 bg-gradient-to-br from-[#FF8A8A]/10 via-[#F8F7FF] to-[#A29BFE]/10 pointer-events-none" />,
-        document.body
-      )}
+    <section className="flex-1 flex flex-col relative h-full w-full overflow-hidden">
       
-      <div className="flex-1 flex flex-col gap-5 sm:gap-6 py-4 relative w-full justify-evenly">
-        {/* Intro Section */}
-        <div className="text-center">
-          <p className="text-[#4A4468] text-[13px] sm:text-lg font-bold leading-relaxed max-w-2xl mx-auto opacity-90 animate-entrance">
-            Verbinde dich mit einem Bisou-Partner,<br />
-            um täglich mehr übereinander zu erfahren.
-          </p>
-        </div>
-
+      <div className="flex-1 flex flex-col gap-3 sm:gap-6 pt-3 sm:pt-6 pb-2 sm:pb-4 relative w-full justify-between sm:justify-evenly min-h-0">
         {/* Infinite Ticker */}
-        <div className="w-full overflow-hidden py-2 border-y border-purple-100/50 relative">
+        <div className="w-full overflow-hidden py-2.5 sm:py-3.5 border-y border-purple-100/50 relative shrink-0 my-1 sm:my-2">
           <div className="flex animate-ticker whitespace-nowrap gap-8 items-center">
             {tickerItems.map((item, i) => (
               <div key={i} className="flex items-center gap-2 shrink-0">
@@ -51,21 +37,28 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Feature List (Responsive Grid) */}
-        <div className="w-full grid grid-cols-2 gap-2 sm:gap-4">
+        {/* Feature List (Vertical List) */}
+        <div className="w-full flex flex-col gap-2 sm:gap-3 px-2 sm:px-6 flex-1 min-h-0 justify-center">
           {features.map((f, i) => (
-            <div key={i} className="flex flex-col items-center text-center gap-2 p-3 sm:p-5 rounded-[1.5rem] sm:rounded-[2rem] bg-white/60 border border-white shadow-sm backdrop-blur-sm transition-all hover:bg-white h-full">
-              <div className="shrink-0 scale-90 sm:scale-100">{f.icon}</div>
-              <p className="text-[9px] sm:text-[11px] font-bold text-[#1F1939] leading-snug">{f.text}</p>
+            <div 
+              key={i} 
+              className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-4 rounded-[1.25rem] sm:rounded-[1.75rem] bg-white/60 border border-white shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:translate-x-1 duration-200"
+            >
+              <div className="shrink-0 p-2 sm:p-2.5 rounded-xl bg-purple-50 flex items-center justify-center">
+                {f.icon}
+              </div>
+              <p className="text-[10px] sm:text-xs font-bold text-[#1F1939] leading-relaxed text-left flex-1">
+                {f.text}
+              </p>
             </div>
           ))}
         </div>
 
         {/* CTA Section */}
-        <div className="flex flex-col items-center gap-3 w-full">
+        <div className="flex flex-col items-center gap-2 sm:gap-3 w-full shrink-0">
           <button 
             onClick={() => navigate('/signup')} 
-            className="btn-primary py-4 px-8 text-[11px] font-black uppercase tracking-[0.2em] w-full shadow-xl hover:scale-[1.02] transition-transform"
+            className="btn-primary py-3 sm:py-4 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
           >
             Kostenlos starten ✨
           </button>
@@ -81,7 +74,7 @@ export default function LandingPage() {
           100% { transform: translateX(-50%); }
         }
         .animate-ticker {
-          animation: ticker 30s linear infinite;
+          animation: ticker 12s linear infinite;
           width: fit-content;
         }
       `}
