@@ -90,7 +90,7 @@ function AppLayout({
       </main>
 
       {/* Blurry fade transition at the bottom */}
-      {profile.intro_completed && !['/intro'].includes(location.pathname) && !location.search.includes('tab=intro') && (
+      {profile.intro_completed && !['/intro', '/questions'].includes(location.pathname) && !location.search.includes('tab=intro') && (
         <div 
           className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
           style={{ 

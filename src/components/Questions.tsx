@@ -506,14 +506,14 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-y-auto scrollbar-soft pt-4 pb-20">
+          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4" style={{ paddingBottom: 'calc(88px + var(--sab))' }}>
             <header className="mb-4">
               <div className="quiz-prog-dots">
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
               </div>
             </header>
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col min-h-0">
-              <h2 className="text-[1.5rem] font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight">{q.q}</h2>
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col min-h-0 scrollbar-soft">
+              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight">{q.q}</h2>
               <div className="flex-1 flex flex-col min-h-0 pb-44">
                 {step === 0 && (
                   <div className="flex flex-col gap-3">
@@ -552,7 +552,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 )}
               </div>
             </div>
-            <div className="mt-auto pt-6 pb-6">
+            <div className="mt-auto pt-4 pb-0">
               <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-5 shadow-none disabled:opacity-40 font-black text-lg group">
                 {isSubmitting ? (
                   'Wird geteilt...'
@@ -577,14 +577,9 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         ) : (
           // --- RESULTS VIEW ---
           <div className="flex flex-col flex-1 h-full overflow-hidden">
-            <header className="h-[40px] flex items-start justify-end shrink-0 mb-2">
-              <button onClick={resetQuiz} className="text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/50 rounded-full border border-red-100">
-                Antworten zurücksetzen <RefreshCcw className="w-3 h-3" />
-              </button>
-            </header>
             <div className="flex-1 relative min-h-0">
               <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
-                <div className="space-y-10 pb-72 pt-10">
+                <div className="space-y-10 pb-72 pt-28">
                 {dailyQs.map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
@@ -632,6 +627,29 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
               />
           </div>
         </div>
+      )}
+
+      {step >= 3 && createPortal(
+        <>
+          <div 
+            className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
+            style={{ 
+              maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)'
+            }}
+          />
+          <div 
+            className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md px-4 z-[100] pointer-events-none" 
+            style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
+          >
+            <div className="flex justify-end">
+              <button onClick={resetQuiz} className="pointer-events-auto text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/50 rounded-full border border-red-100 shadow-sm mt-1">
+                Antworten zurücksetzen <RefreshCcw className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
       )}
     </div>
     );

@@ -85,7 +85,7 @@ export default function PublicLayout() {
       {/* Main Content Area */}
       <main className={`mx-auto flex-1 flex flex-col w-full relative z-10 max-w-md px-4 ${isLandingPage ? 'overflow-y-auto scrollbar-soft' : ''}`}>
         {isLandingPage ? (
-          <div className="pt-0 pb-0">
+          <div className="flex-1 flex flex-col">
             <Outlet />
           </div>
         ) : (

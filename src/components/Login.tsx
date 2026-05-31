@@ -103,7 +103,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-start px-4 pb-4 pt-0 min-h-fit">
+      <div className="flex-1 flex flex-col items-center justify-start px-4 pb-4 pt-8 min-h-fit">
         <div className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-8 shadow-[var(--shadow-soft)] flex flex-col w-full max-w-md">
           <>
             {mode === 'login' && (

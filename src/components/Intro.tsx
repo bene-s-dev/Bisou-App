@@ -48,8 +48,8 @@ const MagicClock = () => {
     <div className="relative w-24 h-24">
       <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center border-2 border-white relative z-10 overflow-hidden">
         <div className="relative w-12 h-12 border-2 border-orange-200 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm">
-          <div className={'absolute w-1 h-4 bg-orange-400 rounded-full origin-bottom transition-all duration-[2000ms] ' + (stopped ? 'rotate-90' : 'animate-[spin_1.5s_linear_infinite]')} style={{ bottom: '50%' }} />
-          <div className={'absolute w-1 h-5 bg-orange-300 rounded-full origin-bottom transition-all duration-[2000ms] ' + (stopped ? 'rotate-0' : 'animate-[spin_0.4s_linear_infinite]')} style={{ bottom: '50%' }} />
+          <div className={'absolute w-1 h-4 bg-orange-400 rounded-full origin-bottom transition-all duration-[2000ms] animate-[spin_1.5s_linear_infinite]'} style={{ bottom: '50%' }} />
+          <div className={'absolute w-1 h-5 bg-orange-300 rounded-full origin-bottom transition-all duration-[2000ms] animate-[spin_0.4s_linear_infinite]'} style={{ bottom: '50%' }} />
           <div className="w-1.5 h-1.5 bg-orange-500 rounded-full z-10" />
         </div>
       </div>

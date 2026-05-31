@@ -104,13 +104,25 @@ export default function Profile({
   }, [activeTab, profile?.partner_id]);
 
   const handleVersionClick = () => {
-    if (isDevMode) return;
-    
     const nextTaps = devTaps + 1;
     setDevTaps(nextTaps);
     
     if (devTimeoutRef.current) {
       clearTimeout(devTimeoutRef.current);
+    }
+    
+    if (isDevMode) {
+      if (nextTaps >= 5) {
+        handleLeaveDevMode();
+      } else {
+        const stepsRemaining = 5 - nextTaps;
+        setDevMessage(`Noch ${stepsRemaining} ${stepsRemaining === 1 ? 'Schritt' : 'Schritte'} zum Deaktivieren! 🔒`);
+        devTimeoutRef.current = setTimeout(() => {
+          setDevMessage(null);
+          setDevTaps(0);
+        }, 3000);
+      }
+      return;
     }
     
     if (nextTaps >= 5) {
@@ -276,6 +288,7 @@ export default function Profile({
       const reader = new FileReader();
       reader.onload = () => setSelectedImage(reader.result as string);
       reader.readAsDataURL(e.target.files[0]);
+      e.target.value = '';
     }
   };
 
@@ -608,7 +621,7 @@ export default function Profile({
           <div className="relative">
             <div 
               onClick={() => setShowAvatarMenu(true)}
-              className="w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center border-2 border-white shadow-xl overflow-hidden relative group cursor-pointer active:scale-95 transition-all"
+              className="w-20 h-20 rounded-[2rem] bg-white flex items-center justify-center border-2 border-white shadow-md overflow-hidden relative group cursor-pointer active:scale-95 transition-all"
             >
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
@@ -696,6 +709,15 @@ export default function Profile({
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {selectedImage && createPortal(
+        <ImageCropper
+          image={selectedImage}
+          onCropComplete={handleCropComplete}
+          onCancel={() => setSelectedImage(null)}
+        />,
         document.body
       )}
 
