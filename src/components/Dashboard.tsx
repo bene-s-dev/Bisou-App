@@ -355,46 +355,30 @@ export default function Dashboard({
   };
 
   if (!dashboardData) return (
-    <div className="flex-1 flex flex-col animate-entrance relative">
-      {userAvatar && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
-          <img 
-            src={userAvatar} 
-            alt="background-avatar" 
-            className="w-full h-full object-cover filter blur-[40px] scale-110"
-          />
+    <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
+      <div className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden">
+        <div className="relative h-[110px] mb-8 flex flex-col items-center justify-center">
+          <div className="flex -space-x-4">
+            <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-20" />
+            <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-10" />
+          </div>
         </div>
-      )}
-      <div className="relative h-[110px] mb-8 flex flex-col items-center justify-center">
-        <div className="flex -space-x-4">
-          <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-20" />
-          <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-10" />
+        <div className="mb-6 space-y-2">
+          <div className="w-32 h-7 rounded-xl skeleton" />
+          <div className="w-48 h-7 rounded-xl skeleton" />
         </div>
+        <div className="space-y-4 mb-8">
+          <div className="h-20 rounded-[24px] skeleton" />
+          <div className="h-20 rounded-[24px] skeleton" />
+        </div>
+        <div className="mt-auto pb-6 pt-2"><div className="h-16 rounded-[22px] skeleton" /></div>
       </div>
-      <div className="mb-6 space-y-2">
-        <div className="w-32 h-7 rounded-xl skeleton" />
-        <div className="w-48 h-7 rounded-xl skeleton" />
-      </div>
-      <div className="space-y-4 mb-8">
-        <div className="h-20 rounded-[24px] skeleton" />
-        <div className="h-20 rounded-[24px] skeleton" />
-      </div>
-      <div className="mt-auto pb-6 pt-2"><div className="h-16 rounded-[22px] skeleton" /></div>
     </div>
   );
 
   if (showComparison) {
     return (
       <div className="animate-entrance flex flex-col h-full overflow-hidden relative">
-        {userAvatar && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
-            <img 
-              src={userAvatar} 
-              alt="background-avatar" 
-              className="w-full h-full object-cover filter blur-[40px] scale-110"
-            />
-          </div>
-        )}
 
         {/* Header area with solid background + soft bottom edge */}
         <div className="relative z-20 shrink-0">
@@ -453,19 +437,10 @@ export default function Dashboard({
 
   return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
-      {userAvatar && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden -z-10 opacity-[0.06] select-none">
-          <img 
-            src={userAvatar} 
-            alt="background-avatar" 
-            className="w-full h-full object-cover filter blur-[40px] scale-110"
-          />
-        </div>
-      )}
-      <div className="flex-1 flex flex-col pt-[52px] pb-20 sm:pb-32 overflow-hidden">
+      <div className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden">
         
         {/* Header: Avatars and Streaks */}
-        <div className="flex flex-col items-center mb-3 sm:mb-6 shrink-0">
+        <div className="flex flex-col items-center mb-5 sm:mb-7 shrink-0">
           <div className="relative flex flex-col items-center">
             {/* Avatars Row with Flame Pills attached */}
             <div className="flex -space-x-4">
@@ -507,14 +482,14 @@ export default function Dashboard({
             </div>
 
             <div className="flex items-center justify-center w-full mt-3 px-2">
-              <div className="w-1/2 flex justify-end pr-3 min-w-0">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-right truncate max-w-full block">
-                  {partnerName.split(' ')[0]}
+              <div className="w-1/2 flex justify-end pr-2.5 min-w-0">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-right whitespace-nowrap">
+                  {partnerName}
                 </span>
               </div>
-              <div className="w-1/2 flex justify-start pl-3 min-w-0">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-left truncate max-w-full block">
-                  {(userName || 'Ich').split(' ')[0]}
+              <div className="w-1/2 flex justify-start pl-2.5 min-w-0">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-left whitespace-nowrap">
+                  {userName || 'Ich'}
                 </span>
               </div>
             </div>

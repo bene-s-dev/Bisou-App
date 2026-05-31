@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, CircleAlert, Shield, Fingerprint, RotateCcw, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 
 interface DeleteAccountModalProps {
@@ -65,7 +66,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
     }
   };
 
-  return (
+  return createPortal(
     <div className="modal-backdrop px-4">
       <div className="absolute inset-0" onClick={onClose} />
       <div className="modal-content p-8 animate-pulse-alarm-border">
@@ -130,6 +131,7 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

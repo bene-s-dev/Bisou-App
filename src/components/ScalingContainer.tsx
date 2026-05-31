@@ -56,7 +56,7 @@ export default function ScalingContainer({
   }, [targetWidth, targetHeight, onlyScaleWidth]);
 
   return (
-    <div className={`fixed inset-0 flex justify-center bg-[#F8F7FF] overflow-hidden ${align === 'center' ? 'items-center' : 'items-start'}`}>
+    <div className={`fixed inset-0 flex justify-center bg-transparent overflow-hidden ${align === 'center' ? 'items-center' : 'items-start'}`}>
       <div 
         ref={wrapperRef}
         style={{ 
@@ -66,7 +66,7 @@ export default function ScalingContainer({
           transformOrigin: align === 'center' ? 'center center' : 'top center',
           flexShrink: 0,
           position: 'relative',
-          backgroundColor: '#F8F7FF'
+          backgroundColor: 'transparent'
         }}
       >
         <div className="w-full h-full flex flex-col relative overflow-hidden">

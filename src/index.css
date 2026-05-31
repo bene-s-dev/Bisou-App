@@ -51,6 +51,12 @@ html, body {
   display: flex;
   flex-direction: column;
   background-color: #F8F7FF !important;
+  transition: filter 0.25s ease;
+}
+
+body.modal-open #root {
+  filter: blur(8px);
+  pointer-events: none;
 }
 
 .bg-aura {
@@ -58,6 +64,43 @@ html, body {
   background: radial-gradient(circle at top right, #FFF0F0 0%, transparent 45%),
               radial-gradient(circle at bottom left, #F0F3FF 0%, transparent 45%),
               #F8F7FF; 
+}
+
+.bg-public-gradient {
+  position: absolute; 
+  inset: 0; 
+  z-index: -1; 
+  overflow: hidden; 
+  background: linear-gradient(135deg, #FFE3E3 0%, #F4F1FF 50%, #E2DDFF 100%);
+}
+
+.bg-public-gradient::before {
+  content: "";
+  position: absolute;
+  top: -15%;
+  right: -15%;
+  width: 60vw;
+  height: 60vw;
+  border-radius: 50%;
+  background: rgba(255, 107, 107, 0.25);
+  -webkit-filter: blur(100px);
+  filter: blur(100px);
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+.bg-public-gradient::after {
+  content: "";
+  position: absolute;
+  bottom: -15%;
+  left: -15%;
+  width: 70vw;
+  height: 70vw;
+  border-radius: 50%;
+  background: rgba(129, 121, 224, 0.25);
+  -webkit-filter: blur(120px);
+  filter: blur(120px);
+  animation: pulse-slow 4s ease-in-out infinite;
+  animation-delay: -2s;
 }
 
 @layer components {
@@ -284,6 +327,22 @@ html, body {
   will-change: transform, opacity;
 }
 
+.animate-fade-in-up {
+  animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes slide-in-right {
   from { transform: translate3d(100%, 0, 0); opacity: 0; }
   to { transform: translate3d(0, 0, 0); opacity: 1; }
@@ -466,7 +525,7 @@ html, body {
 }
 
 .sortable-fallback .card-inner {
-  transform: scale(1.05) !important;
+  transform: scale(1) !important;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
   cursor: grabbing !important;
   background-color: white !important;
@@ -520,4 +579,76 @@ html, body {
   -ms-overflow-style: auto !important;
   scrollbar-width: thin !important;
   scrollbar-color: rgba(162, 155, 254, 0.85) rgba(162, 155, 254, 0.08) !important;
+}
+
+/* Height-based responsive scaling for Quiz View to fit small screens without scrolling */
+@media (max-height: 685px) {
+  .quiz-view-container h2 {
+    @apply text-base mb-3 !important;
+  }
+  
+  .quiz-view-container .flex-col.gap-3 button {
+    @apply py-3.5 px-4 rounded-[1.5rem] min-h-[56px] text-xs !important;
+    margin-bottom: 0px !important;
+  }
+  
+  .quiz-view-container .rank-item .card-inner,
+  .sortable-fallback .card-inner {
+    @apply p-3.5 rounded-[1.5rem] gap-2.5 !important;
+  }
+  
+  .quiz-view-container .rank-item .card-inner span.font-black,
+  .sortable-fallback .card-inner span.font-black {
+    @apply text-xs !important;
+  }
+  
+  .quiz-view-container .rank-item .card-inner span.rank-badge,
+  .sortable-fallback .card-inner span.rank-badge {
+    @apply w-6 h-6 text-[10px] !important;
+  }
+  
+  .quiz-view-container textarea {
+    @apply h-[110px] p-4 rounded-[1.8rem] text-sm !important;
+  }
+  
+  .quiz-view-container .pb-44 {
+    @apply pb-6 !important;
+  }
+  
+  .quiz-view-container .mb-4 {
+    @apply mb-2 !important;
+  }
+  
+  .quiz-view-container .quiz-dot {
+    @apply w-1.5 h-1.5 mx-0.5 !important;
+  }
+}
+
+@media (max-height: 615px) {
+  .quiz-view-container h2 {
+    @apply text-sm mb-2 !important;
+  }
+  
+  .quiz-view-container .flex-col.gap-3 button {
+    @apply py-2 px-3 rounded-[1.25rem] min-h-[46px] text-[11px] !important;
+  }
+  
+  .quiz-view-container .rank-item .card-inner,
+  .sortable-fallback .card-inner {
+    @apply p-2.5 rounded-[1.25rem] gap-2 !important;
+  }
+  
+  .quiz-view-container .rank-item .card-inner span.font-black,
+  .sortable-fallback .card-inner span.font-black {
+    @apply text-[11px] !important;
+  }
+  
+  .quiz-view-container .rank-item .card-inner span.rank-badge,
+  .sortable-fallback .card-inner span.rank-badge {
+    @apply w-5 h-5 text-[9px] !important;
+  }
+  
+  .quiz-view-container textarea {
+    @apply h-[85px] p-3 rounded-[1.5rem] text-xs !important;
+  }
 }

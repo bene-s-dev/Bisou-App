@@ -349,6 +349,13 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       const { error } = await supabase.from('answers').insert([{ user_id: session.user.id, choice: choiceStr, day_key: dayKey }]);
       if (error && error.code !== '23505') throw error;
       
+      // Send push notification to partner (fire-and-forget, non-blocking)
+      if (partnerId) {
+        supabase.functions.invoke('send-push-notification', {
+          body: { user_id: session.user.id, partner_id: partnerId, type: 'answer_submitted' }
+        }).catch(err => console.warn('Push notification failed (non-critical):', err));
+      }
+
       // Update local streak for immediate feedback if dashboardData isn't instant
       if (dashboardData?.streaks) {
         const myS = dashboardData.streaks.find((s: any) => s.user_id === session.user.id);
@@ -521,15 +528,15 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4" style={{ paddingBottom: 'calc(120px + var(--sab))' }}>
+          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container" style={{ paddingBottom: 'calc(92px + var(--sab))' }}>
             <header className="mb-4">
               <div className="quiz-prog-dots">
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
               </div>
             </header>
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col min-h-0 scrollbar-soft">
-              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight">{q.q}</h2>
-              <div className="flex-1 flex flex-col min-h-0 pb-44">
+            <div className="flex-1 overflow-y-auto pr-1 flex flex-col min-h-0 scrollbar-soft justify-center py-4">
+              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q.q}</h2>
+              <div className="min-h-0 pb-4">
                 {step === 0 && (
                   <div className="flex flex-col gap-3">
                     {(q.o || []).map((o, i) => (
@@ -538,16 +545,21 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   </div>
                 )}
                 {step === 1 && (
-                  <div ref={sortableRef} className="flex flex-col gap-3 rank-list">
-                    {rankingOptions.map((o, i) => (
-                      <div key={o} className="cursor-grab select-none rank-item">
-                        <div className="bg-white border-2 border-[var(--card-border)] p-5 rounded-[2rem] flex items-center gap-4 shadow-sm transition-[border-color,background-color] duration-200 card-inner">
-                          <span className="w-8 h-8 rounded-full bg-purple-50 text-[var(--secondary)] flex items-center justify-center text-[12px] font-black rank-badge" data-rank={i + 1}></span>
-                          <span className="font-black text-[14px] text-[#2D264B] leading-snug line-clamp-2">{o}</span>
+                  <>
+                    <div className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.15em] text-center mb-4 flex items-center justify-center gap-1.5 opacity-80">
+                      <span>👆</span> Gedrückt halten zum Verschieben
+                    </div>
+                    <div ref={sortableRef} className="flex flex-col gap-3 rank-list">
+                      {rankingOptions.map((o, i) => (
+                        <div key={o} className="cursor-grab select-none rank-item">
+                          <div className="bg-white border-2 border-[var(--card-border)] p-5 rounded-[2rem] flex items-center gap-4 shadow-sm transition-[border-color,background-color] duration-200 card-inner">
+                            <span className="w-8 h-8 rounded-full bg-purple-50 text-[var(--secondary)] flex items-center justify-center text-[12px] font-black rank-badge" data-rank={i + 1}></span>
+                            <span className="font-black text-[14px] text-[#2D264B] leading-snug line-clamp-2">{o}</span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </>
                 )}
                 {step === 2 && (
                   <div className="flex flex-col gap-2 relative">
@@ -568,7 +580,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
               </div>
             </div>
             <div className="mt-auto pt-4 pb-0">
-              <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-5 shadow-none disabled:opacity-40 font-black text-lg group">
+              <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-4 text-sm uppercase tracking-[0.15em] shadow-none disabled:opacity-40 font-black group">
                 {isSubmitting ? (
                   'Wird geteilt...'
                 ) : (
@@ -576,12 +588,12 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                     {step === 2 ? (
                       <>
                         Antworten senden
-                        <Send className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        <Send className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                       </>
                     ) : (
                       <>
                         Weiter
-                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </>
@@ -610,7 +622,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
                   return (
-                    <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+                    <div key={i} className="animate-fade-in-up" style={{ animationDelay: `${i * 150}ms` }}>
                       <div className="flex items-center mb-4 px-1">
                         <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
                       </div>

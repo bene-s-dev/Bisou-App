@@ -38,34 +38,89 @@ const ScramblingCode = () => {
 };
 
 const MagicClock = ({ onStop }: { onStop?: (el: HTMLElement) => void }) => {
-  const [isStopped, setIsStopped] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const hourRef = useRef<HTMLDivElement>(null);
+  const minuteRef = useRef<HTMLDivElement>(null);
+  const firedRef = useRef(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsStopped(true);
-      if (onStop && containerRef.current) {
-        onStop(containerRef.current);
+    let raf: number;
+    const startTime = performance.now();
+    const spinDuration = 2400; // total animation time in ms
+
+    // Target positions: hour at 90° (3 o'clock), minute at 360° (12 o'clock / 0 o'clock)
+    // To make it look like a real time-lapse, the minute hand must spin EXACTLY 12 times faster than the hour hand!
+    // Let's have the hour hand make 2 full rotations plus the 90° (810° total target)
+    // The minute hand will make exactly 27 full rotations (810° * 12 = 9720° total target)
+    const hourTarget = 90 + 2 * 360; // 810 degrees
+    const minuteTarget = hourTarget * 12; // 9720 degrees
+
+    // Smooth Ease-In-Out Cubic profile for time-lapse acceleration and deceleration
+    const easeInOutCubic = (t: number): number => 
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    const animate = (now: number) => {
+      const elapsed = now - startTime;
+      const rawProgress = Math.min(elapsed / spinDuration, 1);
+      const progress = easeInOutCubic(rawProgress);
+
+      const hourAngle = progress * hourTarget;
+      const minuteAngle = progress * minuteTarget;
+
+      if (hourRef.current) {
+        hourRef.current.style.transform = `rotate(${hourAngle}deg)`;
       }
-    }, 2000);
-    return () => clearTimeout(timer);
+      if (minuteRef.current) {
+        minuteRef.current.style.transform = `rotate(${minuteAngle}deg)`;
+      }
+
+      if (rawProgress < 1) {
+        raf = requestAnimationFrame(animate);
+      } else {
+        // Final layout values
+        if (hourRef.current) hourRef.current.style.transform = `rotate(${hourTarget}deg)`;
+        if (minuteRef.current) minuteRef.current.style.transform = `rotate(${minuteTarget}deg)`;
+        
+        // Trigger stopping handler (e.g. confetti)
+        if (!firedRef.current && onStop && containerRef.current) {
+          firedRef.current = true;
+          onStop(containerRef.current);
+        }
+      }
+    };
+
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
   }, [onStop]);
 
   return (
     <div className="relative w-24 h-24" ref={containerRef}>
-      <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center border-2 border-white relative z-10 overflow-hidden">
-        <div className="relative w-12 h-12 border-2 border-orange-200 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm">
-          {/* Hour Hand (shorter, stops at 3 o'clock / 90deg) */}
-          <div 
-            className={`absolute w-1 h-3.5 bg-orange-400 rounded-full origin-bottom transition-all ${!isStopped ? 'animate-[spin_1.5s_linear_infinite]' : ''}`} 
-            style={isStopped ? { bottom: '50%', transform: 'rotate(90deg)' } : { bottom: '50%' }} 
+      <div className="w-24 h-24 bg-gradient-to-br from-amber-50 to-orange-50 rounded-[2.5rem] flex items-center justify-center border-2 border-white relative z-10 overflow-hidden shadow-sm">
+        <div className="relative w-14 h-14 border-2 border-orange-200 rounded-full flex items-center justify-center bg-white/50 backdrop-blur-sm shadow-inner">
+          {/* Hour Hand – shorter, thicker, centered perfectly */}
+          <div
+            ref={hourRef}
+            className="absolute w-[3px] h-3.5 bg-orange-500 rounded-full"
+            style={{ 
+              bottom: '50%', 
+              left: 'calc(50% - 1.5px)', 
+              transformOrigin: 'bottom center',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}
           />
-          {/* Minute Hand (longer, stops at 12 o'clock / 0deg) */}
-          <div 
-            className={`absolute w-1 h-4.5 bg-orange-300 rounded-full origin-bottom transition-all ${!isStopped ? 'animate-[spin_0.4s_linear_infinite]' : ''}`} 
-            style={isStopped ? { bottom: '50%', transform: 'rotate(0deg)' } : { bottom: '50%' }} 
+          {/* Minute Hand – longer, thinner, centered perfectly */}
+          <div
+            ref={minuteRef}
+            className="absolute w-[2px] h-5.5 bg-orange-400 rounded-full"
+            style={{ 
+              bottom: '50%', 
+              left: 'calc(50% - 1px)', 
+              transformOrigin: 'bottom center',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}
           />
-          <div className="w-1.5 h-1.5 bg-orange-500 rounded-full z-10" />
+          {/* Center dot */}
+          <div className="w-2 h-2 bg-orange-500 rounded-full z-10 relative shadow-sm" />
         </div>
       </div>
     </div>
@@ -191,6 +246,20 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   }, [isReplay, step, isIntroOnly, navigate]);
 
   const setStep = (s: number) => { isIntroOnly ? setLocalStep(s) : navigate("?s=" + s); };
+
+  // Mark intro as completed in the DB as soon as the user reaches the final step.
+  // This prevents the intro from restarting if the PWA is opened after installation
+  // without the user explicitly clicking "Im Browser weitermachen".
+  useEffect(() => {
+    if (step === 5 && !isReplay && !isIntroOnly) {
+      (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.from('profiles').update({ intro_completed: true }).eq('id', session.user.id);
+        }
+      })();
+    }
+  }, [step, isReplay, isIntroOnly]);
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -344,31 +413,41 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                         </p>
                       </div>
                     </div>
+
+                    <button 
+                      onClick={onComplete}
+                      className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
+                    >
+                      Im Browser weitermachen
+                    </button>
                   </>
                 ) : deferredPrompt ? (
                   /* Android with install prompt available */
-                  <button 
-                    onClick={onInstall}
-                    className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
-                  >
-                    <Download className="w-5 h-5" />
-                    App installieren
-                  </button>
+                  <>
+                    <button 
+                      onClick={onInstall}
+                      className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
+                    >
+                      <Download className="w-5 h-5" />
+                      App installieren
+                    </button>
+
+                    <button 
+                      onClick={onComplete}
+                      className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
+                    >
+                      Im Browser weitermachen
+                    </button>
+                  </>
                 ) : (
                   /* Fallback: no install prompt */
-                  <div className="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-50 rounded-[1.5rem] p-5 text-center">
-                    <p className="text-[11px] font-bold text-[#1F1939] leading-relaxed">
-                      Öffne Bisou in <span className="text-[var(--secondary)] font-black">Chrome</span> oder <span className="text-[var(--secondary)] font-black">Safari</span>, um die App zu installieren.
-                    </p>
-                  </div>
+                  <button 
+                    onClick={onComplete}
+                    className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
+                  >
+                    Im Browser weitermachen
+                  </button>
                 )}
-
-                <button 
-                  onClick={onComplete}
-                  className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
-                >
-                  Im Browser weitermachen
-                </button>
               </>
             )}
           </div>
@@ -379,7 +458,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden h-full bg-[#F8F7FF] relative">
+    <div className="flex-1 flex flex-col items-center justify-center overflow-hidden h-full bg-transparent relative">
       <style>{`
         @keyframes pop {
           0% { transform: scale(0); opacity: 0; }

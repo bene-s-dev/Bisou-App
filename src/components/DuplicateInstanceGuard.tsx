@@ -15,8 +15,17 @@ export default function DuplicateInstanceGuard({ children }: DuplicateInstanceGu
 
   useEffect(() => {
     if ('locks' in navigator) {
+      // Try to acquire the lock without blocking
       navigator.locks.request('bisou_app_instance_lock', { ifAvailable: true }, async (lock) => {
-        if (!lock) setIsDuplicate(true);
+        if (!lock) {
+          // Another tab already holds the lock
+          setIsDuplicate(true);
+          return;
+        }
+        // Hold the lock for the entire lifetime of this tab by returning
+        // a Promise that never resolves. The lock is released automatically
+        // when the tab is closed or navigated away.
+        return new Promise<void>(() => {});
       });
     } else {
       const channel = new BroadcastChannel('bisou_instance_check');

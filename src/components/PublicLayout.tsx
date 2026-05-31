@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { ShieldCheck, LogIn } from 'lucide-react';
 
-import ScalingContainer from './ScalingContainer';
-
 export default function PublicLayout() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,20 +34,12 @@ export default function PublicLayout() {
   const isAuthPage = ['/signin', '/signup'].includes(location.pathname);
   const isLandingPage = location.pathname === '/';
 
-  const content = (
-    <div className={`${isAuthPage ? 'w-full h-full overflow-y-auto scrollbar-soft' : 'h-[100svh] w-screen overflow-hidden'} bg-[#F8F7FF] text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative`}>
-      {isLandingPage ? (
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#FFE3E3] via-[#F4F1FF] to-[#E2DDFF] pointer-events-none overflow-hidden">
-          {/* Glowing ambient blobs */}
-          <div className="absolute top-[-15%] right-[-15%] w-[60vw] h-[60vw] rounded-full bg-[#FF6B6B]/25 blur-[100px] sm:blur-[140px] animate-pulse-slow" />
-          <div className="absolute bottom-[-15%] left-[-15%] w-[70vw] h-[70vw] rounded-full bg-[#8179E0]/25 blur-[120px] sm:blur-[170px] animate-pulse-slow" />
-        </div>
-      ) : (
-        !isAuthPage && <div className="bg-aura" />
-      )}
+  return (
+    <div className="h-[100svh] w-screen overflow-y-auto scrollbar-soft text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative">
+      <div className="bg-public-gradient" />
 
       {/* Header */}
-      <header className={`mx-auto pt-12 pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 ${isLandingPage ? 'max-w-5xl' : 'max-w-md'}`}>
+      <header className="mx-auto pt-12 pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 max-w-md">
         {!isAuthPage && (
           <div className="absolute top-4 right-4">
             <button 
@@ -90,9 +80,9 @@ export default function PublicLayout() {
       </header>
 
       {/* Main Content Area */}
-      <main className={`mx-auto flex-1 flex flex-col w-full relative z-10 px-4 ${isLandingPage ? 'max-w-5xl overflow-hidden' : `max-w-md ${isAuthPage ? '' : 'overflow-hidden'}`}`}>
+      <main className={`mx-auto flex-1 flex flex-col w-full relative z-10 px-4 ${isLandingPage ? 'max-w-5xl' : `max-w-md ${isAuthPage ? '' : 'overflow-hidden'}`}`}>
         {isLandingPage ? (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0">
             <Outlet />
           </div>
         ) : (
@@ -110,14 +100,4 @@ export default function PublicLayout() {
       </footer>
     </div>
   );
-
-  if (isAuthPage) {
-    return (
-      <ScalingContainer targetWidth={400} targetHeight={844} onlyScaleWidth={true} align="center">
-        {content}
-      </ScalingContainer>
-    );
-  }
-
-  return content;
 }

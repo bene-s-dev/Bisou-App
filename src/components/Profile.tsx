@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
 import Intro from './Intro';
+import { ClayHearts } from '../lib/clayHearts';
 
 interface ProfileProps {
   profile: any;
@@ -92,9 +93,88 @@ export default function Profile({
   const [modalTouchStart, setModalTouchStart] = useState<number | null>(null);
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
-        const isIOSLocal = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-        const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
-        const isDesktopLocal = !isIOSLocal && !isAndroid;
+  const isIOSLocal = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
+  const isDesktopLocal = !isIOSLocal && !isAndroid;
+
+  const heartsContainerRef = useRef<HTMLDivElement | null>(null);
+  const clayHeartsRef = useRef<ClayHearts | null>(null);
+  const prevPartnerIdRef = useRef<string | null>(initialProfile?.partner_id || null);
+
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [emailInput, setEmailInput] = useState<string>('');
+  const [isEditingEmail, setIsEditingEmail] = useState<boolean>(false);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState<boolean>(false);
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.email) {
+        setUserEmail(user.email);
+        setEmailInput(user.email);
+      }
+    };
+    fetchUserEmail();
+  }, []);
+
+  const triggerHeartsExplosion = useCallback(() => {
+    if (!heartsContainerRef.current) return;
+    if (!clayHeartsRef.current) {
+      clayHeartsRef.current = new ClayHearts(heartsContainerRef.current);
+    }
+    const clientX = window.innerWidth / 2;
+    const clientY = window.innerHeight / 2;
+    clayHeartsRef.current.explode(clientX, clientY);
+    setTimeout(() => {
+      if (clayHeartsRef.current) {
+        clayHeartsRef.current.explode(clientX - 100, clientY - 100);
+        clayHeartsRef.current.explode(clientX + 100, clientY + 100);
+      }
+    }, 150);
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'partner' && clayHeartsRef.current) {
+      clayHeartsRef.current.destroy();
+      clayHeartsRef.current = null;
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    const currentPartnerId = initialProfile?.partner_id;
+    const prevPartnerId = prevPartnerIdRef.current;
+    if (!prevPartnerId && currentPartnerId) {
+      if (activeTab === 'partner') {
+        const timer = setTimeout(() => {
+          triggerHeartsExplosion();
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+    prevPartnerIdRef.current = currentPartnerId;
+  }, [initialProfile?.partner_id, activeTab, triggerHeartsExplosion]);
+
+  const handleUpdateEmail = async () => {
+    if (!emailInput.trim() || emailInput.trim() === userEmail) {
+      setIsEditingEmail(false);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.trim())) {
+      showAlert("Bitte gib eine gültige E-Mail-Adresse ein.", "error");
+      return;
+    }
+    setIsUpdatingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: emailInput.trim() });
+      if (error) throw error;
+      showAlert("Bestätigungs-Link gesendet! Bitte überprüfe deine E-Mails.", "success");
+      setIsEditingEmail(false);
+    } catch (err: any) {
+      showAlert(translateError(err.message), "error");
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'partner' && profile?.partner_id) {
@@ -233,22 +313,20 @@ export default function Profile({
   }, [profile?.id, activeTab]);
 
   const handleTogglePush = async () => {
-    setIsPushLoading(true);
-    try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        showAlert("Push-Benachrichtigungen werden von diesem Gerät/Browser nicht unterstützt.", "error");
-        setIsPushLoading(false);
-        return;
-      }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      showAlert("Push-Benachrichtigungen werden von diesem Gerät/Browser nicht unterstützt.", "error");
+      return;
+    }
 
-      let permission = Notification.permission;
-      if (permission === 'denied') {
-        showAlert("Benachrichtigungen wurden blockiert. Bitte aktiviere sie in den Website-Einstellungen deines Browsers.", "error");
-        setIsPushLoading(false);
-        return;
-      }
+    let permission = Notification.permission;
+    if (permission === 'denied') {
+      showAlert("Benachrichtigungen wurden blockiert. Bitte aktiviere sie in den Website-Einstellungen deines Browsers.", "error");
+      return;
+    }
 
-      if (permission === 'default') {
+    if (permission === 'default') {
+      setIsPushLoading(true);
+      try {
         permission = await Notification.requestPermission();
         setPushPermission(permission);
         if (permission !== 'granted') {
@@ -256,12 +334,24 @@ export default function Profile({
           setIsPushLoading(false);
           return;
         }
+      } catch (err) {
+        setIsPushLoading(false);
+        return;
       }
+      setIsPushLoading(false);
+    }
 
+    // Now we are ready to toggle (permission is granted).
+    const targetState = !pushEnabled;
+    // Optimistic update
+    setPushEnabled(targetState);
+    setIsPushLoading(true);
+
+    try {
       const registration = await navigator.serviceWorker.ready;
       let subscription = await registration.pushManager.getSubscription();
 
-      if (pushEnabled) {
+      if (!targetState) {
         // Toggle OFF: Unsubscribe from push
         if (subscription) {
           await subscription.unsubscribe();
@@ -273,8 +363,6 @@ export default function Profile({
           .eq('user_id', profile.id);
 
         if (error) throw error;
-
-        setPushEnabled(false);
         showAlert("Benachrichtigungen deaktiviert 🔒", "success");
       } else {
         // Toggle ON: Subscribe to push
@@ -296,12 +384,12 @@ export default function Profile({
           }, { onConflict: 'user_id' });
 
         if (error) throw error;
-
-        setPushEnabled(true);
         showAlert("Benachrichtigungen aktiviert! 🔔", "success");
       }
     } catch (err: any) {
       console.error("Error toggling push notifications:", err);
+      // Revert optimistic update on failure
+      setPushEnabled(!targetState);
       showAlert("Fehler beim Verarbeiten der Benachrichtigungs-Einstellungen.", "error");
     } finally {
       setIsPushLoading(false);
@@ -356,6 +444,9 @@ export default function Profile({
       if (error) throw error;
       showAlert("Erfolgreich verknüpft! ❤️", "success");
       setPartnerCodeInput('CB-');
+      setTimeout(() => {
+        triggerHeartsExplosion();
+      }, 500);
     } catch (err: any) {
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
@@ -483,12 +574,13 @@ export default function Profile({
     switch (activeTab) {
       case 'partner':
         return (
-          <div className="flex flex-col items-center gap-2 animate-entrance w-full" key="partner">
-            <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-center mb-1">
+          <div className="flex flex-col items-center gap-2 animate-entrance w-full relative" key="partner">
+            <div ref={heartsContainerRef} className="absolute -inset-10 z-0 pointer-events-none overflow-hidden" />
+            <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-center mb-1 relative z-10">
               {profile?.partner_id ? 'BISOU-PARTNER' : 'BISOU-PARTNER VERBINDEN'}
             </h2>
             {profile?.partner_id ? (
-              <div className="w-full flex flex-col gap-2">
+              <div className="w-full flex flex-col gap-2 relative z-10">
                 <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-4 flex flex-col gap-4 shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-[1.2rem] bg-purple-50 flex items-center justify-center border-2 border-white shadow-md overflow-hidden relative">
@@ -531,7 +623,7 @@ export default function Profile({
                 </div>
               </div>
             ) : (
-              <div className="w-full flex flex-col gap-2">
+              <div className="w-full flex flex-col gap-2 relative z-10">
                 <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-4 flex flex-col items-center text-center gap-2 shadow-sm">
                   <div className="space-y-0.5">
                     <h3 className="text-sm font-black text-[#1F1939]">Teile deinen Code</h3>
@@ -588,7 +680,7 @@ export default function Profile({
              <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">Mitteilungen</h2>
              <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col items-center text-center gap-4 shadow-sm w-full">
                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
-                  {pushEnabled ? <Bell className="w-6 h-6" /> : <BellOff className="w-6 h-6" />}
+                  {pushPermission === 'granted' && pushEnabled ? <Bell className="w-6 h-6" /> : <BellOff className="w-6 h-6" />}
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-sm font-black text-[#1F1939]">Push-Benachrichtigungen</h3>
@@ -597,20 +689,40 @@ export default function Profile({
                   </p>
                 </div>
 
-                <button 
-                  onClick={handleTogglePush}
-                  className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-95 shadow-sm outline-none bg-white border-[var(--card-border)] hover:bg-purple-50/30 ${isPushLoading ? 'pointer-events-none' : ''}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-xl ${pushEnabled ? 'bg-green-50 text-green-500' : 'bg-purple-50 text-[var(--secondary)]'}`}>
-                      {pushEnabled ? <Check className="w-3.5 h-3.5" /> : <Settings className="w-3.5 h-3.5" />}
+                {pushPermission === 'granted' ? (
+                  <button 
+                    onClick={handleTogglePush}
+                    className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-95 shadow-sm outline-none bg-white border-[var(--card-border)] hover:bg-purple-50/30 ${isPushLoading ? 'pointer-events-none' : ''}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-xl transition-colors ${pushEnabled ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>
+                        {pushEnabled ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                      </div>
+                      <span className="text-xs font-black text-[#1F1939] uppercase tracking-wide">{pushEnabled ? 'Aktiviert' : 'Deaktiviert'}</span>
                     </div>
-                    <span className="text-xs font-black text-[#1F1939] uppercase tracking-wide">{pushEnabled ? 'Aktiviert' : 'Deaktiviert'}</span>
-                  </div>
-                  <div className={`w-9 h-5 rounded-full transition-colors relative ${pushEnabled ? 'bg-green-500' : 'bg-gray-200'}`}>
-                    <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${pushEnabled ? 'left-4.5' : 'left-0.5'}`} />
-                  </div>
-                </button>
+                    <div className={`w-9 h-5 rounded-full transition-colors relative ${pushEnabled ? 'bg-green-200' : 'bg-red-200'}`}>
+                      <div className={`absolute top-[3px] w-3.5 h-3.5 bg-white rounded-full transition-all ${pushEnabled ? 'left-[19px]' : 'left-[3px]'}`} />
+                    </div>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleTogglePush}
+                    disabled={isPushLoading}
+                    className={`w-full py-3.5 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center shadow-md select-none outline-none ${
+                      pushPermission === 'denied' 
+                        ? 'bg-red-50 border-2 border-red-100 text-red-400 active:scale-100 shadow-none' 
+                        : 'bg-[var(--secondary)] text-white hover:bg-[var(--secondary)]/90'
+                    }`}
+                  >
+                    {isPushLoading ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" />
+                    ) : pushPermission === 'denied' ? (
+                      'In Browsereinstellungen blockiert 🔒'
+                    ) : (
+                      'Benachrichtigungen erlauben ✨'
+                    )}
+                  </button>
+                )}
              </div>
           </div>
         );
@@ -700,7 +812,7 @@ export default function Profile({
                     <span className={`text-[11px] font-black uppercase tracking-wide ${item.isDanger ? 'text-red-500' : 'text-[#1F1939]'}`}>{item.label}</span>
                   </div>
                 </div>
-                <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-200' : 'text-purple-200'}`} />
+                <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-400' : 'text-[var(--secondary)]'}`} />
               </button>
             ))}
           </div>
@@ -708,40 +820,95 @@ export default function Profile({
       default:
         return (
           <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="main">
+            {/* E-Mail ändern Card */}
+            <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm mb-1 text-left w-full">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
+                  {!isEditingEmail ? (
+                    <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
+                  ) : (
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      disabled={isUpdatingEmail}
+                      className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-2.5 py-1 text-xs font-bold text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-colors mt-0.5"
+                      placeholder="neue@email.de"
+                      autoFocus
+                    />
+                  )}
+                </div>
+              </div>
+              {!isEditingEmail ? (
+                <button 
+                  onClick={() => { setEmailInput(userEmail); setIsEditingEmail(true); }}
+                  className="px-3 py-1.5 bg-purple-50 text-[var(--secondary)] hover:bg-purple-100 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest rounded-xl shrink-0"
+                >
+                  Ändern
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button 
+                    onClick={handleUpdateEmail}
+                    disabled={isUpdatingEmail}
+                    className="p-1 bg-green-50 text-green-500 hover:bg-green-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-green-100"
+                  >
+                    {isUpdatingEmail ? (
+                      <div className="w-3.5 h-3.5 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingEmail(false)}
+                    disabled={isUpdatingEmail}
+                    className="p-1 bg-red-50 text-red-400 hover:bg-red-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-red-100"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
             {[
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
-              { id: 'install', label: 'App installieren', icon: Smartphone },
+              { id: 'install', label: isPWA ? 'App installiert' : 'App installieren', icon: Smartphone },
               { id: 'app-info', label: 'Info', icon: Info }
             ].map(item => {
-              const isDisabled = item.id === 'notifications' && !isDevMode;
+              const isDisabled = false;
+              const isPwaInstalled = item.id === 'install' && isPWA;
               return (
                 <button 
                   key={item.id} 
                   onClick={() => {
-                    if (isDisabled) {
-                      // Do nothing for normal users
+                    if (isDisabled || isPwaInstalled) {
+                      // Do nothing for normal users or if already installed as PWA
                     }
                     else setActiveTab(item.id as any);
                   }} 
                   className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
                     item.isDanger 
                       ? 'border-red-50 hover:border-red-200' 
-                      : (isDisabled ? 'border-purple-50/50' : 'border-purple-50 hover:border-purple-200')
-                  } ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
+                      : (isDisabled || isPwaInstalled ? 'border-purple-50/50' : 'border-purple-50 hover:border-purple-200')
+                  } ${isDisabled || isPwaInstalled ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-xl transition-all ${
                       item.isDanger 
                         ? 'bg-red-50 text-red-500' 
                         : 'bg-purple-50 text-[var(--secondary)]'
-                    } ${isDisabled ? 'opacity-40 grayscale' : ''}`}>
-                      <item.icon className="w-4 h-4" />
+                    } ${isDisabled ? 'opacity-40 grayscale' : ''} ${isPwaInstalled ? 'bg-green-50 text-green-500 animate-in zoom-in-95' : ''}`}>
+                      {isPwaInstalled ? <Check className="w-4 h-4" /> : <item.icon className="w-4 h-4" />}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-[11px] font-black uppercase tracking-wide transition-all ${
                         item.isDanger ? 'text-red-500' : 'text-[#1F1939]'
-                      } ${isDisabled ? 'opacity-40' : ''}`}>
+                      } ${isDisabled ? 'opacity-40' : ''} ${isPwaInstalled ? 'text-green-600' : ''}`}>
                         {item.label}
                       </span>
                       {isDisabled && (
@@ -751,11 +918,15 @@ export default function Profile({
                       )}
                     </div>
                   </div>
-                  <ChevronRight className={`w-3.5 h-3.5 transition-all ${
-                    item.isDanger 
-                      ? 'text-red-200' 
-                      : (isDisabled ? 'text-purple-200/30' : 'text-purple-200')
-                  }`} />
+                  {isPwaInstalled ? (
+                    <Check className="w-3.5 h-3.5 text-green-500" />
+                  ) : (
+                    <ChevronRight className={`w-3.5 h-3.5 transition-all ${
+                      item.isDanger 
+                        ? 'text-red-400' 
+                        : (isDisabled ? 'text-purple-200/30' : 'text-[var(--secondary)]')
+                    }`} />
+                  )}
                 </button>
               );
             })}
@@ -770,6 +941,14 @@ export default function Profile({
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
           <div className="flex items-center justify-center w-full relative h-[40px]">
             {/* The heading and back button were removed per request, preserving height to avoid shifting */}
+            {activeTab !== 'main' && (
+              <button 
+                onClick={() => setActiveTab('main')}
+                className="absolute left-4 p-2 rounded-full bg-white border border-purple-100 text-[var(--secondary)] active:scale-95 transition-all shadow-sm z-50 hover:bg-purple-50"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {/* Profile Avatar */}
@@ -789,7 +968,7 @@ export default function Profile({
             </div>
             <button 
               onClick={() => setShowAvatarMenu(true)}
-              className="absolute -right-1 -bottom-1 w-7 h-7 rounded-full bg-[var(--secondary)] text-white flex items-center justify-center shadow-lg border-2 border-white active:scale-90 transition-all z-30"
+              className="absolute -right-1 -bottom-1 w-7 h-7 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all z-30"
             >
               <Camera className="w-3.5 h-3.5" />
             </button>

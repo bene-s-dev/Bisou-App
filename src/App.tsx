@@ -46,7 +46,7 @@ function AppLayout({
   const isPublic = location.pathname === '/';
   const showHeader = ['/profile', '/dashboard', '/questions', '/intro', '/intro-replay'].includes(location.pathname);
   return (
-    <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[#F8F7FF] flex flex-col">
+    <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-transparent flex flex-col">
       <div className="bg-aura" />
       <main 
         className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
@@ -440,7 +440,7 @@ export default function App() {
         </Route>
         
         <Route path="/reset-password" element={
-          <div className="h-screen w-screen relative bg-[#F8F7FF] overflow-hidden flex flex-col">
+          <div className="h-screen w-screen relative bg-transparent overflow-hidden flex flex-col">
             <div className="bg-aura" />
             <ScalingContainer targetWidth={400}>
               <div className="flex-1 overflow-y-auto pt-12 px-4">

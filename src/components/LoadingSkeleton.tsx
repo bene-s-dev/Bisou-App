@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function LoadingSkeleton() {
   return (
-    <div className="h-[100svh] w-screen flex flex-col bg-[#F8F7FF] px-6 animate-entrance overflow-hidden">
+    <div className="h-[100svh] w-screen flex flex-col bg-transparent px-6 animate-entrance overflow-hidden">
       <div className="max-w-md mx-auto w-full flex flex-col flex-1 relative">
         <div className="bg-aura" />
         

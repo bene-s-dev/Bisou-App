@@ -22,11 +22,11 @@ export default function LandingPage() {
   ];
 
   return (
-    <section className="flex-1 flex flex-col relative h-full w-full overflow-hidden">
+    <section className="flex-1 flex flex-col relative h-full w-full min-h-0">
       
       <div className="flex-1 flex flex-col gap-3 sm:gap-6 pt-3 sm:pt-6 pb-2 sm:pb-4 relative w-full justify-between sm:justify-evenly min-h-0">
         {/* Infinite Ticker */}
-        <div className="w-full overflow-hidden py-2.5 sm:py-3.5 border-y border-purple-100/50 relative shrink-0 my-1 sm:my-2">
+        <div className="-mx-4 w-[calc(100%+2rem)] overflow-hidden py-2.5 sm:py-3.5 border-y border-purple-100/50 relative shrink-0 my-1 sm:my-2">
           <div className="flex animate-ticker whitespace-nowrap gap-8 items-center">
             {tickerItems.map((item, i) => (
               <div key={i} className="flex items-center gap-2 shrink-0">
@@ -61,11 +61,11 @@ export default function LandingPage() {
         <div className="flex-1 flex flex-col items-center justify-center gap-2 sm:gap-3 w-full min-h-0">
           <button 
             onClick={() => navigate('/signup')} 
-            className="btn-primary py-3 sm:py-4 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
+            className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
           >
             Kostenlos starten ✨
           </button>
-          <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest opacity-60">
+          <p className="text-[9px] font-black text-[var(--muted)] tracking-wide opacity-60">
             Bereit in unter 30 Sekunden.
           </p>
         </div>
