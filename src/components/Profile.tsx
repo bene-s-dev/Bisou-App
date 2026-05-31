@@ -17,6 +17,21 @@ interface ProfileProps {
   onInstall?: () => void;
 }
 
+const urlBase64ToUint8Array = (base64String: string) => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+};
+
 export default function Profile({ 
   profile: initialProfile, 
   partnerProfile, 
@@ -67,7 +82,8 @@ export default function Profile({
     lastChecked: string | null;
   }>({ online: 'checking', latency: null, storageItems: 0, lastChecked: null });
 
-  const [devTaps, setDevTaps] = useState(0);
+  const devTapsRef = useRef(0);
+  const lastToggleTimeRef = useRef<number>(0);
   const [isDevMode, setIsDevMode] = useState(() => localStorage.getItem('bisou_dev_mode') === 'true');
   const [devMessage, setDevMessage] = useState<string | null>(null);
   const devTimeoutRef = useRef<any>(null);
@@ -105,42 +121,54 @@ export default function Profile({
   }, [activeTab, profile?.partner_id]);
 
   const handleVersionClick = () => {
-    const nextTaps = devTaps + 1;
-    setDevTaps(nextTaps);
-    
+    // Ignore all taps during the 2-second cooldown after activation/deactivation
+    if (Date.now() - lastToggleTimeRef.current < 2000) {
+      return;
+    }
+
+    // If the final/success message is currently displayed, do not count taps, just reset the hide timer
+    if (devMessage === "Entwicklermodus freigeschaltet! 🎉" || devMessage === "Entwicklermodus deaktiviert 🔒") {
+      if (devTimeoutRef.current) {
+        clearTimeout(devTimeoutRef.current);
+      }
+      devTimeoutRef.current = setTimeout(() => {
+        setDevMessage(null);
+        devTapsRef.current = 0;
+      }, 3000);
+      return;
+    }
+
     if (devTimeoutRef.current) {
       clearTimeout(devTimeoutRef.current);
     }
-    
+
+    devTapsRef.current += 1;
+    const currentTaps = devTapsRef.current;
+
+    // Set a timeout to clear the message and reset taps if user stops tapping
+    devTimeoutRef.current = setTimeout(() => {
+      setDevMessage(null);
+      devTapsRef.current = 0;
+    }, 3000);
+
     if (isDevMode) {
-      if (nextTaps >= 5) {
+      if (currentTaps >= 5) {
         handleLeaveDevMode();
       } else {
-        const stepsRemaining = 5 - nextTaps;
+        const stepsRemaining = 5 - currentTaps;
         setDevMessage(`Noch ${stepsRemaining} ${stepsRemaining === 1 ? 'Schritt' : 'Schritte'} zum Deaktivieren! 🔒`);
-        devTimeoutRef.current = setTimeout(() => {
-          setDevMessage(null);
-          setDevTaps(0);
-        }, 3000);
       }
-      return;
-    }
-    
-    if (nextTaps >= 5) {
-      setIsDevMode(true);
-      localStorage.setItem('bisou_dev_mode', 'true');
-      setDevMessage("Entwicklermodus freigeschaltet! 🎉");
-      devTimeoutRef.current = setTimeout(() => {
-        setDevMessage(null);
-        setDevTaps(0);
-      }, 4000);
-    } else if (nextTaps >= 2) {
-      const stepsRemaining = 5 - nextTaps;
-      setDevMessage(`In ${stepsRemaining} ${stepsRemaining === 1 ? 'Schritt' : 'Schritten'} bist du Entwickler! 💻`);
-      devTimeoutRef.current = setTimeout(() => {
-        setDevMessage(null);
-        setDevTaps(0);
-      }, 3000);
+    } else {
+      if (currentTaps >= 5) {
+        setIsDevMode(true);
+        localStorage.setItem('bisou_dev_mode', 'true');
+        devTapsRef.current = 0;
+        lastToggleTimeRef.current = Date.now();
+        setDevMessage("Entwicklermodus freigeschaltet! 🎉");
+      } else if (currentTaps >= 2) {
+        const stepsRemaining = 5 - currentTaps;
+        setDevMessage(`In ${stepsRemaining} ${stepsRemaining === 1 ? 'Schritt' : 'Schritten'} bist du Entwickler! 💻`);
+      }
     }
   };
 
@@ -150,11 +178,134 @@ export default function Profile({
     }
     setIsDevMode(false);
     localStorage.removeItem('bisou_dev_mode');
-    setDevTaps(0);
+    devTapsRef.current = 0;
+    lastToggleTimeRef.current = Date.now();
     setDevMessage("Entwicklermodus deaktiviert 🔒");
     devTimeoutRef.current = setTimeout(() => {
       setDevMessage(null);
     }, 3000);
+  };
+
+  // Load and check push subscription status when profile is ready or when visiting the notifications tab
+  useEffect(() => {
+    const checkCurrentSubscription = async () => {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        return;
+      }
+      
+      const permission = Notification.permission;
+      setPushPermission(permission);
+      
+      if (permission === 'granted') {
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          const subscription = await registration.pushManager.getSubscription();
+          
+          if (subscription) {
+            // Check if it exists in Supabase
+            const { data, error } = await supabase
+              .from('push_subscriptions')
+              .select('id')
+              .eq('user_id', profile?.id)
+              .maybeSingle();
+              
+            if (data) {
+              setPushEnabled(true);
+            } else {
+              setPushEnabled(false);
+              // Unsubscribe locally to keep in sync if DB has no record
+              await subscription.unsubscribe().catch(() => {});
+            }
+          } else {
+            setPushEnabled(false);
+          }
+        } catch (err) {
+          console.error("Error checking push status:", err);
+        }
+      } else {
+        setPushEnabled(false);
+      }
+    };
+
+    if (profile?.id && activeTab === 'notifications') {
+      checkCurrentSubscription();
+    }
+  }, [profile?.id, activeTab]);
+
+  const handleTogglePush = async () => {
+    setIsPushLoading(true);
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        showAlert("Push-Benachrichtigungen werden von diesem Gerät/Browser nicht unterstützt.", "error");
+        setIsPushLoading(false);
+        return;
+      }
+
+      let permission = Notification.permission;
+      if (permission === 'denied') {
+        showAlert("Benachrichtigungen wurden blockiert. Bitte aktiviere sie in den Website-Einstellungen deines Browsers.", "error");
+        setIsPushLoading(false);
+        return;
+      }
+
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+        setPushPermission(permission);
+        if (permission !== 'granted') {
+          showAlert("Berechtigung für Benachrichtigungen wurde nicht erteilt.", "error");
+          setIsPushLoading(false);
+          return;
+        }
+      }
+
+      const registration = await navigator.serviceWorker.ready;
+      let subscription = await registration.pushManager.getSubscription();
+
+      if (pushEnabled) {
+        // Toggle OFF: Unsubscribe from push
+        if (subscription) {
+          await subscription.unsubscribe();
+        }
+        // Remove from DB
+        const { error } = await supabase
+          .from('push_subscriptions')
+          .delete()
+          .eq('user_id', profile.id);
+
+        if (error) throw error;
+
+        setPushEnabled(false);
+        showAlert("Benachrichtigungen deaktiviert 🔒", "success");
+      } else {
+        // Toggle ON: Subscribe to push
+        if (!subscription) {
+          const publicVapidKey = "BOVKAdvrthN8sHF6ckRDFUUaKx19NNA9P0JQkmxmPF3gIS7d-jl6aPpsdhGHq9Co9IRnUrgRtKIlUR2gNzKDVAM";
+          const convertedKey = urlBase64ToUint8Array(publicVapidKey);
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: convertedKey
+          });
+        }
+
+        // Save to DB
+        const { error } = await supabase
+          .from('push_subscriptions')
+          .upsert({
+            user_id: profile.id,
+            subscription: subscription.toJSON()
+          }, { onConflict: 'user_id' });
+
+        if (error) throw error;
+
+        setPushEnabled(true);
+        showAlert("Benachrichtigungen aktiviert! 🔔", "success");
+      }
+    } catch (err: any) {
+      console.error("Error toggling push notifications:", err);
+      showAlert("Fehler beim Verarbeiten der Benachrichtigungs-Einstellungen.", "error");
+    } finally {
+      setIsPushLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -447,7 +598,7 @@ export default function Profile({
                 </div>
 
                 <button 
-                  onClick={() => {/* Push logic here */}}
+                  onClick={handleTogglePush}
                   className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-95 shadow-sm outline-none bg-white border-[var(--card-border)] hover:bg-purple-50/30 ${isPushLoading ? 'pointer-events-none' : ''}`}
                 >
                   <div className="flex items-center gap-2">
@@ -574,23 +725,37 @@ export default function Profile({
                     else setActiveTab(item.id as any);
                   }} 
                   className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
-                    item.isDanger ? 'border-red-50 hover:border-red-200' : 'border-purple-50 hover:border-purple-200'
-                  } ${isDisabled ? 'opacity-50 grayscale-[0.5]' : ''}`}
+                    item.isDanger 
+                      ? 'border-red-50 hover:border-red-200' 
+                      : (isDisabled ? 'border-purple-50/50' : 'border-purple-50 hover:border-purple-200')
+                  } ${isDisabled ? 'cursor-default' : 'cursor-pointer'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${item.isDanger ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-[var(--secondary)]'}`}>
+                    <div className={`p-2 rounded-xl transition-all ${
+                      item.isDanger 
+                        ? 'bg-red-50 text-red-500' 
+                        : 'bg-purple-50 text-[var(--secondary)]'
+                    } ${isDisabled ? 'opacity-40 grayscale' : ''}`}>
                       <item.icon className="w-4 h-4" />
                     </div>
-                    <div className="flex flex-col items-start">
-                      <span className={`text-[11px] font-black uppercase tracking-wide ${item.isDanger ? 'text-red-500' : 'text-[#1F1939]'}`}>{item.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[11px] font-black uppercase tracking-wide transition-all ${
+                        item.isDanger ? 'text-red-500' : 'text-[#1F1939]'
+                      } ${isDisabled ? 'opacity-40' : ''}`}>
+                        {item.label}
+                      </span>
                       {isDisabled && (
-                        <span className="bg-amber-100 text-amber-600 text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest mt-0 border border-amber-200">
+                        <span className="bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-[6px] uppercase tracking-wider shrink-0 border border-amber-600 shadow-sm">
                           Bald verfügbar
                         </span>
                       )}
                     </div>
                   </div>
-                  <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-200' : (isDisabled ? 'text-purple-100' : 'text-purple-200')}`} />
+                  <ChevronRight className={`w-3.5 h-3.5 transition-all ${
+                    item.isDanger 
+                      ? 'text-red-200' 
+                      : (isDisabled ? 'text-purple-200/30' : 'text-purple-200')
+                  }`} />
                 </button>
               );
             })}
@@ -601,7 +766,6 @@ export default function Profile({
 
   return (
     <div className="animate-entrance flex flex-col h-full bg-[#F8F7FF] relative">
-      <div className="bg-aura" />
       <header className="pt-4 pb-0 flex flex-col items-center gap-4 shrink-0 relative z-10 w-full">
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
           <div className="flex items-center justify-center w-full relative h-[40px]">

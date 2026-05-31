@@ -49,7 +49,7 @@ export default function PublicLayout() {
       )}
 
       {/* Header */}
-      <header className={`mx-auto pt-12 pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 ${isLandingPage ? 'max-w-5xl' : 'max-w-md'}`}>
+      <header className={`mx-auto ${isAuthPage ? 'pt-6' : 'pt-12'} pb-0 text-center select-none w-full relative shrink-0 z-20 px-4 ${isLandingPage ? 'max-w-5xl' : 'max-w-md'}`}>
         {!isAuthPage && (
           <div className="absolute top-4 right-4">
             <button 

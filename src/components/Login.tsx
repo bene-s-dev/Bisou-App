@@ -103,13 +103,13 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col items-center justify-center py-4">
+      <div className="flex-1 flex flex-col items-center justify-start pt-1 pb-8">
         <div className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-6 shadow-[var(--shadow-soft)] flex flex-col w-full max-w-md">
           <>
             {mode === 'login' && (
               <form onSubmit={handleSubmit} className={`space-y-4 ${shouldShake ? 'animate-shake' : ''}`}>
 
-                <input type="email" autoFocus className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
+                <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} 
@@ -150,7 +150,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                       <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
                       <p className="text-sm text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link zum Einloggen.</p>
                     </div>
-                    <input type="email" autoFocus className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+                    <input type="email" className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
                     <button type="submit" disabled={loading} className="btn-static">{loading ? 'Sende...' : 'Link senden ✨'}</button>
                     <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors text-center">Zurück zum Login</button>
                   </>
@@ -182,7 +182,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                     {regStep === 1 && (
                       <form onSubmit={(e) => { e.preventDefault(); setRegStep(2); }} className="space-y-4">
 
-                        <input type="text" autoFocus className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoComplete="name" />
+                        <input type="text" className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoComplete="name" />
                         <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                         <div className="relative">
                           <input 
