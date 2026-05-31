@@ -56,19 +56,6 @@ function AppLayout({
           <div className="flex-1 flex flex-col relative w-full h-full px-4">
             {showHeader && (
               <>
-                {/* Global Top Blur Fade for Header */}
-                {location.pathname !== '/questions' && (
-                  <div 
-                    className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none"
-                  style={{
-                    background: 'linear-gradient(to bottom, rgba(248,247,255,1) 0%, rgba(248,247,255,0.8) 40%, rgba(248,247,255,0) 100%)',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                    maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)'
-                  }}
-                />
-                )}
                 <header className="absolute left-0 right-0 top-0 z-20 px-2 pointer-events-none" style={{ paddingTop: 'calc(1rem + var(--sat))' }}>
                   <div className="flex items-start justify-between">
                     <button 
