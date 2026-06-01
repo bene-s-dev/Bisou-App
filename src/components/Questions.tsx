@@ -61,11 +61,9 @@ const EncryptionOverlay = () => {
       <div 
         className="relative w-48 h-48 flex items-center justify-center"
         style={{
-          transform: phase >= 6 ? 'translateY(-120svh) scale(0.9)' : 'translateY(0) scale(1)',
+          transform: phase >= 6 ? 'translate3d(0, -120vh, 0) scale(0.95)' : 'translate3d(0, 0, 0) scale(1)',
           opacity: phase >= 6 ? 0 : 1,
-          transition: phase >= 6 
-            ? 'transform 900ms cubic-bezier(0.3, -0.05, 0.1, 1.1), opacity 850ms ease-in' 
-            : 'transform 700ms ease-out, opacity 700ms ease-out'
+          transition: 'transform 1100ms cubic-bezier(0.34, 1.25, 0.64, 1), opacity 900ms ease-in-out'
         }}
       >
         
@@ -463,12 +461,17 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       // TRIGGER ANIMATION
       setIsEncrypting(true);
       
+      // Switch step to 3 at 5450ms, exactly when the overlay starts to fade out
+      // This mounts the results view behind the fading overlay, allowing answers to fade in smoothly
+      setTimeout(() => {
+        setMyResults(finalResults);
+        setStep(3);
+      }, 5450);
+
       // Wait for animation sequence + fade out to fully finish (approx 6.1s)
       await new Promise(resolve => setTimeout(resolve, 6100));
 
-      setMyResults(finalResults);
       setIsEncrypting(false);
-      setStep(3);
       // Delayed notification to parent to prevent sync render issues
       setTimeout(() => onComplete(), 200);
     } catch (err: any) {

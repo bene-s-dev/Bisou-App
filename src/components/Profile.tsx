@@ -1765,13 +1765,13 @@ export default function Profile({
       )}
 
       {devMessage && createPortal(
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-xs bg-white/95 backdrop-blur-md border-2 border-purple-100 rounded-[2rem] shadow-[0_15px_40px_rgba(124,58,237,0.2)] px-5 py-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-300">
-          <div className="w-9 h-9 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-xs bg-white/95 dark:bg-[#17122A]/95 backdrop-blur-md border-2 border-purple-100 dark:border-[var(--card-border)] rounded-[2rem] shadow-[0_15px_40px_rgba(124,58,237,0.2)] dark:shadow-[0_15px_40px_rgba(0,0,0,0.5)] px-5 py-4 flex items-center gap-4 animate-in fade-in slide-in-from-top-6 duration-300">
+          <div className="w-9 h-9 rounded-2xl bg-purple-50 dark:bg-[#201B3A] border border-purple-100 dark:border-[var(--card-border)] flex items-center justify-center shrink-0">
             <span className="text-lg">💻</span>
           </div>
           <div className="flex-1 text-left">
             <h3 className="text-[9px] font-black uppercase tracking-wider text-[var(--secondary)]">System</h3>
-            <p className="text-[11px] font-bold text-[#1F1939] leading-snug mt-0.5">{devMessage}</p>
+            <p className="text-[11px] font-bold text-[#1F1939] dark:text-[var(--text-main)] leading-snug mt-0.5">{devMessage}</p>
           </div>
         </div>,
         document.body

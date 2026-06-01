@@ -28,8 +28,8 @@ export default function LandingPage() {
       icon: <MessageCircle className="w-5 h-5 text-emerald-500" />, 
       text: (
         <>
-          Eure Antworten sind erst sichtbar,<br />
-          wenn ihr beide geantwortet habt.
+          Täglich neue inspirierende Fragen:<br />
+          Für lustige Fragen und spannende Momente.
         </>
       )
     },
