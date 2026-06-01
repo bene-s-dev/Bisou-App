@@ -42,7 +42,7 @@ export default function ResetPassword({ onComplete }: { onComplete: () => void }
       </div>
 
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-black text-[#1F1939] mb-3 tracking-tight">Neues Passwort</h2>
+        <h2 className="text-3xl font-black text-[#4A4468] mb-3 tracking-tight">Neues Passwort</h2>
         <p className="text-[#4A4468] text-sm font-semibold leading-relaxed max-w-[280px] mx-auto opacity-80">
           Wähle ein neues, sicheres Passwort für dein Konto.
         </p>

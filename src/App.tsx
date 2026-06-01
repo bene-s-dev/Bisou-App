@@ -120,7 +120,7 @@ function AppLayout({
   }
 
   return (
-    <div className={`h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[var(--bg)] flex flex-col transition-colors duration-300 ${(isDarkMode && !isPublicPath) ? 'dark' : ''}`}>
+    <div className={`h-full w-screen overflow-hidden relative text-[#1F1939] bg-[var(--bg)] flex flex-col transition-colors duration-300 ${(isDarkMode && !isPublicPath) ? 'dark' : ''}`}>
       <main 
         className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 pwa-main-container ${isPublicPath ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
       >

@@ -123,7 +123,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
             {mode === 'login' && (
               <form onSubmit={handleSubmit} className={`space-y-4 ${shouldShake ? 'animate-shake' : ''}`}>
                 <div className="text-center mb-1">
-                  <h2 className="text-lg font-black text-[#1F1939]">Wieder anmelden:</h2>
+                  <h2 className="text-lg font-black text-[#4A4468]">Wieder anmelden:</h2>
                 </div>
 
                 <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
@@ -164,7 +164,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 ) : (
                   <>
                     <div className="text-center mb-2">
-                      <h2 className="text-lg font-black text-[#1F1939] mb-1">Passwort ändern:</h2>
+                      <h2 className="text-lg font-black text-[#4A4468] mb-1">Passwort ändern:</h2>
                       <p className="text-xs text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link.</p>
                     </div>
                     <input type="email" className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
@@ -198,7 +198,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                     {regStep === 1 && (
                       <form onSubmit={(e) => { e.preventDefault(); setRegStep(2); }} className="space-y-4">
                         <div className="text-center mb-1">
-                          <h2 className="text-lg font-black text-[#1F1939]">Bei Bisou anmelden:</h2>
+                          <h2 className="text-lg font-black text-[#4A4468]">Bei Bisou anmelden:</h2>
                         </div>
 
                         <input type="text" className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoComplete="name" />
@@ -227,7 +227,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                     {regStep === 2 && (
                       <form onSubmit={handleRegister} className="space-y-6 animate-entrance">
                         <div className="text-center mb-4">
-                          <h2 className="text-2xl font-black text-[#1F1939]">Alles korrekt?</h2>
+                          <h2 className="text-2xl font-black text-[#4A4468]">Alles korrekt?</h2>
                         </div>
                         
                         <div className="bg-purple-50/50 rounded-[2rem] p-5 border border-purple-100 space-y-4">

@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function LoadingSkeleton() {
   return (
-    <div className="h-[100svh] w-screen flex flex-col bg-[var(--bg)] px-6 animate-entrance overflow-hidden">
+    <div className="h-full w-screen flex flex-col bg-[var(--bg)] px-6 animate-entrance overflow-hidden">
       <div className="max-w-md mx-auto w-full flex flex-col flex-1 relative">
         
         {/* Header Skeleton */}
