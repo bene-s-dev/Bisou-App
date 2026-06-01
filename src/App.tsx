@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Home, MessageCircle, User as UserIcon, Lock, LogOut } from 'lucide-react';
+import { Home, MessageCircle, User as UserIcon, Lock, LogOut, Sun, Moon } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation, Navigate, NavLink } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
@@ -18,7 +18,7 @@ import LoadingSkeleton from './components/LoadingSkeleton';
 import ScalingContainer from './components/ScalingContainer';
 import { getDailyKey } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
-import { DialogProvider } from './components/DialogProvider';
+import { DialogProvider, useDialog } from './components/DialogProvider';
 
 // Create a broadcast channel for cross-tab communication
 const authChannel = new BroadcastChannel('bisou_auth_sync');
@@ -41,6 +41,7 @@ function AppLayout({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { showAlert } = useDialog();
 
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
 
@@ -61,9 +62,11 @@ function AppLayout({
     };
   }, []);
 
+  const isPublicPath = ['/', '/signin', '/signup', '/reset-password'].includes(location.pathname);
+  const showHeader = ['/profile', '/dashboard', '/questions', '/intro', '/intro-replay'].includes(location.pathname);
+
   useEffect(() => {
     const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
-    const isPublicPath = ['/', '/signin', '/signup', '/reset-password'].includes(location.pathname);
     
     if (isDarkMode && !isPublicPath) {
       document.documentElement.classList.add('dark');
@@ -72,18 +75,16 @@ function AppLayout({
       document.documentElement.classList.remove('dark');
       themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
     }
-  }, [isDarkMode, location.pathname]);
+  }, [isDarkMode, isPublicPath]);
 
   if (!profile.intro_completed && location.pathname !== '/intro') {
     return <Navigate to="/intro" replace />;
   }
 
-  const isPublic = location.pathname === '/';
-  const showHeader = ['/profile', '/dashboard', '/questions', '/intro', '/intro-replay'].includes(location.pathname);
   return (
-    <div className={`h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[var(--bg)] flex flex-col transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[var(--bg)] flex flex-col transition-colors duration-300 ${(isDarkMode && !isPublicPath) ? 'dark' : ''}`}>
       <main 
-        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
+        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublicPath ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
         style={{ paddingTop: 'calc(0.5rem + var(--sat))' }}
       >
         <ScalingContainer targetWidth={400} align="top">
@@ -102,16 +103,42 @@ function AppLayout({
                     </button>
 
                     {location.pathname === '/profile' && (
-                      <button 
-                        onClick={onLogout} 
-                        className="flex flex-col items-center gap-1 group pointer-events-auto"
-                        title="Abmelden"
-                      >
-                        <div className="p-2 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90">
-                            <LogOut className="w-4 h-4" />
-                        </div>
-                        <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600 leading-none">Logout</span>
-                      </button>
+                      <div className="flex items-center gap-3 pointer-events-auto">
+                        {/* Theme Toggle Button */}
+                        <button
+                          onClick={() => {
+                            const current = localStorage.getItem('app_dark_mode') === 'true';
+                            localStorage.setItem('app_dark_mode', String(!current));
+                            window.dispatchEvent(new Event('dark-mode-toggle'));
+                            showAlert(current ? "Heller Modus aktiviert ☀️" : "Dunkler Modus aktiviert 🌙", "success");
+                          }}
+                          className="flex flex-col items-center gap-1 group"
+                          title={isDarkMode ? "Heller Modus" : "Dunkler Modus"}
+                        >
+                          <div className="p-2 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] shadow-sm hover:bg-purple-50/30 transition-all active:scale-90 flex items-center justify-center">
+                            {isDarkMode ? (
+                              <Sun className="w-4 h-4 text-amber-500 animate-in spin-in-12 duration-300" />
+                            ) : (
+                              <Moon className="w-4 h-4 text-indigo-500 animate-in spin-in-12 duration-300" />
+                            )}
+                          </div>
+                          <span className="text-[7px] font-black uppercase tracking-widest text-[var(--muted)] group-hover:text-[var(--secondary)] leading-none">
+                            {isDarkMode ? "Hell" : "Dunkel"}
+                          </span>
+                        </button>
+
+                        {/* Logout Button */}
+                        <button 
+                          onClick={onLogout} 
+                          className="flex flex-col items-center gap-1 group"
+                          title="Abmelden"
+                        >
+                          <div className="p-2 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90">
+                              <LogOut className="w-4 h-4" />
+                          </div>
+                          <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600 leading-none">Logout</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </header>

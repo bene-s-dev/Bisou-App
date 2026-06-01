@@ -36,7 +36,12 @@
       (function() {
         try {
           var isDark = localStorage.getItem('app_dark_mode') === 'true';
-          if (isDark) {
+          var isPublicPath = window.location.pathname === '/' || 
+                             window.location.pathname === '/signin' || 
+                             window.location.pathname === '/signup' || 
+                             window.location.pathname === '/reset-password';
+          
+          if (isDark && !isPublicPath) {
             document.documentElement.classList.add('dark');
             document.querySelectorAll('meta[name="theme-color"]').forEach(function(meta) {
               meta.setAttribute('content', '#0C0A15');

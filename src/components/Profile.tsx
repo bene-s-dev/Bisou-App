@@ -1325,17 +1325,6 @@ export default function Profile({
 
                  {isDevMode && (
                    <>
-                     <div className="contents animate-in zoom-in-95 duration-200">
-                       <span className="text-[10px] font-black text-blue-500 tracking-wider pb-2 border-b border-purple-50/50">Debug Tools:</span>
-                       <div className="flex justify-end border-b border-purple-50/50 pb-2 col-span-2">
-                         <button 
-                           onClick={handleHardResetApp}
-                           className="text-[9px] font-black text-white bg-blue-500 px-2 py-1 rounded-md uppercase tracking-wider hover:bg-blue-600 transition-colors shadow-sm"
-                         >
-                           App Hard-Reset
-                         </button>
-                       </div>
-                     </div>
                      {/* Gerät */}
                      <div className="contents">
                        <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Läuft auf:</span>
@@ -1490,6 +1479,14 @@ export default function Profile({
                 <h4 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] text-center border-b border-purple-50/50 pb-2">
                   Entwickler-Optionen
                 </h4>
+
+                <button
+                  onClick={handleHardResetApp}
+                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
+                >
+                  <RefreshCcw className="w-3.5 h-3.5 shrink-0" />
+                  <span>App Hard-Reset</span>
+                </button>
                 <button
                   onClick={async () => {
                     try {
@@ -1542,27 +1539,7 @@ export default function Profile({
                   <span>Server-Push testen</span>
                 </button>
 
-                <button
-                  onClick={() => {
-                    const current = localStorage.getItem('app_dark_mode') === 'true';
-                    localStorage.setItem('app_dark_mode', String(!current));
-                    window.dispatchEvent(new Event('dark-mode-toggle'));
-                    showAlert(current ? "Heller Modus aktiviert ☀️" : "Dunkler Modus aktiviert 🌙", "success");
-                  }}
-                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
-                >
-                  {isDarkMode ? (
-                    <>
-                      <Sun className="w-3.5 h-3.5 shrink-0" />
-                      <span>Heller Modus</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="w-3.5 h-3.5 shrink-0" />
-                      <span>Dunkler Modus</span>
-                    </>
-                  )}
-                </button>
+
               </div>
             )}
             <p className="text-[9px] font-semibold text-[#4A4468] opacity-70 text-center leading-relaxed px-6">
