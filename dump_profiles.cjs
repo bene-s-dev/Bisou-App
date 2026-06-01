@@ -13,6 +13,14 @@ async function main() {
   const { data: streaks, error: err2 } = await supabase.from('streaks').select('*');
   console.log('--- STREAKS ---');
   console.log(streaks);
+
+  const { data: subs, error: err3 } = await supabase.from('push_subscriptions').select('*');
+  console.log('--- PUSH SUBSCRIPTIONS ---');
+  if (err3) {
+    console.error('Error fetching push_subscriptions:', err3.message);
+  } else {
+    console.log(subs);
+  }
 }
 
 main();

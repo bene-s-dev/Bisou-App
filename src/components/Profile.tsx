@@ -104,6 +104,26 @@ export default function Profile({
   const [showAboutAppModal, setShowAboutAppModal] = useState(false); // New state for About App modal
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
+  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(
+    isPWA || localStorage.getItem('pwa_installed') === 'true'
+  );
+
+  useEffect(() => {
+    if (isPWA) {
+      localStorage.setItem('pwa_installed', 'true');
+      setIsAlreadyInstalled(true);
+    } else if ('getInstalledRelatedApps' in navigator) {
+      (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
+        if (apps && apps.length > 0) {
+          localStorage.setItem('pwa_installed', 'true');
+          setIsAlreadyInstalled(true);
+        }
+      }).catch((err: any) => {
+        console.log("Error checking installed apps:", err);
+      });
+    }
+  }, [isPWA]);
+
   const isIOSLocal = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
   const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
   const isDesktopLocal = !isIOSLocal && !isAndroid;
@@ -428,7 +448,7 @@ export default function Profile({
       setPartnerCodeInput('CB-');
 
       // Trigger heart emoji shower
-      const duration = 4500;
+      const duration = 2000;
       const animationEnd = Date.now() + duration;
 
       // Define red heart shape from emoji
@@ -440,9 +460,10 @@ export default function Profile({
       }
 
       const defaults = { 
-        startVelocity: 30, 
+        startVelocity: 15, 
+        gravity: 0.8,
         spread: 360, 
-        ticks: 60, 
+        ticks: 40, 
         zIndex: 10000,
         shapes: [heartShape],
         scalar: 2 // Scale up the heart emojis so they look great
@@ -937,11 +958,11 @@ export default function Profile({
             {[
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
-              { id: 'install', label: isPWA ? 'App installiert' : 'App installieren', icon: Smartphone },
+              { id: 'install', label: isAlreadyInstalled ? 'App installiert' : 'App installieren', icon: Smartphone },
               { id: 'app-info', label: 'Info & Mehr', icon: Info }
             ].map(item => {
               const isDisabled = false;
-              const isPwaInstalled = item.id === 'install' && isPWA;
+              const isPwaInstalled = item.id === 'install' && isAlreadyInstalled;
               return (
                 <button 
                   key={item.id} 

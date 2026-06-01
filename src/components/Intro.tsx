@@ -283,6 +283,25 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
   const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
+  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(
+    isPWA || localStorage.getItem('pwa_installed') === 'true'
+  );
+
+  useEffect(() => {
+    if (isPWA) {
+      localStorage.setItem('pwa_installed', 'true');
+      setIsAlreadyInstalled(true);
+    } else if ('getInstalledRelatedApps' in navigator) {
+      (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
+        if (apps && apps.length > 0) {
+          localStorage.setItem('pwa_installed', 'true');
+          setIsAlreadyInstalled(true);
+        }
+      }).catch((err: any) => {
+        console.log("Error checking installed apps:", err);
+      });
+    }
+  }, [isPWA]);
 
   if (step !== displayState.current) setDisplayState({ current: step, previous: displayState.current });
   useEffect(() => {
@@ -385,10 +404,10 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                   <AnimatedPhoneInstall />
                 </div>
                 <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">
-                  {isPWA ? "Bereits installiert!" : "App installieren"}
+                  {isAlreadyInstalled ? "Bereits installiert!" : "App installieren"}
                 </h2>
                 <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">
-                  {isPWA 
+                  {isAlreadyInstalled 
                     ? "Bisou ist erfolgreich auf deinem Startbildschirm installiert." 
                     : "Installiere Bisou auf deinem Startbildschirm für schnellen Zugriff – wie eine echte App."}
                 </p>
@@ -397,7 +416,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
 
             {/* Bottom action area */}
             <div className="w-full flex flex-col items-center gap-4 pb-4 shrink-0">
-              {isPWA ? (
+              {isAlreadyInstalled ? (
                 <button 
                   onClick={onComplete}
                   className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"

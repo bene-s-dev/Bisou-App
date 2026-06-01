@@ -69,7 +69,12 @@ serve(async (req) => {
       .eq('user_id', partner_id)
       .maybeSingle()
 
-    if (subError || !subData) {
+    if (subError) {
+      console.error('Database error fetching subscription:', subError)
+      throw new Error(`Database error fetching partner subscription: ${subError.message}`)
+    }
+
+    if (!subData) {
       return new Response(
         JSON.stringify({ message: 'Partner has no push subscription', skipped: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -93,7 +98,7 @@ serve(async (req) => {
       url = '/profile'
     } else if (type === 'nudge') {
       title = 'Bisou ❤️'
-      notifBody = `${senderName} hat dich abgestupst!`
+      notifBody = `${senderName} hat dich angestupst!`
       url = '/dashboard'
     }
 
