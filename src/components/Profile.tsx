@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon, Hand, Heart } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon, Hand, Heart } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -9,7 +9,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
 import { capitalizeName } from '../lib/stringUtils';
 import Intro from './Intro';
-import confetti from 'canvas-confetti';
 
 
 interface ProfileProps {
@@ -449,43 +448,6 @@ export default function Profile({
       if (error) throw error;
       showAlert("Erfolgreich verknüpft! ❤️", "success");
       setPartnerCodeInput('CB-');
-
-      // Trigger heart emoji shower
-      const duration = 2000;
-      const animationEnd = Date.now() + duration;
-
-      // Define red heart shape from emoji
-      let heartShape: any;
-      try {
-        heartShape = confetti.shapeFromText({ text: '❤️' });
-      } catch (e) {
-        heartShape = 'circle';
-      }
-
-      const defaults = { 
-        startVelocity: 15, 
-        gravity: 0.8,
-        spread: 360, 
-        ticks: 40, 
-        zIndex: 10000,
-        shapes: [heartShape],
-        scalar: 2 // Scale up the heart emojis so they look great
-      };
-
-      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
-
-      const interval = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval);
-        }
-
-        const particleCount = 20 * (timeLeft / duration);
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
-        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
-      }, 300);
-
     } catch (err: any) {
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
@@ -719,14 +681,14 @@ export default function Profile({
                   </div>
                   
                   <div className="flex items-center gap-2 w-full mt-1">
-                    <div className="flex-1 bg-purple-50/50 border-2 border-purple-100 rounded-2xl p-2 flex items-center justify-center">
+                    <div className="flex-1 bg-purple-50/50 border-2 border-purple-100 rounded-2xl p-2 flex items-center justify-center relative">
                       <span className="text-base font-black text-[var(--secondary)] tracking-[0.2em] pt-0.5">{profile?.partner_code || '---'}</span>
-                      <button onClick={() => { navigator.clipboard.writeText((profile?.partner_code || '').split('-')[1] || ''); showAlert("Code kopiert!", "success"); }} className="ml-2 p-1.5 bg-purple-50 text-[var(--secondary)] rounded-xl hover:bg-purple-100 transition-all active:scale-90 flex items-center justify-center shrink-0">
+                      <button onClick={() => { navigator.clipboard.writeText((profile?.partner_code || '').split('-')[1] || ''); showAlert("Code kopiert!", "success"); }} className="absolute right-2 p-1.5 bg-purple-50 text-[var(--secondary)] rounded-xl hover:bg-purple-100 transition-all active:scale-90 flex items-center justify-center shrink-0">
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <button onClick={handleShareCode} className="w-10 h-10 rounded-xl bg-[var(--secondary)] text-white flex items-center justify-center shadow-md active:scale-95 transition-all shrink-0">
-                      <Download className="w-4 h-4" />
+                      <Share2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -932,9 +894,9 @@ export default function Profile({
               {!isEditingEmail ? (
                 <button 
                   onClick={() => { setEmailInput(userEmail); setIsEditingEmail(true); }}
-                  className="px-3 py-1.5 bg-purple-50 text-[var(--secondary)] hover:bg-purple-100 active:scale-95 transition-all text-[9px] font-black uppercase tracking-widest rounded-xl shrink-0"
+                  className="w-7 h-7 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all shrink-0"
                 >
-                  Ändern
+                  <Pencil className="w-3.5 h-3.5" />
                 </button>
               ) : (
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -988,13 +950,13 @@ export default function Profile({
                       item.isDanger 
                         ? 'bg-red-50 text-red-500' 
                         : 'bg-purple-50 text-[var(--secondary)]'
-                    } ${isDisabled ? 'opacity-40 grayscale' : ''} ${isPwaInstalled ? 'bg-green-50 text-green-500 animate-in zoom-in-95' : ''}`}>
-                      {isPwaInstalled ? <Check className="w-4 h-4" /> : <item.icon className="w-4 h-4" />}
+                    } ${isDisabled ? 'opacity-40 grayscale' : ''}`}>
+                      <item.icon className="w-4 h-4" />
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-[11px] font-black uppercase tracking-wide transition-all ${
                         item.isDanger ? 'text-red-500' : 'text-[#1F1939]'
-                      } ${isDisabled ? 'opacity-40' : ''} ${isPwaInstalled ? 'text-green-600' : ''}`}>
+                      } ${isDisabled ? 'opacity-40' : ''}`}>
                         {item.label}
                       </span>
                       {isDisabled && (
@@ -1310,7 +1272,7 @@ export default function Profile({
                         <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_6px] animate-pulse transition-all duration-500 shrink-0 ${
                           (() => {
                             const lastFetch = localStorage.getItem('last_question_fetch');
-                            if (!lastFetch) return 'bg-gray-400 shadow-gray-200';
+                            if (!lastFetch) return 'bg-red-500 shadow-red-200';
                             const hoursSince = (Date.now() - new Date(lastFetch).getTime()) / (1000 * 60 * 60);
                             return hoursSince <= 24 ? 'bg-blue-500 shadow-blue-200' : 'bg-red-500 shadow-red-200';
                           })()
