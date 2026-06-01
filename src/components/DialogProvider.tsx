@@ -65,11 +65,11 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
           <div className={`flex items-center gap-3 p-4 rounded-2xl shadow-xl border backdrop-blur-md ${
             alert.type === 'error' ? 'bg-red-50/95 border-red-100 text-red-800 dark:bg-red-950/90 dark:border-red-900/50 dark:text-red-200' :
             alert.type === 'success' ? 'bg-green-50/95 border-green-100 text-green-800 dark:bg-green-950/90 dark:border-green-900/50 dark:text-green-200' :
-            'bg-white/95 border-purple-100 text-purple-800 dark:bg-slate-900/95 dark:border-slate-800 dark:text-slate-100'
+            'bg-white/95 border-purple-50 text-[#1F1939] dark:bg-[#1A1625]/95 dark:border-[#2D283E] dark:text-[#F5F3FF]'
           }`}>
-            {alert.type === 'error' && <XCircle className="w-5 h-5 shrink-0" />}
-            {alert.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-            {(alert.type === 'info' || !alert.type) && <Info className="w-5 h-5 shrink-0 text-purple-400 dark:text-blue-300" />}
+            {alert.type === 'error' && <XCircle className="w-5 h-5 shrink-0 text-red-500" />}
+            {alert.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0 text-green-500" />}
+            {(alert.type === 'info' || !alert.type) && <Info className="w-5 h-5 shrink-0 text-[var(--secondary)] dark:text-purple-400" />}
             <p className="text-xs font-black uppercase tracking-wide leading-tight">{alert.message}</p>
             <button onClick={() => setAlert(null)} className="ml-auto p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
               <X className="w-3.5 h-3.5 opacity-50" />
