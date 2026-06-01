@@ -216,7 +216,7 @@ export default function Profile({
       // Immediately refresh local user state
       await refreshUser();
       
-      showAlert("Bestätigungs-Link an die neue Adresse gesendet!", "success");
+      showAlert("Links an BEIDE Adressen gesendet! Bitte in beiden Mails bestätigen.", "success");
       setIsEditingEmail(false);
     } catch (err: any) {
       console.error("Email update failed:", err);
@@ -946,9 +946,12 @@ export default function Profile({
                     <div className="flex flex-col">
                       <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
                       {user?.new_email && (
-                        <div className="flex flex-col gap-1.5 mt-1">
+                        <div className="flex flex-col gap-1 mt-1">
                           <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
                             Warte auf Bestätigung: {user.new_email}
+                          </div>
+                          <div className="text-[7px] font-bold text-[var(--muted)] leading-tight italic">
+                            Info: Du musst den Link in der <b>alten</b> und der <b>neuen</b> Mail anklicken.
                           </div>
                         </div>
                       )}
