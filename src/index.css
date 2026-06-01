@@ -864,3 +864,11 @@ body.modal-open #root {
 .celebration-heart {
   animation: heart-pulse-glow 1.2s ease-in-out infinite;
 }
+
+/* Smooth and simultaneous dark mode transitions */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 300ms !important;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
