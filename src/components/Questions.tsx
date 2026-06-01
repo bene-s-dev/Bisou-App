@@ -528,7 +528,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container" style={{ paddingBottom: 'calc(92px + var(--sab))' }}>
+          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container" style={{ paddingBottom: 'var(--nav-clearance)' }}>
             <header className="mb-4">
               <div className="quiz-prog-dots">
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
@@ -605,9 +605,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           // --- RESULTS VIEW ---
           <div className="flex flex-col flex-1 h-full overflow-hidden relative">
             <div 
-              className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none"
+              className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none results-top-fade"
               style={{
-                background: 'linear-gradient(to bottom, rgba(248,247,255,1) 0%, rgba(248,247,255,0.8) 40%, rgba(248,247,255,0) 100%)',
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
                 maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
@@ -616,8 +615,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
               }}
             />
             <div className="flex-1 relative min-h-0">
-              <div className="h-full pr-1 overflow-y-auto scroll-smooth show-scrollbar">
-                <div className="space-y-10 pb-72 pt-28">
+              <div className="h-full overflow-y-auto scroll-smooth show-scrollbar">
+                <div className="space-y-10 pb-72 pt-28 pr-1">
                 {dailyQs.map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];

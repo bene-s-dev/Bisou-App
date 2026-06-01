@@ -39,6 +39,27 @@ function AppLayout({
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
+    };
+    window.addEventListener('dark-mode-toggle', handleToggle);
+    return () => window.removeEventListener('dark-mode-toggle', handleToggle);
+  }, []);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    return () => {
+      document.documentElement.classList.remove('dark');
+    };
+  }, [isDarkMode]);
+
   if (!profile.intro_completed && location.pathname !== '/intro') {
     return <Navigate to="/intro" replace />;
   }
@@ -46,8 +67,7 @@ function AppLayout({
   const isPublic = location.pathname === '/';
   const showHeader = ['/profile', '/dashboard', '/questions', '/intro', '/intro-replay'].includes(location.pathname);
   return (
-    <div className="h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-transparent flex flex-col">
-      <div className="bg-aura" />
+    <div className={`h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[var(--bg)] flex flex-col transition-colors duration-300 ${isDarkMode ? 'dark' : ''}`}>
       <main 
         className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublic ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
         style={{ paddingTop: 'calc(0.5rem + var(--sat))' }}
@@ -158,6 +178,7 @@ export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
   const fetchLock = React.useRef<string | null>(null);
+  const initialLoadDone = React.useRef(false);
   const navigate = useNavigate();
   const dayKey = getDailyKey();
 
@@ -185,12 +206,14 @@ export default function App() {
   };
 
   const fetchProfile = useCallback(async (userId: string, bypassLock = false) => {
-    // Basic debounce/concurrency control
-    if (!bypassLock && fetchLock.current === userId + dayKey) return;
-    fetchLock.current = userId + dayKey;
+    // Prevent truly concurrent in-flight fetches only
+    const lockKey = userId + dayKey;
+    if (!bypassLock && fetchLock.current === lockKey) return;
+    fetchLock.current = lockKey;
 
     try {
-      setLoading(true);
+      // Only show full loading skeleton on initial load, not on background re-fetches
+      if (!initialLoadDone.current) setLoading(true);
       // 1. Get profile and today's questions in parallel
       const [profileRes, questionsRes] = await Promise.all([
         supabase
@@ -280,6 +303,7 @@ export default function App() {
       setDashboardData((prev: any) => prev || { answers: [], questions: [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text] });
     } finally {
       fetchLock.current = null;
+      initialLoadDone.current = true;
       setLoading(false);
     }
   }, [dayKey]);
@@ -301,11 +325,14 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!mounted) return;
 
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN') {
         if (s) {
           setSession(s);
           fetchProfile(s.user.id);
         }
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Only update session token, don't re-fetch profile (data hasn't changed)
+        if (s) setSession(s);
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setProfile(null);
@@ -391,6 +418,7 @@ export default function App() {
       setProfile(null);
       setPartnerProfile(null);
       setDashboardData(null);
+      initialLoadDone.current = false;
 
       // Perform signOut, but don't let it block indefinitely
       try {
@@ -440,8 +468,7 @@ export default function App() {
         </Route>
         
         <Route path="/reset-password" element={
-          <div className="h-screen w-screen relative bg-transparent overflow-hidden flex flex-col">
-            <div className="bg-aura" />
+          <div className="h-screen w-screen relative bg-[var(--bg)] overflow-hidden flex flex-col">
             <ScalingContainer targetWidth={400}>
               <div className="flex-1 overflow-y-auto pt-12 px-4">
                 <ResetPassword onComplete={() => navigate('/signin')} />

@@ -166,8 +166,8 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                       <Mail className="w-10 h-10 text-[var(--secondary)]" />
                     </div>
                     <p className="text-sm font-bold text-[#4A4468] leading-relaxed">
-                      Wir haben dir einen Bestätigungslink gesendet.<br />
-                      <span className="text-[var(--secondary)]">Prüfe jetzt deine Mails!</span>
+                      Wir haben dir einen Bestätigungslink gesendet.<br /><br />
+                      <span className="text-xs opacity-70">Bitte auch im Spam-Ordner nachschauen.</span>
                     </p>
                     <button 
                       type="button" 

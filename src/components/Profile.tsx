@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -8,7 +8,8 @@ import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
 import Intro from './Intro';
-import { ClayHearts } from '../lib/clayHearts';
+import confetti from 'canvas-confetti';
+
 
 interface ProfileProps {
   profile: any;
@@ -50,6 +51,16 @@ export default function Profile({
   };
   
   const [profile, setProfile] = useState<any>(initialProfile);
+  
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
+    };
+    window.addEventListener('dark-mode-toggle', handleToggle);
+    return () => window.removeEventListener('dark-mode-toggle', handleToggle);
+  }, []);
   
   useEffect(() => {
     setProfile(initialProfile);
@@ -96,9 +107,7 @@ export default function Profile({
   const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
   const isDesktopLocal = !isIOSLocal && !isAndroid;
 
-  const heartsContainerRef = useRef<HTMLDivElement | null>(null);
-  const clayHeartsRef = useRef<ClayHearts | null>(null);
-  const prevPartnerIdRef = useRef<string | null>(initialProfile?.partner_id || null);
+
 
   const [userEmail, setUserEmail] = useState<string>('');
   const [emailInput, setEmailInput] = useState<string>('');
@@ -116,42 +125,7 @@ export default function Profile({
     fetchUserEmail();
   }, []);
 
-  const triggerHeartsExplosion = useCallback(() => {
-    if (!heartsContainerRef.current) return;
-    if (!clayHeartsRef.current) {
-      clayHeartsRef.current = new ClayHearts(heartsContainerRef.current);
-    }
-    const clientX = window.innerWidth / 2;
-    const clientY = window.innerHeight / 2;
-    clayHeartsRef.current.explode(clientX, clientY);
-    setTimeout(() => {
-      if (clayHeartsRef.current) {
-        clayHeartsRef.current.explode(clientX - 100, clientY - 100);
-        clayHeartsRef.current.explode(clientX + 100, clientY + 100);
-      }
-    }, 150);
-  }, []);
 
-  useEffect(() => {
-    if (activeTab !== 'partner' && clayHeartsRef.current) {
-      clayHeartsRef.current.destroy();
-      clayHeartsRef.current = null;
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    const currentPartnerId = initialProfile?.partner_id;
-    const prevPartnerId = prevPartnerIdRef.current;
-    if (!prevPartnerId && currentPartnerId) {
-      if (activeTab === 'partner') {
-        const timer = setTimeout(() => {
-          triggerHeartsExplosion();
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    }
-    prevPartnerIdRef.current = currentPartnerId;
-  }, [initialProfile?.partner_id, activeTab, triggerHeartsExplosion]);
 
   const handleUpdateEmail = async () => {
     if (!emailInput.trim() || emailInput.trim() === userEmail) {
@@ -366,8 +340,16 @@ export default function Profile({
       } else {
         // Toggle ON: Subscribe to push
         if (!subscription) {
-          const publicVapidKey = "BOVKAdvrthN8sHF6ckRDFUUaKx19NNA9P0JQkmxmPF3gIS7d-jl6aPpsdhGHq9Co9IRnUrgRtKIlUR2gNzKDVAM";
-          const convertedKey = urlBase64ToUint8Array(publicVapidKey);
+          // Fetch the current VAPID public key dynamically from the server
+          const { data: vapidData, error: vapidError } = await supabase.functions.invoke('send-push-notification', {
+            method: 'GET'
+          });
+
+          if (vapidError || !vapidData?.vapidPublicKey) {
+            throw new Error("VAPID-Schlüssel konnte nicht vom Server abgerufen werden: " + (vapidError?.message || "Fehlender Schlüssel"));
+          }
+
+          const convertedKey = urlBase64ToUint8Array(vapidData.vapidPublicKey);
           subscription = await registration.pushManager.subscribe({
             userVisibleOnly: true,
             applicationServerKey: convertedKey
@@ -443,9 +425,42 @@ export default function Profile({
       if (error) throw error;
       showAlert("Erfolgreich verknüpft! ❤️", "success");
       setPartnerCodeInput('CB-');
-      setTimeout(() => {
-        triggerHeartsExplosion();
-      }, 500);
+
+      // Trigger heart emoji shower
+      const duration = 4500;
+      const animationEnd = Date.now() + duration;
+
+      // Define red heart shape from emoji
+      let heartShape: any;
+      try {
+        heartShape = confetti.shapeFromText({ text: '❤️' });
+      } catch (e) {
+        heartShape = 'circle';
+      }
+
+      const defaults = { 
+        startVelocity: 30, 
+        spread: 360, 
+        ticks: 60, 
+        zIndex: 10000,
+        shapes: [heartShape],
+        scalar: 2 // Scale up the heart emojis so they look great
+      };
+
+      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 20 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 300);
+
     } catch (err: any) {
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
@@ -455,20 +470,23 @@ export default function Profile({
     }
   };
 
-  const handleUnlink = async () => {
-    const confirmed = await showConfirm("Partner wirklich trennen?", "Eure gemeinsame Serie und alle verknüpften Daten werden für euch beide nicht mehr sichtbar sein.");
-    if (!confirmed) return;
-
-    setLoading(true);
-    try {
-      const { error } = await supabase.rpc('unlink_partners');
-      if (error) throw error;
-      showAlert("Verbindung getrennt.", "info");
-    } catch (err: any) {
-      showAlert(translateError(err.message), "error");
-    } finally {
-      setLoading(false);
-    }
+  const handleUnlink = () => {
+    showConfirm(
+      "Eure gemeinsame Serie und alle verknüpften Daten werden für euch beide nicht mehr sichtbar sein.",
+      async () => {
+        setLoading(true);
+        try {
+          const { error } = await supabase.rpc('unlink_partners');
+          if (error) throw error;
+          showAlert("Verbindung getrennt.", "info");
+        } catch (err: any) {
+          showAlert(translateError(err.message), "error");
+        } finally {
+          setLoading(false);
+        }
+      },
+      { title: "Partner wirklich trennen?", confirmLabel: "Ja, trennen", cancelLabel: "Abbrechen", type: "error" }
+    );
   };
 
   const handleShareCode = async () => {
@@ -574,7 +592,7 @@ export default function Profile({
       case 'partner':
         return (
           <div className="flex flex-col items-center gap-2 animate-entrance w-full relative" key="partner">
-            <div ref={heartsContainerRef} className="absolute -inset-10 z-0 pointer-events-none overflow-hidden" />
+
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-center mb-1 relative z-10">
               {profile?.partner_id ? 'BISOU-PARTNER' : 'BISOU-PARTNER VERBINDEN'}
             </h2>
@@ -1010,6 +1028,8 @@ export default function Profile({
         {renderContent()}
       </div>
 
+
+
       {showAvatarMenu && createPortal(
         <div className="modal-backdrop items-end pb-10 px-4">
           <div className="absolute inset-0" onClick={() => setShowAvatarMenu(false)} />
@@ -1019,7 +1039,7 @@ export default function Profile({
                 <h3 className="text-sm font-black text-[#1F1939] uppercase tracking-widest">Profilbild anpassen</h3>
               </div>
               
-              <button onClick={() => { setShowAvatarMenu(false); document.getElementById('avatar-upload')?.click(); }} className="w-full py-4 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-purple-100 transition-all active:scale-95">
+              <button onClick={() => { document.getElementById('avatar-upload')?.click(); setTimeout(() => setShowAvatarMenu(false), 100); }} className="w-full py-4 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-sm uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-purple-100 transition-all active:scale-95">
                 <Camera className="w-5 h-5" /> 
                 {profile?.avatar_url ? 'Neues Bild wählen' : 'Bild hochladen'}
               </button>
@@ -1228,10 +1248,93 @@ export default function Profile({
                         }`} />
                       </div>
                     </div>
+
                   </>
                 )}
               </div>
             </div>
+
+            {/* Developer Push Test Card */}
+            {isDevMode && (
+              <div className="bg-white/80 backdrop-blur-md rounded-[1.8rem] px-6 py-5 border-2 border-purple-100 w-full max-w-md mx-auto shadow-sm flex flex-col gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                <h4 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] text-center border-b border-purple-50/50 pb-2">
+                  Entwickler-Optionen
+                </h4>
+                <button
+                  onClick={async () => {
+                    try {
+                      showAlert("Server-Push wird angefordert...", "info");
+                      
+                      const senderId = profile?.partner_id || profile?.id;
+                      const receiverId = profile?.id;
+                      
+                      if (!receiverId) {
+                        throw new Error("Benutzer-ID nicht geladen.");
+                      }
+                      
+                      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+                        body: {
+                          user_id: senderId,
+                          partner_id: receiverId,
+                          type: 'answer_submitted'
+                        }
+                      });
+                      
+                      if (error) {
+                        let detailMsg = error.message;
+                        try {
+                          const errText = await error.context.text();
+                          const errJson = JSON.parse(errText);
+                          if (errJson && errJson.error) {
+                            detailMsg = errJson.error;
+                          } else if (errJson && errJson.message) {
+                            detailMsg = errJson.message;
+                          } else {
+                            detailMsg = errText;
+                          }
+                        } catch (_) {}
+                        throw new Error(detailMsg);
+                      }
+                      
+                      if (data?.skipped) {
+                        showAlert("Server meldet: Keine aktive Push-Subscription gefunden. Bitte erst Push-Benachrichtigungen aktivieren.", "error");
+                      } else {
+                        showAlert("Server-Push erfolgreich getriggert! 🔔", "success");
+                      }
+                    } catch (err: any) {
+                      console.error("Server push test error:", err);
+                      showAlert("Server-Push fehlgeschlagen: " + err.message, "error");
+                    }
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
+                >
+                  <Bell className="w-3.5 h-3.5 shrink-0" />
+                  <span>Server-Push testen</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const current = localStorage.getItem('app_dark_mode') === 'true';
+                    localStorage.setItem('app_dark_mode', String(!current));
+                    window.dispatchEvent(new Event('dark-mode-toggle'));
+                    showAlert(current ? "Heller Modus aktiviert ☀️" : "Dunkler Modus aktiviert 🌙", "success");
+                  }}
+                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
+                >
+                  {isDarkMode ? (
+                    <>
+                      <Sun className="w-3.5 h-3.5 shrink-0" />
+                      <span>Heller Modus</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-3.5 h-3.5 shrink-0" />
+                      <span>Dunkler Modus</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
             <p className="text-[9px] font-semibold text-[#4A4468] opacity-70 text-center leading-relaxed px-6">
               Tippe 5x auf die Versionsnummer, um den Entwicklermodus ein- oder auszuschalten 💻
             </p>

@@ -61,7 +61,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       
       {/* Toast Alert */}
       {alert && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[1000] w-[90%] max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
           <div className={`flex items-center gap-3 p-4 rounded-2xl shadow-xl border backdrop-blur-md ${
             alert.type === 'error' ? 'bg-red-50/95 border-red-100 text-red-800' :
             alert.type === 'success' ? 'bg-green-50/95 border-green-100 text-green-800' :

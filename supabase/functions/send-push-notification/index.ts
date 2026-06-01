@@ -15,6 +15,21 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // Handle GET request to retrieve public VAPID key
+  if (req.method === 'GET') {
+    const VAPID_PUBLIC_KEY = Deno.env.get('VAPID_PUBLIC_KEY') || ''
+    if (!VAPID_PUBLIC_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'VAPID public key not configured on server' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    return new Response(
+      JSON.stringify({ vapidPublicKey: VAPID_PUBLIC_KEY }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
