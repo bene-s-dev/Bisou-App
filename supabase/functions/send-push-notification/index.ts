@@ -305,6 +305,7 @@ async function sendWebPush(
     method: 'POST',
     headers: {
       'Authorization': vapidHeaders.authorization,
+      'Crypto-Key': vapidHeaders.cryptoKey,
       'TTL': '86400',
       'Content-Encoding': 'aes128gcm',
       'Content-Type': 'application/octet-stream',
