@@ -245,7 +245,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   // This prevents the intro from restarting if the PWA is opened after installation
   // without the user explicitly clicking "Im Browser weitermachen".
   useEffect(() => {
-    if (step === 5 && !isReplay && !isIntroOnly) {
+    const finalStep = isAlreadyInstalled ? 4 : 5;
+    if (step === finalStep && !isReplay && !isIntroOnly) {
       (async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
@@ -253,7 +254,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         }
       })();
     }
-  }, [step, isReplay, isIntroOnly]);
+  }, [step, isAlreadyInstalled, isReplay, isIntroOnly]);
   const [userName, setUserName] = useState('');
   const [loading, setLoading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -560,12 +561,32 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
       </div>
       <div className="px-6 w-full max-w-md shrink-0 z-20" style={{ paddingBottom: 'calc(1.5rem + var(--sab))' }}>
         <div className="quiz-prog-dots mb-5">
-          {(isReplay ? [1,2,3,4,5] : [0,1,2,3,4,5]).map(i => <div key={i} className={`quiz-prog-dot ${i === step ? 'quiz-prog-dot-active' : ''}`} />)}
+          {(() => {
+            const maxStep = isAlreadyInstalled ? 4 : 5;
+            const startDot = isReplay ? 1 : 0;
+            const dots = [];
+            for (let i = startDot; i <= maxStep; i++) {
+              dots.push(i);
+            }
+            return dots.map(i => (
+              <div key={i} className={`quiz-prog-dot ${i === step ? 'quiz-prog-dot-active' : ''}`} />
+            ));
+          })()}
         </div>
-        {step < 5 ? (
+        {step < 4 ? (
           <button className="btn-static py-4 text-lg font-black group shadow-none" onClick={() => setStep(step + 1)}>
             Weiter
           </button>
+        ) : step === 4 ? (
+          isAlreadyInstalled ? (
+            <button className="btn-primary py-4 text-lg font-black group shadow-none" onClick={onComplete}>
+              {isReplay ? "Schließen" : "Loslegen ✨"}
+            </button>
+          ) : (
+            <button className="btn-static py-4 text-lg font-black group shadow-none" onClick={() => setStep(5)}>
+              Weiter
+            </button>
+          )
         ) : null}
       </div>
 

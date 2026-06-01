@@ -1175,9 +1175,9 @@ export default function Profile({
             {[
               { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
               { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
-              { id: 'install', label: isAlreadyInstalled ? 'App installiert' : 'App installieren', icon: Smartphone },
+              !isPWA && { id: 'install', label: isAlreadyInstalled ? 'App bereits installiert' : 'App installieren', icon: Smartphone },
               { id: 'app-info', label: 'Info & Mehr', icon: Info }
-            ].map(item => {
+            ].filter((item): item is any => !!item).map(item => {
               const isDisabled = false;
               const isPwaInstalled = item.id === 'install' && isAlreadyInstalled;
               return (
