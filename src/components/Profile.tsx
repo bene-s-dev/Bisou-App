@@ -716,6 +716,24 @@ export default function Profile({
 
   const handleNudge = async () => {
     if (!profile?.id || !profile?.partner_id) return;
+    
+    // 30 minute cooldown check
+    const COOLDOWN_MS = 30 * 60 * 1000;
+    const lastNudgeTime = localStorage.getItem(`last_nudge_${profile.id}`);
+    if (lastNudgeTime) {
+      const elapsed = Date.now() - parseInt(lastNudgeTime, 10);
+      if (elapsed < COOLDOWN_MS) {
+        const remainingMs = COOLDOWN_MS - elapsed;
+        const minutes = Math.floor(remainingMs / 60000);
+        const seconds = Math.floor((remainingMs % 60000) / 1000);
+        const timeString = minutes > 0 
+          ? `${minutes} Min. und ${seconds} Sek.` 
+          : `${seconds} Sek.`;
+        showAlert(`Hör auf, deinen Bisou-Partner zu nerven! Nächster Anstupster möglich in: ${timeString}`, "error");
+        return;
+      }
+    }
+
     setIsNudging(true);
     try {
       const { data, error } = await supabase.functions.invoke('send-push-notification', {
@@ -747,6 +765,9 @@ export default function Profile({
       } else {
         showAlert(`${partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Partner'} wurde angestupst! ❤️`, "success");
       }
+      
+      // Save timestamp of successful nudge
+      localStorage.setItem(`last_nudge_${profile.id}`, Date.now().toString());
     } catch (err: any) {
       showAlert(translateError(err.message), "error");
     } finally {
