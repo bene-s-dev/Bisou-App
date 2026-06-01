@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon, Hand, Heart } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon, Hand, Heart, RefreshCcw } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -192,11 +192,22 @@ export default function Profile({
     }
     setIsUpdatingEmail(true);
     try {
-      const { error } = await supabase.auth.updateUser({ email: emailInput.trim() });
+      // Use the actual supabase.auth instance
+      const { data, error } = await supabase.auth.updateUser({ 
+        email: emailInput.trim() 
+      }, {
+        emailRedirectTo: window.location.origin + '/profile'
+      });
+      
       if (error) throw error;
-      showAlert("Bestätigungs-Link gesendet! Bitte überprüfe deine E-Mails.", "success");
+      
+      // Immediately refresh local user state to show the "Waiting" status
+      await refreshUser();
+      
+      showAlert("Bestätigungs-Link an die neue Adresse gesendet! Bitte überprüfe dein Postfach.", "success");
       setIsEditingEmail(false);
     } catch (err: any) {
+      console.error("Email update failed:", err);
       showAlert(translateError(err.message), "error");
     } finally {
       setIsUpdatingEmail(false);
@@ -923,8 +934,17 @@ export default function Profile({
                     <div className="flex flex-col">
                       <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
                       {user?.new_email && (
-                        <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight mt-0.5 animate-pulse">
-                          Warte auf Bestätigung: {user.new_email}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
+                            Warte auf Bestätigung: {user.new_email}
+                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); refreshUser(); }}
+                            className="p-0.5 bg-amber-50 text-amber-600 rounded-md hover:bg-amber-100 transition-colors"
+                            title="Status prüfen"
+                          >
+                            <RefreshCcw className="w-2.5 h-2.5" />
+                          </button>
                         </div>
                       )}
                     </div>
@@ -933,6 +953,7 @@ export default function Profile({
                       type="email"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateEmail()}
                       disabled={isUpdatingEmail}
                       className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-2.5 py-1 text-xs font-bold text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-colors mt-0.5"
                       placeholder="neue@email.de"
