@@ -717,20 +717,34 @@ export default function Profile({
   const handleNudge = async () => {
     if (!profile?.id || !profile?.partner_id) return;
     
-    // 30 minute cooldown check
-    const COOLDOWN_MS = 30 * 60 * 1000;
-    const lastNudgeTime = localStorage.getItem(`last_nudge_${profile.id}`);
-    if (lastNudgeTime) {
-      const elapsed = Date.now() - parseInt(lastNudgeTime, 10);
-      if (elapsed < COOLDOWN_MS) {
-        const remainingMs = COOLDOWN_MS - elapsed;
-        const minutes = Math.floor(remainingMs / 60000);
-        const seconds = Math.floor((remainingMs % 60000) / 1000);
-        const timeString = minutes > 0 
-          ? `${minutes} Min. und ${seconds} Sek.` 
-          : `${seconds} Sek.`;
-        showAlert(`Hör auf, deinen Bisou-Partner zu nerven! Nächster Anstupster möglich in: ${timeString}`, "error");
-        return;
+    // Cooldown progression: increments by 20s (first 20s, then 40s, then 60s, etc.)
+    const BASE_COOLDOWN_MS = 20 * 1000;
+    const RESET_WINDOW_MS = 30 * 60 * 1000; // reset progression after 30 minutes of inactivity
+    
+    const lastNudgeTimeStr = localStorage.getItem(`last_nudge_${profile.id}`);
+    let nudgeCount = parseInt(localStorage.getItem(`nudge_count_${profile.id}`) || '0', 10);
+    
+    if (lastNudgeTimeStr) {
+      const lastNudgeTime = parseInt(lastNudgeTimeStr, 10);
+      const elapsed = Date.now() - lastNudgeTime;
+      
+      // Reset progression count if the user has been inactive for more than 30 minutes
+      if (elapsed > RESET_WINDOW_MS) {
+        nudgeCount = 0;
+      }
+      
+      if (nudgeCount > 0) {
+        const requiredCooldown = nudgeCount * BASE_COOLDOWN_MS;
+        if (elapsed < requiredCooldown) {
+          const remainingMs = requiredCooldown - elapsed;
+          const minutes = Math.floor(remainingMs / 60000);
+          const seconds = Math.floor((remainingMs % 60000) / 1000);
+          const timeString = minutes > 0 
+            ? `${minutes} Min. und ${seconds} Sek.` 
+            : `${seconds} Sek.`;
+          showAlert(`Hör auf, deinen Bisou-Partner zu nerven! Nächster Anstupster möglich in: ${timeString}`, "error");
+          return;
+        }
       }
     }
 
@@ -764,10 +778,10 @@ export default function Profile({
         showAlert(`${partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Partner'} hat Benachrichtigungen nicht aktiviert.`, "info");
       } else {
         showAlert(`${partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Partner'} wurde angestupst! ❤️`, "success");
+        // Save timestamp and increment count ONLY for successful, non-skipped nudge actions
+        localStorage.setItem(`last_nudge_${profile.id}`, Date.now().toString());
+        localStorage.setItem(`nudge_count_${profile.id}`, (nudgeCount + 1).toString());
       }
-      
-      // Save timestamp of successful nudge
-      localStorage.setItem(`last_nudge_${profile.id}`, Date.now().toString());
     } catch (err: any) {
       showAlert(translateError(err.message), "error");
     } finally {
