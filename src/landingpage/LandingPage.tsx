@@ -6,10 +6,42 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const features = [
-    { icon: <Heart className="w-5 h-5 text-red-500" />, text: "Sagt Tschüss zu Doom-Scrollen: Diese App stärkt eure Bindung" },
-    { icon: <Users className="w-5 h-5 text-purple-500" />, text: "Verbinde dich mit einem Bisou-Partner, um täglich mehr übereinander zu erfahren" },
-    { icon: <MessageCircle className="w-5 h-5 text-blue-500" />, text: "Eure Antworten sind erst sichtbar, wenn ihr beide geantwortet habt" },
-    { icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, text: "Deine Daten werden verschlüsselt und nach strengen BSI-Richtlinien übertragen." },
+    { 
+      icon: <Heart className="w-5 h-5 text-red-500" />, 
+      text: (
+        <>
+          Sagt Tschüss zu Doom-Scrollen:<br />
+          Diese App stärkt eure Bindung
+        </>
+      )
+    },
+    { 
+      icon: <Users className="w-5 h-5 text-purple-500" />, 
+      text: (
+        <>
+          Verbinde dich mit einem Bisou-Partner,<br />
+          um täglich mehr übereinander zu erfahren
+        </>
+      )
+    },
+    { 
+      icon: <MessageCircle className="w-5 h-5 text-blue-500" />, 
+      text: (
+        <>
+          Eure Antworten sind erst sichtbar,<br />
+          wenn ihr beide geantwortet habt
+        </>
+      )
+    },
+    { 
+      icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, 
+      text: (
+        <>
+          Deine Daten werden verschlüsselt und<br />
+          nach strengen BSI-Richtlinien übertragen.
+        </>
+      )
+    },
   ];
 
   const tickerItems = [
