@@ -89,7 +89,7 @@ export default function LandingPage() {
           {features.map((f, i) => (
             <div 
               key={i} 
-              className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:p-2.5 rounded-xl sm:rounded-[1.25rem] bg-white/60 border border-white shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:translate-x-1 duration-200"
+              className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:p-2.5 rounded-xl sm:rounded-[1.25rem] bg-white/60 border border-white shadow-sm backdrop-blur-sm"
             >
               <div className="shrink-0 ml-2.5 sm:ml-3.5 p-1.5 sm:p-2 rounded-lg bg-purple-50 flex items-center justify-center">
                 {f.icon}
