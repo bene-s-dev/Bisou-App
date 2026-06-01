@@ -281,7 +281,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     }
   }, []);
 
-  const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isIOS = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
   const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
   const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);

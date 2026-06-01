@@ -106,6 +106,7 @@ export default function Profile({
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [showServices, setShowServices] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showAboutAppModal, setShowAboutAppModal] = useState(false);
   const [partnerDetails, setPartnerDetails] = useState<{
     createdAt: string | null;
     streak: number;
@@ -124,7 +125,54 @@ export default function Profile({
   const [devMessage, setDevMessage] = useState<string | null>(null);
   const devTimeoutRef = useRef<any>(null);
 
-  const [showAboutAppModal, setShowAboutAppModal] = useState(false); // New state for About App modal
+  const handleDevTap = () => {
+    const now = Date.now();
+    if (now - lastToggleTimeRef.current < 500) {
+      devTapsRef.current += 1;
+      if (devTapsRef.current >= 5) {
+        const newState = !isDevMode;
+        setIsDevMode(newState);
+        localStorage.setItem('bisou_dev_mode', String(newState));
+        showAlert(newState ? "Debug-Modus aktiviert 🛠️" : "Debug-Modus deaktiviert", "info");
+        devTapsRef.current = 0;
+      }
+    } else {
+      devTapsRef.current = 1;
+    }
+    lastToggleTimeRef.current = now;
+  };
+
+  const handleHardResetApp = async () => {
+    showConfirm(
+      "Dies löscht alle Service Worker und den Cache der App. Die Seite wird danach neu geladen.",
+      async () => {
+        try {
+          setLoading(true);
+          // 1. Unregister Service Workers
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const reg of registrations) {
+              await reg.unregister();
+            }
+          }
+          // 2. Clear Caches
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            for (const key of keys) {
+              await caches.delete(key);
+            }
+          }
+          // 3. Reload
+          window.location.reload();
+        } catch (e) {
+          showAlert("Fehler beim Zurücksetzen", "error");
+        } finally {
+          setLoading(false);
+        }
+      },
+      { title: "App Hard-Reset", confirmLabel: "Jetzt zurücksetzen", cancelLabel: "Abbrechen" }
+    );
+  };
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
   const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
@@ -150,7 +198,7 @@ export default function Profile({
     }
   }, [isPWA]);
 
-  const isIOSLocal = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isIOSLocal = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
   const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
   const isDesktopLocal = !isIOSLocal && !isAndroid;
 
@@ -371,7 +419,24 @@ export default function Profile({
   const executePushToggle = async (targetState: boolean) => {
     setIsPushLoading(true);
     try {
-      const registration = await navigator.serviceWorker.ready;
+      if (!('serviceWorker' in navigator)) {
+        throw new Error("Service Worker nicht unterstützt");
+      }
+
+      // 1. Ensure Service Worker is registered and active
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        // Fallback: Try to register the default Vite PWA worker or the push worker
+        registration = await navigator.serviceWorker.register('/sw.js').catch(() => 
+          navigator.serviceWorker.register('/sw-push.js')
+        );
+      }
+
+      // Wait for registration to be active with a timeout
+      const readyPromise = navigator.serviceWorker.ready;
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Service Worker Zeitüberschreitung")), 10000));
+      registration = await Promise.race([readyPromise, timeoutPromise]) as ServiceWorkerRegistration;
+
       let subscription = await registration.pushManager.getSubscription();
 
       if (!targetState) {
@@ -382,30 +447,50 @@ export default function Profile({
       } else {
         if (!subscription) {
           const { data: vapidData, error: vapidError } = await supabase.functions.invoke('send-push-notification', { method: 'GET' });
-          if (vapidError || !vapidData?.vapidPublicKey) throw new Error("VAPID-Schlüssel konnte nicht abgerufen werden.");
+          if (vapidError || !vapidData?.vapidPublicKey) throw new Error("VAPID-Schlüssel fehlt");
+          
           const convertedKey = urlBase64ToUint8Array(vapidData.vapidPublicKey);
-          subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedKey });
+          subscription = await registration.pushManager.subscribe({ 
+            userVisibleOnly: true, 
+            applicationServerKey: convertedKey 
+          });
         }
-        const { error } = await supabase.from('push_subscriptions').upsert({ user_id: profile.id, subscription: subscription.toJSON() }, { onConflict: 'user_id' });
+        const { error } = await supabase.from('push_subscriptions').upsert({ 
+          user_id: profile.id, 
+          subscription: subscription.toJSON() 
+        }, { onConflict: 'user_id' });
+        
         if (error) throw error;
         setPushEnabled(true);
         showAlert("Benachrichtigungen aktiviert! 🔔", "success");
       }
     } catch (err: any) {
-      console.error("Error toggling push notifications:", err);
-      showAlert("Fehler beim Aktivieren der Benachrichtigungen.", "error");
+      console.error("Push toggle error:", err);
+      showAlert("Fehler: " + (err.message || "Benachrichtigung konnte nicht aktiviert werden"), "error");
     } finally {
       setIsPushLoading(false);
     }
   };
 
   const handleTogglePush = () => {
-    if (!('serviceWorker' in navigator)) {
-      showAlert("Service Worker wird nicht unterstützt.", "error");
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      showAlert("Benachrichtigungen erfordern eine sichere HTTPS-Verbindung.", "error");
       return;
     }
 
-    const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    if (!('Notification' in window)) {
+      showAlert("Browser unterstützt keine Mitteilungen.", "error");
+      return;
+    }
+
+    const currentPermission = Notification.permission;
+
+    if (currentPermission === 'denied') {
+      showAlert("Bitte aktiviere Benachrichtigungen in deinen Browser-Einstellungen.", "error");
+      return;
+    }
+
+    const isIOS = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (isIOS && !isStandalone) {
       showAlert("Auf iOS funktionieren Benachrichtigungen nur in der installierten App.", "info");
@@ -413,33 +498,17 @@ export default function Profile({
       return;
     }
 
-    if (!('PushManager' in window)) {
-      showAlert("Push wird nicht unterstützt.", "error");
-      return;
-    }
-
-    // Capture current permission
-    const permission = Notification.permission;
-    
-    if (permission === 'denied') {
-      showAlert("Benachrichtigungen sind im Browser blockiert.", "error");
-      return;
-    }
-
-    if (permission === 'default') {
-      // MANDATORY: Call requestPermission IMMEDIATELY in the click handler
-      Notification.requestPermission().then(newPermission => {
-        setPushPermission(newPermission);
-        if (newPermission === 'granted') {
+    if (currentPermission === 'default') {
+      Notification.requestPermission().then(p => {
+        setPushPermission(p);
+        if (p === 'granted') {
           executePushToggle(true);
-        } else {
-          showAlert("Berechtigung wurde nicht erteilt.", "error");
         }
       }).catch(err => {
-        console.error("Permission error:", err);
+        console.error("Permission request error", err);
+        showAlert("Fehler bei der Berechtigungsanfrage.", "error");
       });
     } else {
-      // Permission already granted, just toggle
       executePushToggle(!pushEnabled);
     }
   };
@@ -806,19 +875,7 @@ export default function Profile({
                   </button>
                 ) : (
                   <button 
-                    onClick={() => {
-                      // ABSOLUTE FIRST ACTION: Trigger native prompt synchronously
-                      if ('Notification' in window && Notification.permission === 'default') {
-                        Notification.requestPermission().then(newPermission => {
-                          setPushPermission(newPermission);
-                          if (newPermission === 'granted') {
-                            handleTogglePush();
-                          }
-                        });
-                      } else {
-                        handleTogglePush();
-                      }
-                    }}
+                    onClick={() => handleTogglePush()}
                     disabled={isPushLoading}
                     className={`w-full py-3.5 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center shadow-md select-none outline-none ${
                       pushPermission === 'denied' 
@@ -839,7 +896,7 @@ export default function Profile({
           </div>
         );
       case 'install':
-        const isIOSLocalInstall = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+        const isIOSLocalInstall = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
         const isAndroidLocalInstall = /android/.test(navigator.userAgent.toLowerCase());
         
         return (
@@ -1187,7 +1244,10 @@ export default function Profile({
              </button>
              
              <div className="flex flex-col items-center gap-4 mb-6 pt-4 shrink-0">
-               <div className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
+               <div 
+                 onClick={handleDevTap}
+                 className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm active:scale-95 transition-transform cursor-pointer"
+               >
                  <Info className="w-8 h-8" />
                </div>
                <h3 className="text-xl font-black text-[#1F1939] uppercase tracking-widest text-center">Über die App</h3>
@@ -1205,8 +1265,8 @@ export default function Profile({
                  </div>
 
                  {/* Version */}
-                 <div className="contents cursor-pointer group" onClick={handleVersionClick}>
-                   <span className="text-[10px] font-black text-[var(--muted)] tracking-wider group-active:text-[var(--secondary)] transition-colors pb-2 border-b border-purple-50/50">Version:</span>
+                 <div className="contents">
+                   <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Version:</span>
                    <div className="flex justify-end border-b border-purple-50/50 pb-2 col-span-2">
                      <span className="text-xs font-black text-[#1F1939]">1.0.0</span>
                    </div>
@@ -1214,6 +1274,17 @@ export default function Profile({
 
                  {isDevMode && (
                    <>
+                     <div className="contents animate-in zoom-in-95 duration-200">
+                       <span className="text-[10px] font-black text-blue-500 tracking-wider pb-2 border-b border-purple-50/50">Debug Tools:</span>
+                       <div className="flex justify-end border-b border-purple-50/50 pb-2 col-span-2">
+                         <button 
+                           onClick={handleHardResetApp}
+                           className="text-[9px] font-black text-white bg-blue-500 px-2 py-1 rounded-md uppercase tracking-wider hover:bg-blue-600 transition-colors shadow-sm"
+                         >
+                           App Hard-Reset
+                         </button>
+                       </div>
+                     </div>
                      {/* Gerät */}
                      <div className="contents">
                        <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50">Läuft auf:</span>
