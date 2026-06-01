@@ -9,12 +9,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
 import { capitalizeName } from '../lib/stringUtils';
 import Intro from './Intro';
+import { User } from '@supabase/supabase-js';
 
 
 interface ProfileProps {
   profile: any;
   partnerProfile: any;
   userEmail?: string;
+  user?: User | null;
   onLogout: () => void;
   deferredPrompt?: any;
   onInstall?: () => void;
@@ -39,6 +41,7 @@ export default function Profile({
   profile: initialProfile, 
   partnerProfile, 
   userEmail: propEmail,
+  user: initialUser,
   onLogout,
   deferredPrompt,
   onInstall 
@@ -53,6 +56,7 @@ export default function Profile({
   };
   
   const [profile, setProfile] = useState<any>(initialProfile);
+  const [user, setUser] = useState<User | null>(initialUser || null);
   
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
 
@@ -68,6 +72,10 @@ export default function Profile({
     setProfile(initialProfile);
     setNewName(initialProfile?.display_name || '');
   }, [initialProfile]);
+
+  useEffect(() => {
+    setUser(initialUser || null);
+  }, [initialUser]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(initialProfile?.display_name || '');
@@ -141,11 +149,10 @@ export default function Profile({
   const [isUpdatingEmail, setIsUpdatingEmail] = useState<boolean>(false);
 
   useEffect(() => {
-    if (propEmail) {
-      setUserEmail(propEmail);
-      if (!isEditingEmail) setEmailInput(propEmail);
-    }
-  }, [propEmail, isEditingEmail]);
+    const currentEmail = user?.email || propEmail || '';
+    setUserEmail(currentEmail);
+    if (!isEditingEmail) setEmailInput(currentEmail);
+  }, [user?.email, propEmail, isEditingEmail]);
 
 
 
@@ -888,7 +895,14 @@ export default function Profile({
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
                   {!isEditingEmail ? (
-                    <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
+                    <div className="flex flex-col">
+                      <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
+                      {user?.new_email && (
+                        <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight mt-0.5 animate-pulse">
+                          Warte auf Bestätigung: {user.new_email}
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <input
                       type="email"

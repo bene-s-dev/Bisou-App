@@ -12,7 +12,7 @@ interface LoginProps {
 
 export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'login' | 'register' | 'magic-link'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot-password'>(initialMode);
   
   // Sync mode with initialMode prop when navigating between /signin and /signup
   React.useEffect(() => {
@@ -75,27 +75,24 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     }
   };
 
-  const handleMagicLink = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     if (error) {
       setMessage({ type: 'error', text: translateError(error.message) });
     } else {
-      setMessage({ type: 'success', text: 'Prüfe dein Postfach für den Login-Link! ✨' });
+      setMessage({ type: 'success', text: 'Link zum Passwort-Reset wurde gesendet! ✨' });
     }
     setLoading(false);
   };
 
-  const handleSubmit = mode === 'login' ? handleLogin : (mode === 'register' ? handleRegister : handleMagicLink);
+  const handleSubmit = mode === 'login' ? handleLogin : (mode === 'register' ? handleRegister : handleForgotPassword);
 
   return (
     <div className="w-full min-h-full flex flex-col">
@@ -131,7 +128,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                   </button>
                 </div>
                 <div className="flex justify-end pr-2">
-                  <button type="button" onClick={() => setMode('magic-link')} className="text-xs font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Passwort vergessen?</button>
+                  <button type="button" onClick={() => setMode('forgot-password')} className="text-xs font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Passwort vergessen?</button>
                 </div>
                 <button type="submit" disabled={loading} className="btn-static w-full mt-2">
                   {loading ? 'Lädt...' : 'Einloggen ✨'}
@@ -140,7 +137,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
               </form>
             )}
 
-            {mode === 'magic-link' && (
+            {mode === 'forgot-password' && (
               <form onSubmit={handleSubmit} className="space-y-6">
                 {message?.type === 'success' ? (
                   <div className="text-center py-4">
@@ -150,7 +147,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                   <>
                     <div className="text-center mb-4">
                       <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
-                      <p className="text-sm text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link zum Einloggen.</p>
+                      <p className="text-sm text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link, um dein Passwort neu zu setzen.</p>
                     </div>
                     <input type="email" className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
                     <button type="submit" disabled={loading} className="btn-static">{loading ? 'Sende...' : 'Link senden ✨'}</button>

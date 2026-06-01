@@ -376,7 +376,7 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!mounted) return;
 
-      if (event === 'SIGNED_IN') {
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         handleSession(s);
       } else if (event === 'TOKEN_REFRESHED') {
         if (s) setSession(s);
@@ -555,6 +555,7 @@ export default function App() {
                   profile={profile} 
                   partnerProfile={partnerProfile} 
                   userEmail={session?.user?.email}
+                  user={session?.user}
                   onLogout={handleLogout} 
                   deferredPrompt={deferredPrompt}
                   onInstall={handleInstallClick}
