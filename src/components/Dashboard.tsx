@@ -500,7 +500,7 @@ export default function Dashboard({
             <div className="flex items-center justify-center w-full mt-3 px-2">
               <div className="w-1/2 flex justify-end pr-0 min-w-0">
                 <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -mr-2 whitespace-nowrap">
-                  {capitalizeName(partnerName)}
+                  {hasPartner ? capitalizeName(partnerName) : ''}
                 </span>
               </div>
               <div className="w-1/2 flex justify-start pl-0 min-w-0">
