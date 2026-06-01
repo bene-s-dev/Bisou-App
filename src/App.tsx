@@ -272,6 +272,10 @@ export default function App() {
         }
       }
 
+      if (qData) {
+        localStorage.setItem('last_question_fetch', new Date().toISOString());
+      }
+
       const currentQs = (qData && qData.tot && qData.ranking && qData.text) 
         ? [qData.tot, qData.ranking, qData.text] 
         : [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];

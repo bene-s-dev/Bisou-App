@@ -1270,7 +1270,7 @@ export default function Profile({
                         <span className="text-[9px] font-black text-blue-600 tracking-wider">
                           {(() => {
                             const lastFetch = localStorage.getItem('last_question_fetch');
-                            if (!lastFetch) return 'Heute, 08:30 Uhr';
+                            if (!lastFetch) return 'Unbekannt';
                             const date = new Date(lastFetch);
                             const today = new Date();
                             const isToday = date.toDateString() === today.toDateString();
