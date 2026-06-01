@@ -499,15 +499,25 @@ export default function Profile({
     }
 
     if (currentPermission === 'default') {
-      Notification.requestPermission().then(p => {
-        setPushPermission(p);
-        if (p === 'granted') {
-          executePushToggle(true);
+      try {
+        const handlePermission = (p: NotificationPermission) => {
+          setPushPermission(p);
+          if (p === 'granted') {
+            executePushToggle(true);
+          }
+        };
+
+        const req = Notification.requestPermission(handlePermission);
+        if (req && typeof req.then === 'function') {
+          req.then(handlePermission).catch(err => {
+            console.error("Permission request error", err);
+            showAlert("Fehler bei der Berechtigungsanfrage.", "error");
+          });
         }
-      }).catch(err => {
-        console.error("Permission request error", err);
-        showAlert("Fehler bei der Berechtigungsanfrage.", "error");
-      });
+      } catch (err) {
+        console.error("Permission request crash:", err);
+        showAlert("Dein Browser hat ein Problem mit der Berechtigungsanfrage.", "error");
+      }
     } else {
       executePushToggle(!pushEnabled);
     }
@@ -1249,12 +1259,12 @@ export default function Profile({
              </button>
              
              <div className="flex flex-col items-center gap-4 mb-6 pt-4 shrink-0">
-               <div 
+               <button 
                  onClick={handleDevTap}
-                 className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm active:scale-95 transition-transform cursor-pointer"
+                 className="w-16 h-16 bg-purple-50 rounded-[2rem] flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm active:scale-95 transition-transform cursor-pointer outline-none focus:outline-none focus:ring-2 focus:ring-[var(--secondary)] focus:ring-offset-2"
                >
-                 <Info className="w-8 h-8" />
-               </div>
+                 <Info className="w-8 h-8 pointer-events-none" />
+               </button>
                <h3 className="text-xl font-black text-[#1F1939] uppercase tracking-widest text-center">Über die App</h3>
              </div>
 
