@@ -462,16 +462,28 @@ export default function App() {
     };
     authChannel.addEventListener('message', handleAuthMessage);
 
-    // Refresh data when tab becomes visible after being inactive
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && mounted && session?.user.id) {
-        // Only refresh if data is older than 5 minutes
-        if (Date.now() - lastFetchTimestamp.current > 5 * 60 * 1000) {
+    // Refresh data when tab becomes visible or focused (PWA/multi-tabs wake up)
+    const handleSyncOnWake = () => {
+      if (mounted && session?.user.id) {
+        // Cooldown of 3 seconds to avoid redundant triggers from simultaneous focus/visibility events
+        if (Date.now() - lastFetchTimestamp.current > 3000) {
           fetchProfile(session.user.id, true);
         }
       }
     };
+    
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        handleSyncOnWake();
+      }
+    };
+    
+    const handleFocus = () => {
+      handleSyncOnWake();
+    };
+
     window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
 
     // Reload app when Service Worker updates
     if ('serviceWorker' in navigator) {
@@ -485,6 +497,7 @@ export default function App() {
       subscription.unsubscribe(); 
       authChannel.removeEventListener('message', handleAuthMessage);
       window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [fetchProfile, session?.user.id, location.pathname, navigate]);
 
@@ -611,17 +624,8 @@ export default function App() {
           <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
           <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="login" />} />
           <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="register" />} />
+          <Route path="/reset-password" element={<ResetPassword onComplete={() => navigate('/signin')} />} />
         </Route>
-        
-        <Route path="/reset-password" element={
-          <div className="h-screen w-screen relative bg-[var(--bg)] overflow-hidden flex flex-col">
-            <ScalingContainer targetWidth={400}>
-              <div className="flex-1 overflow-y-auto pt-12 px-4">
-                <ResetPassword onComplete={() => navigate('/signin')} />
-              </div>
-            </ScalingContainer>
-          </div>
-        } />
         
         {/* Protected Routes Wrapper */}
         {session && profile ? (

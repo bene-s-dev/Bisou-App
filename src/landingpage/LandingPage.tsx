@@ -1,14 +1,14 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Lock, EyeOff } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Lock, Users } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
 
   const features = [
-    { icon: <Heart className="w-5 h-5 text-red-500" />, text: "Sagt Tschüss zu Doom-Scrollen: Diese App stärkt eure Beziehung" },
-    { icon: <MessageCircle className="w-5 h-5 text-blue-500" />, text: "Verbinde dich mit einem Bisou-Partner, um täglich mehr übereinander zu erfahren" },
-    { icon: <EyeOff className="w-5 h-5 text-purple-500" />, text: "Antworten erst sichtbar, wenn beide geantwortet haben" },
+    { icon: <Heart className="w-5 h-5 text-red-500" />, text: "Sagt Tschüss zu Doom-Scrollen: Diese App stärkt eure Bindung" },
+    { icon: <Users className="w-5 h-5 text-purple-500" />, text: "Verbinde dich mit einem Bisou-Partner, um täglich mehr übereinander zu erfahren" },
+    { icon: <MessageCircle className="w-5 h-5 text-blue-500" />, text: "Eure Antworten sind erst sichtbar, wenn ihr beide geantwortet habt" },
     { icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, text: "Deine Daten werden verschlüsselt und nach strengen BSI-Richtlinien übertragen." },
   ];
 

@@ -497,17 +497,21 @@ export default function Dashboard({
               </div>
             </div>
 
-            <div className="flex items-center justify-center w-full mt-3 px-2">
-              <div className="w-1/2 flex justify-end pr-0 min-w-0">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -mr-2 whitespace-nowrap">
-                  {hasPartner ? capitalizeName(partnerName) : ''}
-                </span>
-              </div>
-              <div className="w-1/2 flex justify-start pl-0 min-w-0">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -ml-2 whitespace-nowrap">
+            <div className="flex items-center justify-center w-full mt-3 px-4">
+              {hasPartner ? (
+                <div className="flex items-center justify-center gap-x-8 sm:gap-x-10 max-w-full">
+                  <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center max-w-[110px] sm:max-w-[130px] break-words leading-tight">
+                    {capitalizeName(partnerName)}
+                  </span>
+                  <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center max-w-[110px] sm:max-w-[130px] break-words leading-tight">
+                    {userName ? capitalizeName(userName) : 'Ich'}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center max-w-[110px] sm:max-w-[130px] break-words leading-tight translate-x-8 sm:translate-x-10">
                   {userName ? capitalizeName(userName) : 'Ich'}
                 </span>
-              </div>
+              )}
             </div>
           </div>
         </div>

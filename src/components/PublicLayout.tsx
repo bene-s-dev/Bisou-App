@@ -7,31 +7,19 @@ export default function PublicLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [isKuss, setIsKuss] = useState(false);
-  const words = ['Küsschen', 'bisschen'];
   const [wordIndex, setWordIndex] = useState(0);
-  const [isFading, setIsFading] = useState(false);
+  const [isFirstRender, setIsFirstRender] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsKuss(true);
-    }, 1500);
-
+    setIsFirstRender(false);
     const interval = setInterval(() => {
-      setIsFading(true);
-      setTimeout(() => {
-        setWordIndex((prev) => (prev + 1) % words.length);
-        setIsFading(false);
-      }, 600);
+      setWordIndex((prev) => (prev === 0 ? 1 : 0));
     }, 4000);
 
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, []);
 
-  const isAuthPage = ['/signin', '/signup'].includes(location.pathname);
+  const isAuthPage = ['/signin', '/signup', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/';
 
   return (
@@ -64,13 +52,30 @@ export default function PublicLayout() {
             <span className="whitespace-nowrap">Jeden Tag ein&nbsp;</span>
 
             <span className="relative inline-flex items-center justify-center text-[var(--primary)] h-[1.2em]">
-              <span className="invisible px-[1px] whitespace-nowrap">{words[0]}</span>
-              <span className="absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap transition-all duration-500 ease-in-out px-[1px]" 
-                    style={{ 
-                      opacity: isFading ? 0 : 1,
-                      transform: isFading ? 'translateY(-10px)' : 'translateY(0)'
-                    }}>
-                {words[wordIndex]}
+              {/* Invisible spacer to maintain width of the largest word */}
+              <span className="invisible px-[1px] whitespace-nowrap">Küsschen</span>
+              
+              <span 
+                className={`absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap px-[1px] ${
+                  isFirstRender 
+                    ? 'opacity-100' 
+                    : wordIndex === 0 
+                      ? 'animate-slogan-down-in' 
+                      : 'animate-slogan-up-out'
+                }`}
+              >
+                bisschen
+              </span>
+              <span 
+                className={`absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap px-[1px] ${
+                  isFirstRender 
+                    ? 'opacity-0' 
+                    : wordIndex === 1 
+                      ? 'animate-slogan-up-in' 
+                      : 'animate-slogan-down-out'
+                }`}
+              >
+                Küsschen
               </span>
             </span>
 

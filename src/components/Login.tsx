@@ -117,10 +117,13 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
       )}
 
       <div className="flex-1 flex flex-col items-center justify-start pt-1 pb-8">
-        <div className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-6 shadow-[var(--shadow-soft)] flex flex-col w-full max-w-md">
+        <div key={mode} className="bg-white border-2 border-purple-100 rounded-[2.5rem] p-6 shadow-[var(--shadow-soft)] flex flex-col w-full max-w-md animate-entrance">
           <>
             {mode === 'login' && (
               <form onSubmit={handleSubmit} className={`space-y-4 ${shouldShake ? 'animate-shake' : ''}`}>
+                <div className="text-center mb-1">
+                  <h2 className="text-lg font-black text-[#1F1939]">Wieder anmelden:</h2>
+                </div>
 
                 <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
                 <div className="relative">
@@ -152,20 +155,19 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
             )}
 
             {mode === 'forgot-password' && (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {message?.type === 'success' ? (
                   <div className="text-center py-4">
                     <button type="button" onClick={() => { navigate('/signin'); setMode('login'); setMessage(null); }} className="btn-static">Zum Login</button>
                   </div>
                 ) : (
                   <>
-                    <div className="text-center mb-4">
-                      <h2 className="text-2xl font-black text-[#1F1939] mb-2">Passwort ändern</h2>
-                      <p className="text-sm text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link, um dein Passwort neu zu setzen.</p>
+                    <div className="text-center mb-2">
+                      <h2 className="text-lg font-black text-[#1F1939] mb-1">Passwort ändern:</h2>
+                      <p className="text-xs text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link.</p>
                     </div>
                     <input type="email" className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
                     <button type="submit" disabled={loading} className="btn-static">{loading ? 'Sende...' : 'Link senden ✨'}</button>
-                    <button type="button" onClick={() => navigate('/signin')} className="w-full text-sm font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors text-center">Zurück zum Login</button>
                   </>
                 )}
               </form>
@@ -194,6 +196,9 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                   <>
                     {regStep === 1 && (
                       <form onSubmit={(e) => { e.preventDefault(); setRegStep(2); }} className="space-y-4">
+                        <div className="text-center mb-1">
+                          <h2 className="text-lg font-black text-[#1F1939]">Bei Bisou anmelden:</h2>
+                        </div>
 
                         <input type="text" className="input-base" placeholder="Dein Vorname" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required autoComplete="name" />
                         <input type="email" className="input-base" placeholder="E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="username" />
@@ -257,7 +262,19 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 )}
               </div>
             )}
-            <button type="button" onClick={() => navigate('/')} className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] mt-6 hover:text-[var(--text-main)] transition-colors text-center shrink-0">← Zurück</button>
+            <button 
+              type="button" 
+              onClick={() => {
+                if (mode === 'forgot-password') {
+                  setMode('login');
+                } else {
+                  navigate('/');
+                }
+              }} 
+              className="w-full text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.2em] mt-6 hover:text-[var(--text-main)] transition-colors text-center shrink-0"
+            >
+              ← Zurück
+            </button>
           </>
         </div>
       </div>

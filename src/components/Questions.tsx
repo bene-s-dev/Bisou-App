@@ -26,13 +26,14 @@ const EncryptionOverlay = () => {
 
   useEffect(() => {
     // Sequence
-    const t1 = setTimeout(() => setPhase(2), 500);   // Start encrypting
-    const t2 = setTimeout(() => setPhase(3), 2000);  // Letter moves into envelope
-    const t3 = setTimeout(() => setPhase(4), 2600);  // Envelope closes
-    const t4 = setTimeout(() => setPhase(5), 3100);  // Seal (Lock) appears
-    const t5 = setTimeout(() => setPhase(6), 3800);  // Move up and disappear
+    const t1 = setTimeout(() => setPhase(2), 500);   // Start encrypting text
+    const t2 = setTimeout(() => setPhase(3), 2200);  // Letter moves into envelope
+    const t3 = setTimeout(() => setPhase(4), 3100);  // Envelope flap closes
+    const t4 = setTimeout(() => setPhase(5), 3800);  // Seal (Lock) appears
+    const t5 = setTimeout(() => setPhase(6), 4600);  // Move up and disappear
+    const t6 = setTimeout(() => setPhase(7), 5450);  // Fade out background overlay
     
-    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
+    return () => { [t1, t2, t3, t4, t5, t6].forEach(clearTimeout); };
   }, []);
 
   useEffect(() => {
@@ -53,44 +54,94 @@ const EncryptionOverlay = () => {
   }, [phase, targetScrambled]);
 
   return createPortal(
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-sm overflow-hidden">
-      <div className={`relative flex items-center justify-center transition-all duration-700 ease-in-out ${phase === 6 ? '-translate-y-[120vh] opacity-0' : 'translate-y-0 opacity-100'}`}>
+    <div 
+      className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-all duration-700 ease-in-out
+        ${phase === 7 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+    >
+      <div 
+        className="relative w-48 h-48 flex items-center justify-center"
+        style={{
+          transform: phase >= 6 ? 'translateY(-120svh) scale(0.9)' : 'translateY(0) scale(1)',
+          opacity: phase >= 6 ? 0 : 1,
+          transition: phase >= 6 
+            ? 'transform 900ms cubic-bezier(0.3, -0.05, 0.1, 1.1), opacity 850ms ease-in' 
+            : 'transform 700ms ease-out, opacity 700ms ease-out'
+        }}
+      >
         
-        {/* The Letter */}
+        {/* Layer 1: Envelope Back */}
+        <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-10">
+          <rect x="8" y="64" width="176" height="112" rx="12" fill="white" stroke="currentColor" strokeWidth="4" />
+        </svg>
+
+        {/* Layer 1b: Envelope Flap (transitions from pointing up to folding down) */}
+        <svg 
+          viewBox="0 0 192 192" 
+          className={`absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none transition-all duration-300 ${phase >= 4 ? 'z-50' : 'z-10'}`}
+        >
+          <path
+            d="M 8 64 L 96 12 L 184 64"
+            fill="white"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinejoin="round"
+            style={{
+              transformOrigin: '96px 64px',
+              transform: phase >= 4 ? 'scaleY(-1)' : 'scaleY(1)',
+              transition: 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+          />
+        </svg>
+
+        {/* Layer 2: The Letter (slides down behind EnvelopeFront pocket) */}
         <div 
-          className={`absolute w-40 h-52 bg-white rounded-xl shadow-2xl border-2 border-[var(--secondary)] p-6 flex flex-col gap-3 transition-all duration-700 ease-in-out z-40 
-            ${phase >= 3 ? 'translate-y-20 scale-50 opacity-0' : 'translate-y-[-80px] scale-100 opacity-100'}`}
+          className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-xl shadow-xl border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-800 ease-in-out z-20 
+            ${phase >= 3 ? 'translate-y-[48px] scale-90 opacity-0' : 'translate-y-[-60px] scale-100 opacity-100'}`}
         >
           <div className="w-full h-2 bg-[var(--secondary)] rounded-full opacity-30" />
           <div className="w-3/4 h-2 bg-[var(--secondary)] rounded-full opacity-30" />
-          <p className="mt-4 font-mono text-[10px] font-black text-[var(--secondary)] break-words leading-relaxed text-center">
+          <p className="mt-2 font-mono text-[9px] font-black text-[var(--secondary)] break-words leading-relaxed text-center">
             {scrambledText}
           </p>
-          <div className="mt-auto flex flex-col gap-2">
-            <div className="w-full h-1.5 bg-[var(--secondary)] rounded-full opacity-20" />
-            <div className="w-full h-1.5 bg-[var(--secondary)] rounded-full opacity-20" />
+          <div className="mt-auto flex flex-col gap-1.5">
+            <div className="w-full h-1 bg-[var(--secondary)] rounded-full opacity-20" />
+            <div className="w-full h-1 bg-[var(--secondary)] rounded-full opacity-20" />
           </div>
         </div>
 
-        {/* The Envelope */}
-        <div className={`relative transition-all duration-700 ease-in-out z-30 ${phase >= 3 ? 'scale-110' : 'scale-100'}`}>
-          {phase < 4 ? (
-            <MailOpen className="w-48 h-48 text-[var(--secondary)] fill-white stroke-[2px]" />
-          ) : (
-            <Mail className="w-48 h-48 text-[var(--secondary)] fill-white stroke-[2px]" />
-          )}
-          
-          {/* The Lock / Seal */}
-          <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${phase >= 5 ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`}>
-            <div className="bg-[var(--secondary)] p-4 rounded-full shadow-2xl border-4 border-white">
-              <Lock className="w-8 h-8 text-white fill-white" />
-            </div>
+        {/* Layer 3: Envelope Front Pocket */}
+        <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-30">
+          <path 
+            d="M 8 64 L 96 120 L 184 64 L 184 164 A 12 12 0 0 1 172 176 L 20 176 A 12 12 0 0 1 8 164 Z" 
+            fill="white" 
+            stroke="currentColor" 
+            strokeWidth="4" 
+            strokeLinejoin="round" 
+          />
+        </svg>
+
+        {/* Layer 4: The Lock (bounces onto the envelope seal crease) */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center z-60 translate-y-6"
+          style={{
+            transformOrigin: 'center center',
+            transform: phase >= 5 ? 'scale(1)' : 'scale(0)',
+            opacity: phase >= 5 ? 1 : 0,
+            transition: 'transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 450ms ease-out'
+          }}
+        >
+          <div className="bg-[var(--secondary)] p-3 rounded-full shadow-2xl border-4 border-white">
+            <Lock className="w-6 h-6 text-white fill-white" />
           </div>
         </div>
 
       </div>
       
-      <div className="absolute bottom-24 left-0 right-0 text-center">
+      {/* Bottom info text */}
+      <div 
+        className={`absolute bottom-24 left-0 right-0 text-center transition-all duration-500 ease-in-out
+          ${phase >= 6 ? 'opacity-0 translate-y-4' : phase >= 5 ? 'opacity-100 translate-y-0 scale-105' : 'opacity-100 translate-y-0'}`}
+      >
         <span className="text-[12px] font-black text-[var(--secondary)] uppercase tracking-[0.4em] animate-pulse">
           {phase < 5 ? "Verschlüsseln..." : "Gesichert"}
         </span>
@@ -412,8 +463,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       // TRIGGER ANIMATION
       setIsEncrypting(true);
       
-      // Wait for animation to finish (approx 4.5s total to be safe)
-      await new Promise(resolve => setTimeout(resolve, 4800));
+      // Wait for animation sequence + fade out to fully finish (approx 6.1s)
+      await new Promise(resolve => setTimeout(resolve, 6100));
 
       setMyResults(finalResults);
       setIsEncrypting(false);
@@ -564,8 +615,10 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
 
   // --- MAIN RENDER ---
   try {
-    const q = dailyQs[step < 3 ? step : 0] || FALLBACK_QUESTIONS.tot;
-
+    const q0 = dailyQs[0] || FALLBACK_QUESTIONS.tot;
+    const q1 = dailyQs[1] || FALLBACK_QUESTIONS.ranking;
+    const q2 = dailyQs[2] || FALLBACK_QUESTIONS.text;
+    
     return (
       <div 
         className="animate-entrance flex flex-col flex-1 h-full overflow-hidden pt-0 will-change-transform"
@@ -581,18 +634,29 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
               </div>
             </header>
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col min-h-0 scrollbar-soft justify-center py-4">
-              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q.q}</h2>
-              <div className="min-h-0 pb-4">
-                {step === 0 && (
-                  <div className="flex flex-col gap-3">
-                    {(q.o || []).map((o, i) => (
-                      <button key={i} className={`p-6 rounded-[2rem] border-2 text-sm font-black min-h-[80px] flex items-center justify-center transition-all shadow-sm ${selectedTot === o ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468] hover:border-purple-300'}`} onClick={() => setSelectedTot(o)}>{o}</button>
-                    ))}
+            <div className="flex-1 overflow-hidden relative w-full h-full">
+              <div 
+                className="flex h-full transition-transform duration-500 ease-in-out w-[300%]"
+                style={{
+                  transform: `translate3d(-${(step >= 3 ? 2 : step) * 33.3333}%, 0, 0)`
+                }}
+              >
+                {/* Slide 0 */}
+                <div className="w-1/3 flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4">
+                  <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q0.q}</h2>
+                  <div className="min-h-0 pb-4">
+                    <div className="flex flex-col gap-3">
+                      {(q0.o || []).map((o, i) => (
+                        <button key={i} className={`p-6 rounded-[2rem] border-2 text-sm font-black min-h-[80px] flex items-center justify-center transition-all shadow-sm ${selectedTot === o ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468] hover:border-purple-300'}`} onClick={() => setSelectedTot(o)}>{o}</button>
+                      ))}
+                    </div>
                   </div>
-                )}
-                {step === 1 && (
-                  <>
+                </div>
+
+                {/* Slide 1 */}
+                <div className="w-1/3 flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4">
+                  <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q1.q}</h2>
+                  <div className="min-h-0 pb-4">
                     <div className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.15em] text-center mb-4 flex items-center justify-center gap-1.5 opacity-80">
                       <span>👆</span> Gedrückt halten zum Verschieben
                     </div>
@@ -606,30 +670,35 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                         </div>
                       ))}
                     </div>
-                  </>
-                )}
-                {step === 2 && (
-                  <div className="flex flex-col gap-2 relative">
-                    <textarea 
-                      className="w-full h-[180px] p-6 pb-12 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
-                      placeholder="Deine Gedanken hier..." 
-                      value={textVal} 
-                      onChange={(e) => setTextVal(e.target.value)} 
-                      maxLength={MAX_TEXT_LENGTH}
-                    />
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
-                      <span className={`text-[9px] font-black tracking-[0.2em] uppercase px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
-                        {textVal.length} / {MAX_TEXT_LENGTH}
-                      </span>
+                  </div>
+                </div>
+
+                {/* Slide 2 */}
+                <div className="w-1/3 flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4">
+                  <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q2.q}</h2>
+                  <div className="min-h-0 pb-4">
+                    <div className="flex flex-col gap-2 relative">
+                      <textarea 
+                        className="w-full h-[180px] p-6 pb-12 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
+                        placeholder="Deine Gedanken hier..." 
+                        value={textVal} 
+                        onChange={(e) => setTextVal(e.target.value)} 
+                        maxLength={MAX_TEXT_LENGTH}
+                      />
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
+                        <span className={`text-[9px] font-black tracking-[0.2em] uppercase px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
+                          {textVal.length} / {MAX_TEXT_LENGTH}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
         ) : (
           // --- RESULTS VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden relative">
+          <div className="flex flex-col flex-1 h-full overflow-hidden relative animate-fade-in">
             <div 
               className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none results-top-fade"
               style={{
