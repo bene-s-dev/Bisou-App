@@ -70,7 +70,7 @@ export default function LandingPage() {
         </div>
 
         {/* Feature List (Vertical List) */}
-        <div className="w-full flex flex-col gap-2 sm:gap-3 px-2 sm:px-6 shrink-0">
+        <div className="w-full max-w-sm mx-auto flex flex-col gap-2 sm:gap-3 px-8 sm:px-10 shrink-0 mt-2 sm:mt-3">
           <p className="text-[10px] font-black text-[var(--muted)] tracking-[0.05em] mb-2.5 px-2 text-center">
             Bisou ist jetzt mit diesen Funktionen verfügbar:
           </p>
