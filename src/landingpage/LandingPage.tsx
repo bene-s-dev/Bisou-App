@@ -7,7 +7,7 @@ export default function LandingPage() {
 
   const features = [
     { 
-      icon: <Heart className="w-3.5 h-3.5 text-red-500" />, 
+      icon: <Heart className="w-4 sm:w-[18px] h-4 sm:h-[18px] text-red-500" />, 
       text: (
         <>
           Sagt Tschüss zu Doom-Scrollen:<br />
@@ -16,7 +16,7 @@ export default function LandingPage() {
       )
     },
     { 
-      icon: <Users className="w-3.5 h-3.5 text-purple-500" />, 
+      icon: <Users className="w-4 sm:w-[18px] h-4 sm:h-[18px] text-purple-500" />, 
       text: (
         <>
           Verbinde dich mit einem Bisou-Partner,<br />
@@ -25,7 +25,7 @@ export default function LandingPage() {
       )
     },
     { 
-      icon: <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />, 
+      icon: <MessageCircle className="w-4 sm:w-[18px] h-4 sm:h-[18px] text-emerald-500" />, 
       text: (
         <>
           Täglich neue inspirierende Fragen:<br />
@@ -34,7 +34,7 @@ export default function LandingPage() {
       )
     },
     { 
-      icon: <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />, 
+      icon: <ShieldCheck className="w-4 sm:w-[18px] h-4 sm:h-[18px] text-blue-500" />, 
       text: (
         <>
           Deine Daten werden verschlüsselt<br />
@@ -70,10 +70,10 @@ export default function LandingPage() {
         </div>
 
         {/* Feature List (Vertical List) */}
-        <div className="w-full max-w-sm mx-auto flex flex-col gap-1.5 sm:gap-2 px-8 sm:px-10 shrink-0 mt-2 sm:mt-3">
+        <div className="w-full max-w-sm mx-auto flex flex-col gap-2 sm:gap-2.5 px-8 sm:px-10 shrink-0 mt-2 sm:mt-3">
           <div className="relative p-4 sm:p-5 rounded-[2rem_1rem_2rem_1rem] bg-white/60 border border-purple-200/80 dark:border-purple-900/40 shadow-md backdrop-blur-sm mb-3 mt-1 text-center">
             {/* Floating question mark sticking out of the top right border */}
-            <div className="absolute -top-3 -right-2.5 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-400 to-purple-400 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-[#17122A] z-20 animate-bounce-3s">
+            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-100/90 to-purple-100/90 text-[#4A4468] flex items-center justify-center shadow-md border-2 border-white dark:border-[#17122A] z-20">
               <span className="text-[15px] font-black select-none mt-[-1px]">?</span>
             </div>
 
@@ -89,12 +89,12 @@ export default function LandingPage() {
           {features.map((f, i) => (
             <div 
               key={i} 
-              className="flex items-center gap-2 sm:gap-2.5 p-1.5 sm:p-2 rounded-xl sm:rounded-[1rem] bg-white/60 border border-white shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:translate-x-1 duration-200"
+              className="flex items-center gap-2.5 sm:gap-3.5 p-2 sm:p-2.5 rounded-xl sm:rounded-[1.25rem] bg-white/60 border border-white shadow-sm backdrop-blur-sm transition-all hover:bg-white hover:translate-x-1 duration-200"
             >
-              <div className="shrink-0 ml-3.5 sm:ml-4.5 p-1 sm:p-1.5 rounded-md bg-purple-50 flex items-center justify-center">
+              <div className="shrink-0 ml-2.5 sm:ml-3.5 p-1.5 sm:p-2 rounded-lg bg-purple-50 flex items-center justify-center">
                 {f.icon}
               </div>
-              <p className="text-[9px] sm:text-[10px] font-bold text-[#1F1939] leading-tight text-center flex-1">
+              <p className="text-[10px] sm:text-[11.5px] font-bold text-[#1F1939] leading-snug text-center flex-1">
                 {f.text}
               </p>
             </div>
@@ -136,15 +136,6 @@ export default function LandingPage() {
         .animate-ticker {
           animation: ticker 12s linear infinite;
           width: fit-content;
-        }
-        @keyframes bounce3s {
-          0%, 15%, 100% { transform: translateY(0); }
-          5% { transform: translateY(-6px); }
-          10% { transform: translateY(1.5px); }
-        }
-        .animate-bounce-3s {
-          animation: bounce3s 3s ease-in-out infinite;
-          transform-origin: center bottom;
         }
       `}
       </style>
