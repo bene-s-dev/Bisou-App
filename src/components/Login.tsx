@@ -59,6 +59,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
       email,
       password,
       options: {
+        emailRedirectTo: window.location.origin,
         data: {
           display_name: capitalizeName(displayName),
         },

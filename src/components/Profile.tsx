@@ -106,9 +106,7 @@ export default function Profile({
   const [showAboutAppModal, setShowAboutAppModal] = useState(false); // New state for About App modal
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
-  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(
-    isPWA || localStorage.getItem('pwa_installed') === 'true'
-  );
+  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
 
   useEffect(() => {
     if (isPWA) {
@@ -119,10 +117,15 @@ export default function Profile({
         if (apps && apps.length > 0) {
           localStorage.setItem('pwa_installed', 'true');
           setIsAlreadyInstalled(true);
+        } else {
+          localStorage.removeItem('pwa_installed');
+          setIsAlreadyInstalled(false);
         }
       }).catch((err: any) => {
         console.log("Error checking installed apps:", err);
       });
+    } else {
+      setIsAlreadyInstalled(false);
     }
   }, [isPWA]);
 

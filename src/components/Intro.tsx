@@ -284,9 +284,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
   const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
-  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(
-    isPWA || localStorage.getItem('pwa_installed') === 'true'
-  );
+  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
 
   useEffect(() => {
     if (isPWA) {
@@ -297,10 +295,16 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         if (apps && apps.length > 0) {
           localStorage.setItem('pwa_installed', 'true');
           setIsAlreadyInstalled(true);
+        } else {
+          localStorage.removeItem('pwa_installed');
+          setIsAlreadyInstalled(false);
         }
       }).catch((err: any) => {
         console.log("Error checking installed apps:", err);
       });
+    } else {
+      // If we can't check and we are not in PWA mode, don't blindly trust localStorage
+      setIsAlreadyInstalled(false);
     }
   }, [isPWA]);
 
