@@ -98,7 +98,9 @@ export default function Profile({
   const [isNudging, setIsNudging] = useState(false);
   const [shouldShake, setShouldShake] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
-  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>(
+    typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
+  );
   const [isPushLoading, setIsPushLoading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
@@ -367,20 +369,39 @@ export default function Profile({
   }, [profile?.id, activeTab]);
 
   const handleTogglePush = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      showAlert("Push-Benachrichtigungen werden von diesem Gerät/Browser nicht unterstützt.", "error");
+    if (!('serviceWorker' in navigator)) {
+      showAlert("Service Worker wird von diesem Browser nicht unterstützt.", "error");
+      return;
+    }
+
+    // Special check for iOS: Notifications only work in PWA mode
+    const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    
+    if (isIOS && !isStandalone) {
+      showAlert("Auf iOS funktionieren Benachrichtigungen nur, wenn du die App zum Home-Bildschirm hinzufügst.", "info");
+      setActiveTab('install');
+      return;
+    }
+
+    if (!('PushManager' in window)) {
+      showAlert("Push-Benachrichtigungen werden von diesem Browser nicht unterstützt.", "error");
       return;
     }
 
     let permission = Notification.permission;
+    
+    // 1. Handle Blocked
     if (permission === 'denied') {
       showAlert("Benachrichtigungen wurden blockiert. Bitte aktiviere sie in den Website-Einstellungen deines Browsers.", "error");
       return;
     }
 
+    // 2. Handle Requesting (Must be very responsive for iOS)
     if (permission === 'default') {
       setIsPushLoading(true);
       try {
+        // Direct call to requestPermission
         permission = await Notification.requestPermission();
         setPushPermission(permission);
         if (permission !== 'granted') {
@@ -389,16 +410,14 @@ export default function Profile({
           return;
         }
       } catch (err) {
+        console.error("Permission request error:", err);
         setIsPushLoading(false);
         return;
       }
-      setIsPushLoading(false);
     }
 
-    // Now we are ready to toggle (permission is granted).
+    // 3. Permission is GRANTED: Toggle logic
     const targetState = !pushEnabled;
-    // Optimistic update
-    setPushEnabled(targetState);
     setIsPushLoading(true);
 
     try {
@@ -411,12 +430,12 @@ export default function Profile({
           await subscription.unsubscribe();
         }
         // Remove from DB
-        const { error } = await supabase
+        await supabase
           .from('push_subscriptions')
           .delete()
           .eq('user_id', profile.id);
 
-        if (error) throw error;
+        setPushEnabled(false);
         showAlert("Benachrichtigungen deaktiviert 🔒", "success");
       } else {
         // Toggle ON: Subscribe to push
@@ -427,7 +446,7 @@ export default function Profile({
           });
 
           if (vapidError || !vapidData?.vapidPublicKey) {
-            throw new Error("VAPID-Schlüssel konnte nicht vom Server abgerufen werden: " + (vapidError?.message || "Fehlender Schlüssel"));
+            throw new Error("VAPID-Schlüssel konnte nicht abgerufen werden.");
           }
 
           const convertedKey = urlBase64ToUint8Array(vapidData.vapidPublicKey);
@@ -446,13 +465,12 @@ export default function Profile({
           }, { onConflict: 'user_id' });
 
         if (error) throw error;
+        setPushEnabled(true);
         showAlert("Benachrichtigungen aktiviert! 🔔", "success");
       }
     } catch (err: any) {
       console.error("Error toggling push notifications:", err);
-      // Revert optimistic update on failure
-      setPushEnabled(!targetState);
-      showAlert("Fehler beim Verarbeiten der Benachrichtigungs-Einstellungen.", "error");
+      showAlert("Fehler beim Aktivieren der Benachrichtigungen.", "error");
     } finally {
       setIsPushLoading(false);
     }
