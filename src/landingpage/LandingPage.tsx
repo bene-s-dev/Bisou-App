@@ -58,16 +58,29 @@ export default function LandingPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-2 sm:gap-3 w-full min-h-0">
-          <button 
-            onClick={() => navigate('/signup')} 
-            className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
-          >
-            Kostenlos starten ✨
-          </button>
-          <p className="text-[9px] font-black text-[var(--muted)] tracking-wide opacity-60">
-            Bereit in unter 30 Sekunden.
-          </p>
+        <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-2 sm:px-6 relative">
+          {/* Glowing blur spot */}
+          <div 
+            className="absolute w-[110%] h-[60%] rounded-full opacity-100"
+            style={{
+              background: 'radial-gradient(ellipse, rgba(255, 107, 107, 0.9) 0%, rgba(129, 121, 224, 0.9) 50%, transparent 80%)',
+              filter: 'blur(24px)',
+              pointerEvents: 'none',
+              zIndex: 0,
+            }}
+          />
+          
+          <div className="w-full flex flex-col items-center justify-center gap-2 sm:gap-3 relative z-10">
+            <button 
+              onClick={() => navigate('/signup')} 
+              className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
+            >
+              Kostenlos starten ✨
+            </button>
+            <p className="text-[9px] font-black text-[var(--muted)] tracking-wide opacity-85">
+              Bereit in unter 30 Sekunden.
+            </p>
+          </div>
         </div>
       </div>
 
