@@ -15,6 +15,7 @@ import confetti from 'canvas-confetti';
 interface ProfileProps {
   profile: any;
   partnerProfile: any;
+  userEmail?: string;
   onLogout: () => void;
   deferredPrompt?: any;
   onInstall?: () => void;
@@ -38,6 +39,7 @@ const urlBase64ToUint8Array = (base64String: string) => {
 export default function Profile({ 
   profile: initialProfile, 
   partnerProfile, 
+  userEmail: propEmail,
   onLogout,
   deferredPrompt,
   onInstall 
@@ -131,21 +133,17 @@ export default function Profile({
 
 
 
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [emailInput, setEmailInput] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>(propEmail || '');
+  const [emailInput, setEmailInput] = useState<string>(propEmail || '');
   const [isEditingEmail, setIsEditingEmail] = useState<boolean>(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState<boolean>(false);
 
   useEffect(() => {
-    const fetchUserEmail = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        setUserEmail(user.email);
-        setEmailInput(user.email);
-      }
-    };
-    fetchUserEmail();
-  }, []);
+    if (propEmail) {
+      setUserEmail(propEmail);
+      if (!isEditingEmail) setEmailInput(propEmail);
+    }
+  }, [propEmail, isEditingEmail]);
 
 
 
@@ -304,6 +302,10 @@ export default function Profile({
 
     if (profile?.id && activeTab === 'notifications') {
       checkCurrentSubscription();
+      
+      // Also check when window gets focus (user might have changed settings in browser)
+      window.addEventListener('focus', checkCurrentSubscription);
+      return () => window.removeEventListener('focus', checkCurrentSubscription);
     }
   }, [profile?.id, activeTab]);
 
@@ -719,7 +721,7 @@ export default function Profile({
                   <div className="flex items-center gap-2 w-full mt-1">
                     <div className="flex-1 bg-purple-50/50 border-2 border-purple-100 rounded-2xl p-2 flex items-center justify-center">
                       <span className="text-base font-black text-[var(--secondary)] tracking-[0.2em] pt-0.5">{profile?.partner_code || '---'}</span>
-                      <button onClick={() => { navigator.clipboard.writeText(profile?.partner_code || ''); showAlert("Code kopiert!", "success"); }} className="ml-2 p-1.5 bg-purple-50 text-[var(--secondary)] rounded-xl hover:bg-purple-100 transition-all active:scale-90 flex items-center justify-center shrink-0">
+                      <button onClick={() => { navigator.clipboard.writeText((profile?.partner_code || '').split('-')[1] || ''); showAlert("Code kopiert!", "success"); }} className="ml-2 p-1.5 bg-purple-50 text-[var(--secondary)] rounded-xl hover:bg-purple-100 transition-all active:scale-90 flex items-center justify-center shrink-0">
                         <Copy className="w-3.5 h-3.5" />
                       </button>
                     </div>

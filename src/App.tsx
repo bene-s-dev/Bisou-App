@@ -256,12 +256,19 @@ export default function App() {
       // 2. If no questions exist for today, trigger the Edge Function (non-blocking if possible, but here we wait for data)
       if (!qData) {
         try {
-          const { data: genData, error: genError } = await supabase.functions.invoke('generate-questions', {
+          const genPromise = supabase.functions.invoke('generate-questions', {
             body: { day_key: dayKey }
           });
-          if (!genError) qData = genData?.questions;
+          
+          // Use a timeout to prevent hanging the entire app if the Edge Function is slow
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Edge Function Timeout")), 6000)
+          );
+
+          const result: any = await Promise.race([genPromise, timeoutPromise]);
+          if (result && !result.error) qData = result.data?.questions;
         } catch (err) {
-          console.error("Failed to generate questions:", err);
+          console.error("Failed to generate questions or timeout:", err);
         }
       }
 
@@ -340,28 +347,34 @@ export default function App() {
 
   useEffect(() => {
     let mounted = true;
+    let initialFetchStarted = false;
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (mounted) {
-        if (s) {
-          setSession(s);
+    const handleSession = async (s: Session | null) => {
+      if (!mounted) return;
+      if (s) {
+        setSession(s);
+        if (!initialFetchStarted) {
+          initialFetchStarted = true;
           fetchProfile(s.user.id);
-        } else {
-          setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
-    });
+    };
+
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => handleSession(s))
+      .catch((err) => {
+        console.error("Auth session error:", err);
+        if (mounted) setLoading(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       if (!mounted) return;
 
       if (event === 'SIGNED_IN') {
-        if (s) {
-          setSession(s);
-          fetchProfile(s.user.id);
-        }
+        handleSession(s);
       } else if (event === 'TOKEN_REFRESHED') {
-        // Only update session token, don't re-fetch profile (data hasn't changed)
         if (s) setSession(s);
       } else if (event === 'SIGNED_OUT') {
         setSession(null);
@@ -369,6 +382,7 @@ export default function App() {
         setPartnerProfile(null);
         setDashboardData(null);
         setLoading(false);
+        initialFetchStarted = false;
       }
     });
 
@@ -536,6 +550,7 @@ export default function App() {
                 <Route path="profile" element={<Profile 
                   profile={profile} 
                   partnerProfile={partnerProfile} 
+                  userEmail={session?.user?.email}
                   onLogout={handleLogout} 
                   deferredPrompt={deferredPrompt}
                   onInstall={handleInstallClick}
