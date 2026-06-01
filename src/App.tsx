@@ -20,8 +20,46 @@ import { getDailyKey } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider, useDialog } from './components/DialogProvider';
 
-// Create a broadcast channel for cross-tab communication
-const authChannel = new BroadcastChannel('bisou_auth_sync');
+// Create a safe broadcast channel wrapper to prevent crashes in restricted environments (e.g. iOS in-app browsers)
+class SafeAuthChannel {
+  private channel: BroadcastChannel | null = null;
+
+  constructor() {
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        this.channel = new BroadcastChannel('bisou_auth_sync');
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel not supported or restricted in this environment:', e);
+    }
+  }
+
+  postMessage(message: any) {
+    try {
+      this.channel?.postMessage(message);
+    } catch (e) {
+      console.warn('Failed to postMessage on BroadcastChannel:', e);
+    }
+  }
+
+  addEventListener(type: string, listener: (e: any) => void) {
+    try {
+      this.channel?.addEventListener(type, listener);
+    } catch (e) {
+      console.warn('Failed to addEventListener on BroadcastChannel:', e);
+    }
+  }
+
+  removeEventListener(type: string, listener: (e: any) => void) {
+    try {
+      this.channel?.removeEventListener(type, listener);
+    } catch (e) {
+      console.warn('Failed to removeEventListener on BroadcastChannel:', e);
+    }
+  }
+}
+
+const authChannel = new SafeAuthChannel();
 
 // Separate Layout component to prevent remounting on navigation
 function AppLayout({ 
@@ -421,7 +459,9 @@ export default function App() {
     };
 
     supabase.auth.getSession()
-      .then(({ data: { session: s } }) => handleSession(s))
+      .then((res) => {
+        handleSession(res?.data?.session || null);
+      })
       .catch((err) => {
         console.error("Auth session error:", err);
         if (mounted) setLoading(false);

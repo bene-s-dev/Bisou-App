@@ -13,5 +13,10 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-project') || 
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder'
+  supabaseAnonKey || 'placeholder',
+  {
+    auth: {
+      flowType: 'implicit'
+    }
+  }
 );
