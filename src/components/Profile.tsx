@@ -198,9 +198,9 @@ export default function Profile({
     }
   }, [isPWA]);
 
-  const isIOSLocal = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
-  const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
-  const isDesktopLocal = !isIOSLocal && !isAndroid;
+  const isActuallyIOS = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
+  const isAndroid = /android/i.test(navigator.userAgent.toLowerCase());
+  const isDesktopLocal = !isActuallyIOS && !isAndroid;
 
 
 
@@ -486,13 +486,17 @@ export default function Profile({
     const currentPermission = Notification.permission;
 
     if (currentPermission === 'denied') {
-      showAlert("Bitte aktiviere Benachrichtigungen in deinen Browser-Einstellungen.", "error");
+      if (isAndroid) {
+        showAlert("Benachrichtigungen sind blockiert. Bitte prüfe in den Android-Einstellungen unter 'Apps > Chrome > Benachrichtigungen', ob 'Websites' erlaubt sind.", "error");
+      } else {
+        showAlert("Bitte aktiviere Benachrichtigungen in deinen Browser-Einstellungen.", "error");
+      }
       return;
     }
 
-    const isIOS = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
+    const isActuallyIOS = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isIOS && !isStandalone) {
+    if (isActuallyIOS && !isStandalone) {
       showAlert("Auf iOS funktionieren Benachrichtigungen nur in der installierten App.", "info");
       setActiveTab('install');
       return;
@@ -896,8 +900,8 @@ export default function Profile({
           </div>
         );
       case 'install':
-        const isIOSLocalInstall = (/iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase()) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/chrome|firefox|edg|opr/i.test(navigator.userAgent) && navigator.maxTouchPoints > 0;
-        const isAndroidLocalInstall = /android/.test(navigator.userAgent.toLowerCase());
+        const isActuallyIOSInstall = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
+        const isAndroidLocalInstall = /android/i.test(navigator.userAgent.toLowerCase());
         
         return (
           <div className="flex flex-col items-center gap-2 animate-entrance w-full max-w-md mx-auto" key="install">
@@ -913,7 +917,7 @@ export default function Profile({
                   </p>
                 </div>
 
-                {isIOSLocalInstall ? (
+                {isActuallyIOSInstall ? (
                   <div className="space-y-3 w-full text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
