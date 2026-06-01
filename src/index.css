@@ -676,7 +676,6 @@ body.modal-open #root {
 }
 
 /* Background & Wrapper overrides */
-.dark,
 .dark #root,
 .dark .bg-\[\#F8F7FF\] {
   background-color: var(--bg) !important;

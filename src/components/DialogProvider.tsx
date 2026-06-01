@@ -70,7 +70,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       
       {/* Toast Alert */}
       {alert && (
-        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-xs animate-in fade-in slide-in-from-top-4 duration-300 ${isDarkMode ? 'dark' : ''}`}>
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
           <div className={`flex items-center gap-3 p-4 rounded-2xl shadow-xl border backdrop-blur-md ${
             alert.type === 'error' ? (isDarkMode ? 'bg-red-950/90 border-red-900/50 text-red-200' : 'bg-red-50/95 border-red-100 text-red-800') :
             alert.type === 'success' ? (isDarkMode ? 'bg-green-950/90 border-green-900/50 text-green-200' : 'bg-green-50/95 border-green-100 text-green-800') :
@@ -89,7 +89,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
 
       {/* Confirm Modal */}
       {confirm && (
-        <div className={`modal-backdrop ${isDarkMode ? 'dark' : ''}`}>
+        <div className="modal-backdrop">
           <div className="absolute inset-0" onClick={() => setConfirm(null)} />
           <div className={`modal-content p-8 text-center ${isDarkMode ? 'bg-[#17122A] border-[#231E3D]' : 'bg-white border-purple-100'}`}>
             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto ${confirm.options?.type === 'error' ? (isDarkMode ? 'bg-red-950/30' : 'bg-red-50') : (isDarkMode ? 'bg-purple-950/30' : 'bg-purple-50')}`}>
