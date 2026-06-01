@@ -55,45 +55,55 @@ const EncryptionOverlay = () => {
 
   return createPortal(
     <div 
-      className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-all duration-700 ease-in-out
+      className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-opacity duration-700 ease-in-out
         ${phase === 7 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
     >
       <div 
         className="relative w-48 h-48 flex items-center justify-center"
         style={{
-          transform: phase >= 6 ? 'translate3d(0, -120vh, 0) scale(0.95)' : 'translate3d(0, 0, 0) scale(1)',
-          opacity: phase >= 6 ? 0 : 1,
-          transition: 'transform 1100ms cubic-bezier(0.34, 1.25, 0.64, 1), opacity 900ms ease-in-out'
+          transform: phase >= 6 ? 'translate3d(0, -120vh, 0) scale(0.9)' : 'translate3d(0, 0, 0) scale(1)',
+          transition: 'transform 850ms cubic-bezier(0.32, 0, 0.67, 0)',
+          perspective: '600px',
+          transformStyle: 'preserve-3d'
         }}
       >
         
         {/* Layer 1: Envelope Back */}
         <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-10">
-          <rect x="8" y="64" width="176" height="112" rx="12" fill="white" stroke="currentColor" strokeWidth="4" />
-        </svg>
-
-        {/* Layer 1b: Envelope Flap (transitions from pointing up to folding down) */}
-        <svg 
-          viewBox="0 0 192 192" 
-          className={`absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none transition-all duration-300 ${phase >= 4 ? 'z-50' : 'z-10'}`}
-        >
-          <path
-            d="M 8 64 L 96 12 L 184 64"
-            fill="white"
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinejoin="round"
-            style={{
-              transformOrigin: '96px 64px',
-              transform: phase >= 4 ? 'scaleY(-1)' : 'scaleY(1)',
-              transition: 'transform 600ms cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
+          <path 
+            d="M 8 64 L 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z" 
+            fill="#FFFFFF" 
+            stroke="currentColor" 
+            strokeWidth="3.5" 
+            strokeLinejoin="round" 
           />
         </svg>
 
+        {/* Layer 1b: Envelope Flap (3D folding flap) */}
+        <div 
+          className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-600 ease-in-out"
+          style={{
+            transformOrigin: '96px 64px',
+            transform: phase >= 4 ? 'rotateX(-180deg)' : 'rotateX(0deg)',
+            transformStyle: 'preserve-3d',
+            zIndex: phase >= 4 ? 40 : 15,
+          }}
+        >
+          <svg viewBox="0 0 192 192" className="w-full h-full text-[var(--secondary)]">
+            <path
+              d="M 8 64 Q 96 8 184 64"
+              fill="#FFFFFF"
+              stroke="currentColor"
+              strokeWidth="3.5"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
         {/* Layer 2: The Letter (slides down behind EnvelopeFront pocket) */}
         <div 
-          className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-xl shadow-xl border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-800 ease-in-out z-20 
+          className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-2xl shadow-lg border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-800 ease-in-out z-20 
             ${phase >= 3 ? 'translate-y-[48px] scale-90 opacity-0' : 'translate-y-[-60px] scale-100 opacity-100'}`}
         >
           <div className="w-full h-2 bg-[var(--secondary)] rounded-full opacity-30" />
@@ -110,17 +120,17 @@ const EncryptionOverlay = () => {
         {/* Layer 3: Envelope Front Pocket */}
         <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-30">
           <path 
-            d="M 8 64 L 96 120 L 184 64 L 184 164 A 12 12 0 0 1 172 176 L 20 176 A 12 12 0 0 1 8 164 Z" 
-            fill="white" 
+            d="M 8 64 Q 96 118 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z" 
+            fill="#FFFFFF" 
             stroke="currentColor" 
-            strokeWidth="4" 
+            strokeWidth="3.5" 
             strokeLinejoin="round" 
           />
         </svg>
 
         {/* Layer 4: The Lock (bounces onto the envelope seal crease) */}
         <div 
-          className="absolute inset-0 flex items-center justify-center z-60 translate-y-6"
+          className="absolute inset-0 flex items-center justify-center z-[60] translate-y-6"
           style={{
             transformOrigin: 'center center',
             transform: phase >= 5 ? 'scale(1)' : 'scale(0)',
@@ -188,6 +198,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const [textVal, setTextVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEncrypting, setIsEncrypting] = useState(false);
+  const [revealResults, setRevealResults] = useState(initialStep >= 3);
   const [rankingOptions, setRankingOptions] = useState<string[]>([]);
   const [internalError, setInternalError] = useState<string | null>(null);
   
@@ -464,11 +475,16 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       setIsEncrypting(true);
       
       // Switch step to 3 at 5450ms, exactly when the overlay starts to fade out
-      // This mounts the results view behind the fading overlay, allowing answers to fade in smoothly
       setTimeout(() => {
         setMyResults(finalResults);
         setStep(3);
       }, 5450);
+
+      // Start revealing the results at 5750ms (300ms after the overlay starts fading out)
+      // This allows the elements to slide up and fade in while the overlay becomes transparent
+      setTimeout(() => {
+        setRevealResults(true);
+      }, 5750);
 
       // Wait for animation sequence + fade out to fully finish (approx 6.1s)
       await new Promise(resolve => setTimeout(resolve, 6100));
@@ -588,6 +604,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           setTextVal('');
           setRankingOptions([]);
           setIsSubmitting(false);
+          setRevealResults(false);
           
           setTimeout(() => onComplete(), 200);
           await loadData(true);
@@ -704,7 +721,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           </div>
         ) : (
           // --- RESULTS VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden relative animate-fade-in">
+          <div className={`flex flex-col flex-1 h-full overflow-hidden relative ${revealResults ? 'animate-fade-in' : 'opacity-0'}`}>
             <div 
               className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none results-top-fade"
               style={{
@@ -722,7 +739,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
                   return (
-                    <div key={i} className="animate-fade-in-up" style={{ animationDelay: `${i * 150}ms` }}>
+                    <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 150}ms` }}>
                       <div className="flex items-center mb-4 px-1">
                         <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
                       </div>
