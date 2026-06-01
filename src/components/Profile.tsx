@@ -198,9 +198,9 @@ export default function Profile({
     }
   }, [isPWA]);
 
-  const isActuallyIOS = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
-  const isAndroid = /android/i.test(navigator.userAgent.toLowerCase());
-  const isDesktopLocal = !isActuallyIOS && !isAndroid;
+  const isIOSLocal = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isDesktopLocal = !isIOSLocal && !isAndroid;
 
 
 
@@ -486,17 +486,13 @@ export default function Profile({
     const currentPermission = Notification.permission;
 
     if (currentPermission === 'denied') {
-      if (isAndroid) {
-        showAlert("Benachrichtigungen sind blockiert. Bitte prüfe in den Android-Einstellungen unter 'Apps > Chrome > Benachrichtigungen', ob 'Websites' erlaubt sind.", "error");
-      } else {
-        showAlert("Bitte aktiviere Benachrichtigungen in deinen Browser-Einstellungen.", "error");
-      }
+      showAlert("Bitte aktiviere Benachrichtigungen in deinen Browser-Einstellungen.", "error");
       return;
     }
 
-    const isActuallyIOS = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
+    const isIOS = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    if (isActuallyIOS && !isStandalone) {
+    if (isIOS && !isStandalone) {
       showAlert("Auf iOS funktionieren Benachrichtigungen nur in der installierten App.", "info");
       setActiveTab('install');
       return;
@@ -890,18 +886,23 @@ export default function Profile({
                     {isPushLoading ? (
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" />
                     ) : pushPermission === 'denied' ? (
-                      'In Browsereinstellungen blockiert 🔒'
+                      `In Browsereinstellungen blockiert 🔒 (${Notification.permission})`
                     ) : (
                       'Benachrichtigungen erlauben ✨'
                     )}
                   </button>
                 )}
+                {isDevMode && (
+                  <div className="text-[8px] text-gray-400 mt-2">
+                    Permission: {pushPermission} | API: {typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A'} | SW: {'serviceWorker' in navigator ? 'Yes' : 'No'}
+                  </div>
+                )}
              </div>
           </div>
         );
       case 'install':
-        const isActuallyIOSInstall = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
-        const isAndroidLocalInstall = /android/i.test(navigator.userAgent.toLowerCase());
+        const isIOSLocalInstall = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+        const isAndroidLocalInstall = /Android/i.test(navigator.userAgent);
         
         return (
           <div className="flex flex-col items-center gap-2 animate-entrance w-full max-w-md mx-auto" key="install">
@@ -917,7 +918,7 @@ export default function Profile({
                   </p>
                 </div>
 
-                {isActuallyIOSInstall ? (
+                {isIOSLocalInstall ? (
                   <div className="space-y-3 w-full text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>

@@ -281,8 +281,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     }
   }, []);
 
-  const isActuallyIOS = (/iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !/Google Inc/i.test(navigator.vendor);
-  const isAndroid = /android/i.test(navigator.userAgent.toLowerCase());
+  const isIOS = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+  const isAndroid = /Android/i.test(navigator.userAgent);
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
   const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
 
@@ -430,7 +430,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                 </button>
               ) : (
                 <>
-                  {isActuallyIOS ? (
+                  {isIOS ? (
                     /* iOS: Show step-by-step instructions + install-like button */
                     <>
                       <div className="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-50 rounded-[1.5rem] p-5 text-left space-y-3">
