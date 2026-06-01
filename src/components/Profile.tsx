@@ -186,13 +186,23 @@ export default function Profile({
       setIsEditingEmail(false);
       return;
     }
+
+    // Check if it's a social login (cannot change email)
+    if (user?.app_metadata?.provider && user.app_metadata.provider !== 'email') {
+      showAlert("E-Mail von Google/Apple Logins kann nicht geändert werden.", "error");
+      setIsEditingEmail(false);
+      return;
+    }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.trim())) {
       showAlert("Bitte gib eine gültige E-Mail-Adresse ein.", "error");
       return;
     }
+
     setIsUpdatingEmail(true);
     try {
-      // Use the actual supabase.auth instance
+      console.log("Attempting to update email to:", emailInput.trim());
+      
       const { data, error } = await supabase.auth.updateUser({ 
         email: emailInput.trim() 
       }, {
@@ -201,10 +211,12 @@ export default function Profile({
       
       if (error) throw error;
       
-      // Immediately refresh local user state to show the "Waiting" status
+      console.log("Update requested. Supabase response:", data);
+      
+      // Immediately refresh local user state
       await refreshUser();
       
-      showAlert("Bestätigungs-Link an die neue Adresse gesendet! Bitte überprüfe dein Postfach.", "success");
+      showAlert("Bestätigungs-Link an die neue Adresse gesendet!", "success");
       setIsEditingEmail(false);
     } catch (err: any) {
       console.error("Email update failed:", err);
@@ -934,17 +946,10 @@ export default function Profile({
                     <div className="flex flex-col">
                       <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
                       {user?.new_email && (
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex flex-col gap-1.5 mt-1">
                           <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
                             Warte auf Bestätigung: {user.new_email}
                           </div>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); refreshUser(); }}
-                            className="p-0.5 bg-amber-50 text-amber-600 rounded-md hover:bg-amber-100 transition-colors"
-                            title="Status prüfen"
-                          >
-                            <RefreshCcw className="w-2.5 h-2.5" />
-                          </button>
                         </div>
                       )}
                     </div>
