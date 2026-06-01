@@ -73,7 +73,7 @@ export default function LandingPage() {
           <div className="w-full flex flex-col items-center justify-center gap-2 sm:gap-3 relative z-10">
             <button 
               onClick={() => navigate('/signup')} 
-              className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-xl hover:scale-[1.02] transition-transform"
+              className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-[0_0_24px_rgba(255,107,107,0.45),_0_0_12px_rgba(129,121,224,0.4)] hover:scale-[1.02] transition-transform"
             >
               Kostenlos starten ✨
             </button>
