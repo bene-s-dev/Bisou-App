@@ -60,6 +60,17 @@ export default function Profile({
   
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
 
+  const refreshUser = useCallback(async () => {
+    const { data: { user: latestUser } } = await supabase.auth.getUser();
+    if (latestUser) {
+      setUser(latestUser);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
   useEffect(() => {
     const handleToggle = () => {
       setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');

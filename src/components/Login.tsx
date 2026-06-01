@@ -146,7 +146,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 ) : (
                   <>
                     <div className="text-center mb-4">
-                      <h2 className="text-2xl font-black text-[#1F1939] mb-2">Reset Passwort</h2>
+                      <h2 className="text-2xl font-black text-[#1F1939] mb-2">Passwort ändern</h2>
                       <p className="text-sm text-[#4A4468] font-bold opacity-60">Wir senden dir einen Link, um dein Passwort neu zu setzen.</p>
                     </div>
                     <input type="email" className="input-base" placeholder="Deine E-Mail" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />

@@ -20,15 +20,6 @@ const DialogContext = createContext<DialogContextType | undefined>(undefined);
 export function DialogProvider({ children }: { children: React.ReactNode }) {
   const [alert, setAlert] = useState<{ message: string; type: DialogType } | null>(null);
   const [confirm, setConfirm] = useState<{ message: string; onConfirm: () => void; options?: DialogOptions } | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
-
-  useEffect(() => {
-    const handleToggle = () => {
-      setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
-    };
-    window.addEventListener('dark-mode-toggle', handleToggle);
-    return () => window.removeEventListener('dark-mode-toggle', handleToggle);
-  }, []);
 
   const showAlert = useCallback((message: string, type: DialogType = 'info') => {
     setAlert({ message, type });
@@ -72,15 +63,15 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       {alert && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-xs animate-in fade-in slide-in-from-top-4 duration-300">
           <div className={`flex items-center gap-3 p-4 rounded-2xl shadow-xl border backdrop-blur-md ${
-            alert.type === 'error' ? (isDarkMode ? 'bg-red-950/90 border-red-900/50 text-red-200' : 'bg-red-50/95 border-red-100 text-red-800') :
-            alert.type === 'success' ? (isDarkMode ? 'bg-green-950/90 border-green-900/50 text-green-200' : 'bg-green-50/95 border-green-100 text-green-800') :
-            (isDarkMode ? 'bg-slate-900/95 border-slate-800 text-slate-100' : 'bg-white/95 border-purple-100 text-purple-800')
+            alert.type === 'error' ? 'bg-red-50/95 border-red-100 text-red-800 dark:bg-red-950/90 dark:border-red-900/50 dark:text-red-200' :
+            alert.type === 'success' ? 'bg-green-50/95 border-green-100 text-green-800 dark:bg-green-950/90 dark:border-green-900/50 dark:text-green-200' :
+            'bg-white/95 border-purple-100 text-purple-800 dark:bg-slate-900/95 dark:border-slate-800 dark:text-slate-100'
           }`}>
             {alert.type === 'error' && <XCircle className="w-5 h-5 shrink-0" />}
             {alert.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-            {(alert.type === 'info' || !alert.type) && <Info className={`w-5 h-5 shrink-0 ${isDarkMode ? 'text-blue-300' : 'text-blue-400'}`} />}
+            {(alert.type === 'info' || !alert.type) && <Info className="w-5 h-5 shrink-0 text-blue-400 dark:text-blue-300" />}
             <p className="text-xs font-black uppercase tracking-wide leading-tight">{alert.message}</p>
-            <button onClick={() => setAlert(null)} className="ml-auto p-1 hover:bg-black/5 rounded-full transition-colors">
+            <button onClick={() => setAlert(null)} className="ml-auto p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
               <X className="w-3.5 h-3.5 opacity-50" />
             </button>
           </div>
@@ -91,14 +82,14 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       {confirm && (
         <div className="modal-backdrop">
           <div className="absolute inset-0" onClick={() => setConfirm(null)} />
-          <div className={`modal-content p-8 text-center ${isDarkMode ? 'bg-[#17122A] border-[#231E3D]' : 'bg-white border-purple-100'}`}>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto ${confirm.options?.type === 'error' ? (isDarkMode ? 'bg-red-950/30' : 'bg-red-50') : (isDarkMode ? 'bg-purple-950/30' : 'bg-purple-50')}`}>
+          <div className="modal-content p-8 text-center dark:bg-[#17122A] dark:border-[#231E3D]">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto ${confirm.options?.type === 'error' ? 'bg-red-50 dark:bg-red-950/30' : 'bg-purple-50 dark:bg-purple-950/30'}`}>
               <AlertCircle className={`w-8 h-8 ${confirm.options?.type === 'error' ? 'text-[var(--primary)]' : 'text-[var(--secondary)]'}`} />
             </div>
-            <h3 className={`text-xl font-black mb-4 uppercase tracking-tight leading-tight ${isDarkMode ? 'text-[#F5F3FF]' : 'text-[#1F1939]'}`}>
+            <h3 className="text-xl font-black mb-4 uppercase tracking-tight leading-tight text-[#1F1939] dark:text-[#F5F3FF]">
               {confirm.options?.title || 'Bist du sicher?'}
             </h3>
-            <p className={`text-sm font-bold leading-relaxed mb-8 px-2 ${isDarkMode ? 'text-[#D6D2FA]' : 'text-[#4A4468]'}`}>
+            <p className="text-sm font-bold leading-relaxed mb-8 px-2 text-[#4A4468] dark:text-[#D6D2FA]">
               {confirm.message}
             </p>
             <div className="flex flex-col gap-3">
@@ -114,7 +105,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
               </button>
               <button 
                 onClick={() => setConfirm(null)} 
-                className={`w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-colors ${isDarkMode ? 'text-[#9590B5] hover:text-[#F5F3FF]' : 'text-[var(--muted)] hover:text-[var(--text-main)]'}`}
+                className="w-full py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-colors text-[var(--muted)] hover:text-[var(--text-main)] dark:text-[#9590B5] dark:hover:text-[#F5F3FF]"
               >
                 {confirm.options?.cancelLabel || 'Abbrechen'}
               </button>

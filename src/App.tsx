@@ -51,18 +51,16 @@ function AppLayout({
 
   useEffect(() => {
     const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
-    if (isDarkMode) {
+    const isPublicPath = ['/', '/signin', '/signup', '/reset-password'].includes(location.pathname);
+    
+    if (isDarkMode && !isPublicPath) {
       document.documentElement.classList.add('dark');
       themeMetas.forEach(meta => meta.setAttribute('content', '#0C0A15'));
     } else {
       document.documentElement.classList.remove('dark');
       themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
     }
-    return () => {
-      document.documentElement.classList.remove('dark');
-      themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
-    };
-  }, [isDarkMode]);
+  }, [isDarkMode, location.pathname]);
 
   if (!profile.intro_completed && location.pathname !== '/intro') {
     return <Navigate to="/intro" replace />;
@@ -184,7 +182,18 @@ export default function App() {
   const fetchLock = React.useRef<string | null>(null);
   const initialLoadDone = React.useRef(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const dayKey = getDailyKey();
+
+  // Root-level dark mode cleanup for public routes
+  useEffect(() => {
+    const isPublicPath = ['/', '/signin', '/signup', '/reset-password'].includes(location.pathname);
+    if (isPublicPath) {
+      document.documentElement.classList.remove('dark');
+      const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
+      themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     // If it was captured early, use it
