@@ -147,6 +147,53 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const dayKey = getDailyKey();
   const MAX_TEXT_LENGTH = 100;
 
+  // --- PERSISTENCE ---
+  // Load progress from localStorage on mount if not already completed
+  useEffect(() => {
+    if (step < 3) {
+      const saved = localStorage.getItem(`quiz_progress_${dayKey}`);
+      if (saved) {
+        try {
+          const { step: savedStep, myResults: savedResults } = JSON.parse(saved);
+          if (savedResults && Array.isArray(savedResults)) {
+            setMyResults(savedResults);
+            setStep(savedStep);
+            // Restore current step's inputs
+            const currentVal = savedResults[savedStep];
+            if (currentVal) {
+              if (savedStep === 0) setSelectedTot(currentVal);
+              else if (savedStep === 1) setRankingOptions(currentVal.split(" > "));
+              else if (savedStep === 2) setTextVal(currentVal);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load quiz progress:", e);
+        }
+      }
+    }
+  }, [dayKey]); // Only run on mount or when day changes
+
+  // Save progress to localStorage whenever it changes
+  useEffect(() => {
+    if (step < 3 && (myResults.length > 0 || selectedTot || textVal)) {
+      // Create a snapshot of current progress including unsaved current step
+      const currentResults = [...myResults];
+      let currentVal = '';
+      if (step === 0) currentVal = selectedTot || '';
+      else if (step === 1) currentVal = rankingOptions.join(" > ");
+      else if (step === 2) currentVal = textVal.trim();
+      
+      if (currentVal) currentResults[step] = currentVal;
+      
+      localStorage.setItem(`quiz_progress_${dayKey}`, JSON.stringify({ 
+        step, 
+        myResults: currentResults 
+      }));
+    } else if (step === 3) {
+      localStorage.removeItem(`quiz_progress_${dayKey}`);
+    }
+  }, [step, myResults, selectedTot, textVal, rankingOptions, dayKey]);
+
   // Sync with live dashboardData if it changes (e.g. partner answers while viewing)
   useEffect(() => {
     if (dashboardData) {

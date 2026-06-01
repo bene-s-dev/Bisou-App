@@ -30,6 +30,20 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [shouldShake, setShouldShake] = useState(false);
 
+  // Auto-detect session if success message is showing (user might have confirmed in another tab/email)
+  React.useEffect(() => {
+    if (message?.type === 'success' && mode === 'register') {
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          onLogin();
+        }
+      };
+      const interval = setInterval(checkSession, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [message, mode, onLogin]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);

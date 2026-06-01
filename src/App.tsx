@@ -20,6 +20,9 @@ import { getDailyKey } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider } from './components/DialogProvider';
 
+// Create a broadcast channel for cross-tab communication
+const authChannel = new BroadcastChannel('bisou_auth_sync');
+
 // Separate Layout component to prevent remounting on navigation
 function AppLayout({ 
   children, 
@@ -45,8 +48,17 @@ function AppLayout({
     const handleToggle = () => {
       setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
     };
+    
+    // Support both local custom event and cross-tab storage event
     window.addEventListener('dark-mode-toggle', handleToggle);
-    return () => window.removeEventListener('dark-mode-toggle', handleToggle);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'app_dark_mode') handleToggle();
+    });
+    
+    return () => {
+      window.removeEventListener('dark-mode-toggle', handleToggle);
+      window.removeEventListener('storage', handleToggle);
+    };
   }, []);
 
   useEffect(() => {
@@ -181,6 +193,7 @@ export default function App() {
 
   const fetchLock = React.useRef<string | null>(null);
   const initialLoadDone = React.useRef(false);
+  const lastFetchTimestamp = React.useRef<number>(Date.now());
   const navigate = useNavigate();
   const location = useLocation();
   const dayKey = getDailyKey();
@@ -292,11 +305,11 @@ export default function App() {
       // 3. Robust Profile Handling (Handle missing profile case)
       if (!profileData) {
         // We use the metadata from the session if profile is missing
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.user) {
           const newProfile = {
             id: userId,
-            display_name: session.user.user_metadata?.display_name || 'Nutzer',
+            display_name: currentSession.user.user_metadata?.display_name || 'Nutzer',
             partner_code: 'CB-' + userId.substring(0, 6).toUpperCase(),
             intro_completed: false
           };
@@ -309,6 +322,10 @@ export default function App() {
 
           if (inserted) {
             profileData = inserted;
+          } else if (insertError && (insertError.code === '23505' || insertError.message.includes('unique'))) {
+            // Already exists, likely created by another tab/instance. Fetch it.
+            const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+            profileData = retryData;
           } else {
             // Last resort retry
             const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -347,6 +364,7 @@ export default function App() {
         
         // Mark successful data sync
         localStorage.setItem('last_sync_timestamp', new Date().toISOString());
+        lastFetchTimestamp.current = Date.now();
       }
     } catch (e: any) {
       console.error("Critical Profile Error:", e);
@@ -396,11 +414,52 @@ export default function App() {
         setDashboardData(null);
         setLoading(false);
         initialFetchStarted = false;
+        // Broadcast to other tabs
+        authChannel.postMessage({ type: 'SIGNED_OUT' });
       }
     });
 
-    return () => { mounted = false; subscription.unsubscribe(); };
-  }, [fetchProfile]);
+    // Cross-tab sync via BroadcastChannel
+    const handleAuthMessage = (e: MessageEvent) => {
+      if (e.data.type === 'SIGNED_OUT' && mounted) {
+        setSession(null);
+        setProfile(null);
+        setPartnerProfile(null);
+        setDashboardData(null);
+        setLoading(false);
+        initialFetchStarted = false;
+        if (location.pathname !== '/' && !location.pathname.startsWith('/signin')) {
+           navigate('/signin', { replace: true });
+        }
+      }
+    };
+    authChannel.addEventListener('message', handleAuthMessage);
+
+    // Refresh data when tab becomes visible after being inactive
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && mounted && session?.user.id) {
+        // Only refresh if data is older than 5 minutes
+        if (Date.now() - lastFetchTimestamp.current > 5 * 60 * 1000) {
+          fetchProfile(session.user.id, true);
+        }
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Reload app when Service Worker updates
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+    }
+
+    return () => { 
+      mounted = false; 
+      subscription.unsubscribe(); 
+      authChannel.removeEventListener('message', handleAuthMessage);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchProfile, session?.user.id, location.pathname, navigate]);
 
 
   // --- Realtime Sync Subscriptions ---
@@ -476,6 +535,9 @@ export default function App() {
       setPartnerProfile(null);
       setDashboardData(null);
       initialLoadDone.current = false;
+      
+      // Broadcast logout to other tabs BEFORE calling signOut (to avoid race with storage events)
+      authChannel.postMessage({ type: 'SIGNED_OUT' });
 
       // Perform signOut, but don't let it block indefinitely
       try {
@@ -582,4 +644,3 @@ export default function App() {
     </DialogProvider>
   );
 }
-

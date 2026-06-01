@@ -69,7 +69,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
           }`}>
             {alert.type === 'error' && <XCircle className="w-5 h-5 shrink-0" />}
             {alert.type === 'success' && <CheckCircle2 className="w-5 h-5 shrink-0" />}
-            {(alert.type === 'info' || !alert.type) && <Info className="w-5 h-5 shrink-0 text-blue-400 dark:text-blue-300" />}
+            {(alert.type === 'info' || !alert.type) && <Info className="w-5 h-5 shrink-0 text-purple-400 dark:text-blue-300" />}
             <p className="text-xs font-black uppercase tracking-wide leading-tight">{alert.message}</p>
             <button onClick={() => setAlert(null)} className="ml-auto p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
               <X className="w-3.5 h-3.5 opacity-50" />
