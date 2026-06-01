@@ -21,11 +21,17 @@
   --card-border: #E2DFFF;
   --shadow-soft: 0 8px 30px rgba(162, 155, 254, 0.1);
   
-  /* Safe area variables */
+  /* Safe area variables with fallback chain */
+  --sat: 0px;
+  --sat: constant(safe-area-inset-top);
   --sat: env(safe-area-inset-top, 0px);
+
+  --sab: 0px;
+  --sab: constant(safe-area-inset-bottom);
   --sab: env(safe-area-inset-bottom, 0px);
+
   /* Navbar clearance: nav height (56px) + nav bottom offset (24px) + gap (8px) + safe area */
-  --nav-clearance: calc(88px + var(--sab));
+  --nav-clearance: calc(88px + var(--sab, 0px));
 }
 
 * {
@@ -148,7 +154,8 @@ body.modal-open #root {
   .nav-dock {
     @apply fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md h-14 bg-white border-2 rounded-[2rem] flex items-center justify-around px-2 z-[100] shadow-[var(--shadow-soft)];
     border-color: rgba(226, 223, 255, 0.5);
-    bottom: calc(1.5rem + var(--sab));
+    bottom: 1.5rem; /* Fallback for browsers without CSS variables or safe-areas */
+    bottom: calc(1.5rem + var(--sab, 0px));
   }
 
   .nav-item { 
@@ -916,5 +923,46 @@ body.modal-open #root {
   transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
   transition-duration: 300ms !important;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Safe Area Helper Classes for iOS PWA and general safe area layout with fallbacks */
+.pwa-public-header {
+  padding-top: 3rem; /* Fallback */
+  padding-top: calc(3rem + var(--sat, 0px));
+}
+
+.pwa-public-login-btn {
+  top: 1rem; /* Fallback */
+  top: calc(1rem + var(--sat, 0px));
+}
+
+.pwa-main-container {
+  padding-top: 0.5rem; /* Fallback */
+  padding-top: calc(0.5rem + var(--sat, 0px));
+}
+
+.pwa-app-header {
+  padding-top: 1rem; /* Fallback */
+  padding-top: calc(1rem + var(--sat, 0px));
+}
+
+.pwa-questions-reset-header {
+  padding-top: 1.5rem; /* Fallback */
+  padding-top: calc(1.5rem + var(--sat, 0px));
+}
+
+.pwa-quiz-view-container {
+  padding-bottom: 9.5rem; /* Fallback */
+  padding-bottom: calc(9.5rem + var(--sab, 0px));
+}
+
+.pwa-quiz-next-btn-container {
+  bottom: 5.5rem; /* Fallback */
+  bottom: calc(5.5rem + var(--sab, 0px));
+}
+
+.pwa-intro-bottom-container {
+  padding-bottom: 1.5rem; /* Fallback */
+  padding-bottom: calc(1.5rem + var(--sab, 0px));
 }
 

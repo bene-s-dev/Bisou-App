@@ -634,7 +634,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container" style={{ paddingBottom: 'calc(9.5rem + var(--sab))' }}>
+          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container pwa-quiz-view-container">
             <header className="mb-4">
               <div className="quiz-prog-dots">
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
@@ -762,8 +762,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
 
       {step < 3 && createPortal(
         <div 
-          className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90]" 
-          style={{ bottom: 'calc(5.5rem + var(--sab))' }}
+          className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90] pwa-quiz-next-btn-container" 
         >
           <button 
             onClick={handleNext} 
@@ -802,8 +801,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             }}
           />
           <div 
-            className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md px-4 z-[100] pointer-events-none" 
-            style={{ paddingTop: 'calc(1.5rem + var(--sat))' }}
+            className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md px-4 z-[100] pointer-events-none pwa-questions-reset-header" 
           >
             <div className="flex justify-end">
               <button onClick={resetQuiz} className="pointer-events-auto text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/50 rounded-full border border-red-100 shadow-sm mt-1">

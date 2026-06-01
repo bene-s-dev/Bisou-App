@@ -122,14 +122,13 @@ function AppLayout({
   return (
     <div className={`h-[100svh] w-screen overflow-hidden relative text-[#1F1939] bg-[var(--bg)] flex flex-col transition-colors duration-300 ${(isDarkMode && !isPublicPath) ? 'dark' : ''}`}>
       <main 
-        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 ${isPublicPath ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
-        style={{ paddingTop: 'calc(0.5rem + var(--sat))' }}
+        className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 pwa-main-container ${isPublicPath ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
       >
         <ScalingContainer targetWidth={400} align="top">
           <div className="flex-1 flex flex-col relative w-full h-full px-4">
             {showHeader && (
               <>
-                <header className="absolute left-0 right-0 top-0 z-20 px-2 pointer-events-none" style={{ paddingTop: 'calc(1rem + var(--sat))' }}>
+                <header className="absolute left-0 right-0 top-0 z-20 px-2 pointer-events-none pwa-app-header">
                   <div className="flex items-start justify-between">
                     <button 
                       onClick={() => navigate('/')}
