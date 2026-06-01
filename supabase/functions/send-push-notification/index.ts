@@ -413,11 +413,10 @@ async function encryptPayload(
 
   // Build the aes128gcm header:
   // salt (16 bytes) + record size (4 bytes, big-endian) + key ID length (1 byte) + key ID (local public key, 65 bytes)
-  const recordSize = encrypted.length + 86 // header size (16 + 4 + 1 + 65 = 86) for the record
   const header = new Uint8Array(86)
   header.set(salt, 0) // 16 bytes salt
-  // Record size as 4-byte big-endian uint32
-  const rs = payloadBytes.length + 1 + 16 + 86 // content + padding + tag + header
+  // Record size as 4-byte big-endian uint32 (default 4096 for Web Push)
+  const rs = 4096
   header[16] = (rs >>> 24) & 0xff
   header[17] = (rs >>> 16) & 0xff
   header[18] = (rs >>> 8) & 0xff
