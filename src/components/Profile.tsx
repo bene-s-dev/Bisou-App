@@ -165,6 +165,20 @@ export default function Profile({
     if (!isEditingEmail) setEmailInput(currentEmail);
   }, [user?.email, propEmail, isEditingEmail]);
 
+  // Sync / monitor email confirmation status
+  useEffect(() => {
+    if (user?.new_email) {
+      const interval = setInterval(async () => {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session?.user && !session.user.new_email) {
+          // Email confirmed! Force a reload or update local state
+          window.location.reload();
+        }
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [user?.new_email]);
+
 
 
   const handleUpdateEmail = async () => {
