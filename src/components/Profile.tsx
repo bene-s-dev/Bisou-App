@@ -102,6 +102,7 @@ export default function Profile({
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'default'
   );
   const [isPushLoading, setIsPushLoading] = useState(false);
+  const [diagnosticInfo, setDiagnosticInfo] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [showAvatarMenu, setShowAvatarMenu] = useState(false);
   const [showServices, setShowServices] = useState(false);
@@ -172,6 +173,101 @@ export default function Profile({
       },
       { title: "App Hard-Reset", confirmLabel: "Jetzt zurücksetzen", cancelLabel: "Abbrechen" }
     );
+  };
+
+  const handleRunDiagnostics = async () => {
+    try {
+      const logs: string[] = [];
+      logs.push(`=== BİSOU SYSTEM-DIAGNOSE ===`);
+      logs.push(`Zeitstempel: ${new Date().toLocaleString('de-DE')}`);
+      logs.push(`Origin: ${window.location.origin}`);
+      logs.push(`Protocol: ${window.location.protocol}`);
+      logs.push(`User Agent: ${navigator.userAgent}`);
+      
+      // PWA Mode
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+      logs.push(`PWA Standalone: ${isStandalone ? 'Ja' : 'Nein'}`);
+      
+      // Notifications
+      logs.push(`\n[NOTIFICATIONS]`);
+      if ('Notification' in window) {
+        logs.push(`Notification.permission: ${Notification.permission}`);
+        if (navigator.permissions && navigator.permissions.query) {
+          try {
+            const status = await navigator.permissions.query({ name: 'notifications' });
+            logs.push(`Permission Query State: ${status.state}`);
+          } catch (e: any) {
+            logs.push(`Permission Query State: Fehler (${e.message})`);
+          }
+        } else {
+          logs.push(`Permission Query API: Nicht unterstützt`);
+        }
+      } else {
+        logs.push(`Notification API: Nicht unterstützt`);
+      }
+
+      // Service Worker
+      logs.push(`\n[SERVICE WORKER]`);
+      if ('serviceWorker' in navigator) {
+        logs.push(`ServiceWorker support: Ja`);
+        const regs = await navigator.serviceWorker.getRegistrations();
+        logs.push(`Aktive Registrierungen: ${regs.length}`);
+        for (const [index, reg] of regs.entries()) {
+          logs.push(`  Reg #${index + 1}:`);
+          logs.push(`    Scope: ${reg.scope}`);
+          logs.push(`    Active: ${reg.active ? `Ja (${reg.active.state})` : 'Nein'}`);
+          logs.push(`    Installing: ${reg.installing ? 'Ja' : 'Nein'}`);
+          logs.push(`    Waiting: ${reg.waiting ? 'Ja' : 'Nein'}`);
+          
+          if (reg.pushManager) {
+            logs.push(`    PushManager support: Ja`);
+            try {
+              const sub = await reg.pushManager.getSubscription();
+              if (sub) {
+                logs.push(`    Subscription: Aktiv`);
+                logs.push(`    Endpoint: ${sub.endpoint.substring(0, 50)}...`);
+                logs.push(`    Keys present: ${sub.toJSON().keys ? Object.keys(sub.toJSON().keys || {}).join(', ') : 'Keine'}`);
+              } else {
+                logs.push(`    Subscription: Keine`);
+              }
+            } catch (err: any) {
+              logs.push(`    Subscription Error: ${err.message}`);
+            }
+          } else {
+            logs.push(`    PushManager support: Nein`);
+          }
+        }
+      } else {
+        logs.push(`ServiceWorker support: Nein`);
+      }
+
+      // Local Storage
+      logs.push(`\n[STORAGE & DATABASE]`);
+      logs.push(`LocalStorage Keys: ${Object.keys(localStorage).length}`);
+      let totalSize = 0;
+      for (let x in localStorage) {
+        if (localStorage.hasOwnProperty(x)) {
+          totalSize += (localStorage[x].length + x.length) * 2; // approximation in bytes
+        }
+      }
+      logs.push(`LocalStorage geschätzte Größe: ${(totalSize / 1024).toFixed(2)} KB`);
+      
+      // Supabase connectivity check
+      const start = performance.now();
+      try {
+        const { error } = await supabase.from('profiles').select('id').limit(1).maybeSingle();
+        const latency = performance.now() - start;
+        logs.push(`Supabase Verbindung: ${error ? `Fehler (${error.message})` : `Online (${latency.toFixed(1)}ms Latency)`}`);
+      } catch (err: any) {
+        logs.push(`Supabase Verbindung: Fehler (${err.message})`);
+      }
+
+      setDiagnosticInfo(logs.join('\n'));
+      showAlert("Diagnose abgeschlossen! 📋", "success");
+    } catch (e: any) {
+      console.error(e);
+      showAlert("Diagnose-Fehler: " + e.message, "error");
+    }
   };
 
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
@@ -911,38 +1007,7 @@ export default function Profile({
                     )}
                   </button>
                 )}
-                {isDevMode && (
-                  <div className="text-[8px] text-gray-400 mt-2 space-y-1">
-                    <div>Permission: {pushPermission} | API: {typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A'} | SW: {'serviceWorker' in navigator ? 'Yes' : 'No'}</div>
-                    <div id="dev-perm-api">Perm API: checking...</div>
-                    <div className="truncate">Origin: {typeof window !== 'undefined' ? window.location.origin : 'N/A'}</div>
-                    <button onClick={() => {
-                       navigator.serviceWorker.getRegistration().then(reg => {
-                         alert(`SW Reg: ${reg ? 'Yes' : 'No'}\nSW Active: ${reg?.active ? 'Yes' : 'No'}\nPushManager: ${reg?.pushManager ? 'Yes' : 'No'}`);
-                       }).catch(e => alert(`SW Error: ${e.message}`));
-                    }} className="underline">SW Status prüfen</button>
-                    <span> | </span>
-                    <button onClick={async () => {
-                       try {
-                         const reg = await navigator.serviceWorker.ready;
-                         const sub = await reg.pushManager.getSubscription();
-                         alert(`Sub: ${sub ? 'Exists' : 'None'}\nEndpoint: ${sub?.endpoint ? sub.endpoint.substring(0, 30) + '...' : 'N/A'}`);
-                       } catch(e: any) { alert(`Sub Error: ${e.message}`); }
-                    }} className="underline">Sub Status prüfen</button>
-                    <span> | </span>
-                    <button onClick={() => {
-                      if (navigator.permissions) {
-                        navigator.permissions.query({ name: 'notifications' }).then(status => {
-                          const el = document.getElementById('dev-perm-api');
-                          if(el) el.innerText = `Perm API: ${status.state}`;
-                          alert(`System Permission API meldet: ${status.state}`);
-                        }).catch(e => alert(`Perm API Error: ${e.message}`));
-                      } else {
-                        alert("Perm API nicht unterstützt.");
-                      }
-                    }} className="underline">System-Rechte fragen</button>
-                  </div>
-                )}
+
              </div>
           </div>
         );
@@ -1487,6 +1552,41 @@ export default function Profile({
                   <RefreshCcw className="w-3.5 h-3.5 shrink-0" />
                   <span>App Hard-Reset</span>
                 </button>
+                
+                <button
+                  onClick={handleRunDiagnostics}
+                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
+                >
+                  <Info className="w-3.5 h-3.5 shrink-0" />
+                  <span>System-Diagnose ausführen</span>
+                </button>
+
+                {diagnosticInfo && (
+                  <div className="flex flex-col gap-2 p-4 bg-purple-950/95 text-[10px] text-green-400 font-mono rounded-2xl w-full border border-purple-900 shadow-inner relative max-h-[300px] overflow-y-scroll show-scrollbar animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between border-b border-purple-900 pb-1.5 mb-1.5 sticky top-0 bg-purple-950/95 z-10">
+                      <span className="font-bold text-purple-200 uppercase tracking-wider">Diagnose-Log</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(diagnosticInfo);
+                            showAlert("Diagnose-Log kopiert! 📋", "success");
+                          }}
+                          className="px-2 py-0.5 rounded bg-purple-900 text-purple-200 hover:bg-purple-800 transition-colors uppercase font-black text-[8px] tracking-wider cursor-pointer"
+                        >
+                          Kopieren
+                        </button>
+                        <button
+                          onClick={() => setDiagnosticInfo(null)}
+                          className="px-2 py-0.5 rounded bg-red-950 text-red-400 hover:bg-red-900 transition-colors uppercase font-black text-[8px] tracking-wider cursor-pointer"
+                        >
+                          Schließen
+                        </button>
+                      </div>
+                    </div>
+                    <pre className="whitespace-pre-wrap leading-relaxed select-text text-left">{diagnosticInfo}</pre>
+                  </div>
+                )}
+
                 <button
                   onClick={async () => {
                     try {
