@@ -25,7 +25,7 @@ export default function LandingPage() {
       )
     },
     { 
-      icon: <MessageCircle className="w-5 h-5 text-blue-500" />, 
+      icon: <MessageCircle className="w-5 h-5 text-emerald-500" />, 
       text: (
         <>
           Eure Antworten sind erst sichtbar,<br />
@@ -34,7 +34,7 @@ export default function LandingPage() {
       )
     },
     { 
-      icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />, 
+      icon: <ShieldCheck className="w-5 h-5 text-blue-500" />, 
       text: (
         <>
           Deine Daten werden verschlüsselt und<br />
