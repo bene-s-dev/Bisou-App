@@ -179,7 +179,7 @@ export default function App() {
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [showLockedModal, setShowLockedModal] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
 
   const fetchLock = React.useRef<string | null>(null);
   const initialLoadDone = React.useRef(false);
@@ -187,13 +187,29 @@ export default function App() {
   const dayKey = getDailyKey();
 
   useEffect(() => {
+    // If it was captured early, use it
+    if ((window as any).deferredPrompt && !deferredPrompt) {
+      setDeferredPrompt((window as any).deferredPrompt);
+    }
+
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
+
+    const customHandler = () => {
+      if ((window as any).deferredPrompt) {
+        setDeferredPrompt((window as any).deferredPrompt);
+      }
+    };
+
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
+    window.addEventListener('pwa-install-prompt', customHandler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('pwa-install-prompt', customHandler);
+    };
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -497,7 +513,7 @@ export default function App() {
             <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
               <Routes>
                 <Route path="intro" element={<Intro onComplete={handleIntroComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
-                <Route path="intro-replay" element={<Intro onComplete={() => navigate('/profile')} deferredPrompt={null} onInstall={() => {}} isReplay={true} />} />
+                <Route path="intro-replay" element={<Intro onComplete={() => navigate('/profile')} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} isReplay={true} />} />
                 <Route path="dashboard" element={<Dashboard 
                   userName={profile.display_name} 
                   userAvatar={profile.avatar_url} 

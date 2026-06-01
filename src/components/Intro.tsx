@@ -281,6 +281,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   }, []);
 
   const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+  const isAndroid = /android/.test(navigator.userAgent.toLowerCase());
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
 
   if (step !== displayState.current) setDisplayState({ current: step, previous: displayState.current });
   useEffect(() => {
@@ -372,82 +374,129 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
           </div>
         </div>
       );
-      case 5: return (
-        <div className={"flex-1 flex flex-col items-center text-center px-6 min-h-0 " + animationClass}>
-          {/* Centered content block */}
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="flex flex-col items-center">
-              <div className="h-36 flex items-center justify-center mb-6 shrink-0">
-                <AnimatedPhoneInstall />
+      case 5: {
+        const secondaryButtonText = isReplay ? "Schließen" : "Im Browser weitermachen";
+        return (
+          <div className={"flex-1 flex flex-col items-center text-center px-6 min-h-0 " + animationClass}>
+            {/* Centered content block */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center">
+                <div className="h-36 flex items-center justify-center mb-6 shrink-0">
+                  <AnimatedPhoneInstall />
+                </div>
+                <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">
+                  {isPWA ? "Bereits installiert!" : "App installieren"}
+                </h2>
+                <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">
+                  {isPWA 
+                    ? "Bisou ist erfolgreich auf deinem Startbildschirm installiert." 
+                    : "Installiere Bisou auf deinem Startbildschirm für schnellen Zugriff – wie eine echte App."}
+                </p>
               </div>
-              <h2 className="text-2xl font-black text-[#1F1939] tracking-tight mb-4 uppercase">App installieren</h2>
-              <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">
-                Installiere Bisou auf deinem Startbildschirm für schnellen Zugriff – wie eine echte App.
-              </p>
+            </div>
+
+            {/* Bottom action area */}
+            <div className="w-full flex flex-col items-center gap-4 pb-4 shrink-0">
+              {isPWA ? (
+                <button 
+                  onClick={onComplete}
+                  className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
+                >
+                  {isReplay ? "Schließen" : "Loslegen ✨"}
+                </button>
+              ) : (
+                <>
+                  {isIOS ? (
+                    /* iOS: Show step-by-step instructions + install-like button */
+                    <>
+                      <div className="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-50 rounded-[1.5rem] p-5 text-left space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
+                          <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
+                            Tippe unten auf <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-50 rounded-lg text-[var(--secondary)] font-black"><Share2 className="w-3 h-3" /> Teilen</span>
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">2</div>
+                          <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
+                            Wähle <span className="text-[var(--secondary)] font-black">"Zum Home-Bildschirm"</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={onComplete}
+                        className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
+                      >
+                        {secondaryButtonText}
+                      </button>
+                    </>
+                  ) : deferredPrompt ? (
+                    /* Android / desktop Chrome with install prompt available */
+                    <>
+                      <button 
+                        onClick={onInstall}
+                        className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
+                      >
+                        <Download className="w-5 h-5" />
+                        App installieren
+                      </button>
+
+                      <button 
+                        onClick={onComplete}
+                        className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
+                      >
+                        {secondaryButtonText}
+                      </button>
+                    </>
+                  ) : isAndroid ? (
+                    /* Android fallback when deferredPrompt is not available */
+                    <>
+                      <div className="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-50 rounded-[1.5rem] p-5 text-left space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
+                          <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
+                            Tippe auf die drei Punkte <span className="font-black">(Menü)</span> oben rechts in Chrome.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">2</div>
+                          <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
+                            Wähle <span className="text-[var(--secondary)] font-black">"App installieren"</span> oder <span className="text-[var(--secondary)] font-black">"Zum Startbildschirm hinzufügen"</span>.
+                          </p>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={onComplete}
+                        className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
+                      >
+                        {secondaryButtonText}
+                      </button>
+                    </>
+                  ) : (
+                    /* Fallback: other browsers/platforms */
+                    <>
+                      <div className="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-50 rounded-[1.5rem] p-5 text-center">
+                        <p className="text-[11px] font-bold text-[#1F1939] leading-relaxed">
+                          Nutze Safari auf iOS oder Chrome auf Android für das beste App-Erlebnis.
+                        </p>
+                      </div>
+
+                      <button 
+                        onClick={onComplete}
+                        className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
+                      >
+                        {secondaryButtonText}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
-
-          {/* Bottom action area */}
-          <div className="w-full flex flex-col items-center gap-4 pb-4 shrink-0">
-            {!isReplay && (
-              <>
-                {isIOS ? (
-                  /* iOS: Show step-by-step instructions + install-like button */
-                  <>
-                    <div className="w-full bg-white/80 backdrop-blur-sm border-2 border-purple-50 rounded-[1.5rem] p-5 text-left space-y-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
-                        <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                          Tippe unten auf <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-50 rounded-lg text-[var(--secondary)] font-black"><Share2 className="w-3 h-3" /> Teilen</span>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">2</div>
-                        <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                          Wähle <span className="text-[var(--secondary)] font-black">"Zum Home-Bildschirm"</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={onComplete}
-                      className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
-                    >
-                      Im Browser weitermachen
-                    </button>
-                  </>
-                ) : deferredPrompt ? (
-                  /* Android with install prompt available */
-                  <>
-                    <button 
-                      onClick={onInstall}
-                      className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
-                    >
-                      <Download className="w-5 h-5" />
-                      App installieren
-                    </button>
-
-                    <button 
-                      onClick={onComplete}
-                      className="text-[11px] font-bold text-[var(--muted)] hover:text-[var(--secondary)] transition-colors py-2 active:scale-95"
-                    >
-                      Im Browser weitermachen
-                    </button>
-                  </>
-                ) : (
-                  /* Fallback: no install prompt */
-                  <button 
-                    onClick={onComplete}
-                    className="btn-primary py-4 text-sm font-black uppercase tracking-widest w-full flex items-center justify-center gap-3"
-                  >
-                    Im Browser weitermachen
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      );
+        );
+      }
       default: return null;
     }
   };
@@ -492,10 +541,6 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         {step < 5 ? (
           <button className="btn-static py-4 text-lg font-black group shadow-none" onClick={() => setStep(step + 1)}>
             Weiter
-          </button>
-        ) : isReplay ? (
-          <button className="btn-static py-4 text-lg font-black group shadow-none" onClick={onComplete}>
-            Schließen
           </button>
         ) : null}
       </div>

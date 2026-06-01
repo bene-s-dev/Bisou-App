@@ -44,6 +44,14 @@
           }
         } catch (e) {}
       })();
+
+      // Capture PWA install prompt early
+      window.deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.deferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-install-prompt'));
+      });
     </script>
   </head>
   <body>
