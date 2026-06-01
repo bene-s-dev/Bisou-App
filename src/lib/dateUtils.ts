@@ -71,3 +71,22 @@ export function getTimeUntilReset(): { hours: number; minutes: number; seconds: 
   
   return { hours, minutes, seconds, totalSeconds };
 }
+
+/**
+ * Checks if a streak is active based on the last answer date.
+ * A streak is active if the last answer was submitted today or yesterday (relative to CET day reset).
+ */
+export function isStreakActive(lastAnswerDate: string | null | undefined, todayKey: string): boolean {
+  if (!lastAnswerDate) return false;
+  if (lastAnswerDate === todayKey) return true;
+  
+  const parts = todayKey.split('-');
+  const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  date.setDate(date.getDate() - 1);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const yesterdayKey = `${year}-${month}-${day}`;
+  
+  return lastAnswerDate === yesterdayKey;
+}

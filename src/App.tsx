@@ -16,7 +16,7 @@ import Profile from './components/Profile';
 import ResetPassword from './components/ResetPassword';
 import LoadingSkeleton from './components/LoadingSkeleton';
 import ScalingContainer from './components/ScalingContainer';
-import { getDailyKey } from './lib/dateUtils';
+import { getDailyKey, isStreakActive } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider, useDialog } from './components/DialogProvider';
 
@@ -416,15 +416,22 @@ export default function App() {
         const userIds = [userId];
         if (profileData.partner_id) userIds.push(profileData.partner_id);
 
-        const [answersRes, streaksRes] = await Promise.all([
-          supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey),
-          supabase.from('streaks').select('*').in('user_id', userIds).in('partner_id', userIds)
-        ]);
+        const rawStreaks = streaksRes.data || [];
+        const processedStreaks = await Promise.all(rawStreaks.map(async (s: any) => {
+          if (s.current_streak > 0 && !isStreakActive(s.last_answer_date, dayKey)) {
+            // Update the database to reflect the reset in the background
+            supabase.from('streaks').update({ current_streak: 0 }).eq('id', s.id).then(({ error }) => {
+              if (error) console.error("Error resetting broken streak in db:", error);
+            });
+            return { ...s, current_streak: 0 };
+          }
+          return s;
+        }));
 
         setDashboardData({
           answers: answersRes.data || [],
           questions: currentQs,
-          streaks: streaksRes.data || []
+          streaks: processedStreaks
         });
         
         // Mark successful data sync

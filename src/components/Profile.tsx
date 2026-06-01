@@ -9,6 +9,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
 import { capitalizeName } from '../lib/stringUtils';
 import Intro from './Intro';
+import { getDailyKey, isStreakActive } from '../lib/dateUtils';
 import { User } from '@supabase/supabase-js';
 
 
@@ -380,13 +381,23 @@ export default function Profile({
         try {
           const [partnerRes, streakRes] = await Promise.all([
             supabase.from('profiles').select('created_at').eq('id', profile.partner_id).single(),
-            supabase.from('streaks').select('current_streak').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
+            supabase.from('streaks').select('current_streak, last_answer_date').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
           ]);
 
           if (partnerRes.data) {
+            const dayKey = getDailyKey();
+            let streakVal = streakRes.data?.current_streak || 0;
+            if (streakVal > 0 && !isStreakActive(streakRes.data?.last_answer_date, dayKey)) {
+              streakVal = 0;
+              // Reset broken streak in db
+              supabase.from('streaks').update({ current_streak: 0 }).eq('user_id', profile.partner_id).eq('partner_id', profile.id).then(({ error }) => {
+                if (error) console.error("Error resetting broken partner streak in db:", error);
+              });
+            }
+
             setPartnerDetails({
               createdAt: partnerRes.data.created_at,
-              streak: streakRes.data?.current_streak || 0,
+              streak: streakVal,
               partnerSince: null
             });
           }
