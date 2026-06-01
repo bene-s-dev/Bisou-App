@@ -11,7 +11,7 @@ export default function LandingPage() {
       text: (
         <>
           Sagt Tschüss zu Doom-Scrollen:<br />
-          Diese App stärkt eure Bindung
+          Diese App stärkt eure Bindung.
         </>
       )
     },
@@ -20,7 +20,7 @@ export default function LandingPage() {
       text: (
         <>
           Verbinde dich mit einem Bisou-Partner,<br />
-          um täglich mehr übereinander zu erfahren
+          um täglich mehr übereinander zu erfahren.
         </>
       )
     },
@@ -29,7 +29,7 @@ export default function LandingPage() {
       text: (
         <>
           Eure Antworten sind erst sichtbar,<br />
-          wenn ihr beide geantwortet habt
+          wenn ihr beide geantwortet habt.
         </>
       )
     },
