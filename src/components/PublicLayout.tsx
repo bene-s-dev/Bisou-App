@@ -103,7 +103,7 @@ export default function PublicLayout() {
 
       <footer className="pb-2 pt-2 w-full text-center relative z-10 shrink-0">
         <p className="text-[10px] font-bold text-[var(--muted)] opacity-50">
-          Bisou-App &bull; &copy; 2026 &bull; Benedikt S.
+          Bisou-App &copy; 2026 &bull; Benedikt S.
         </p>
       </footer>
     </div>
