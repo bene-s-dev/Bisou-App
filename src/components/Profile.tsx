@@ -791,7 +791,7 @@ export default function Profile({
 
                 {pushPermission === 'granted' ? (
                   <button 
-                    onClick={handleTogglePush}
+                    onClick={() => handleTogglePush()}
                     className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-95 shadow-sm outline-none bg-white border-[var(--card-border)] hover:bg-purple-50/30 ${isPushLoading ? 'pointer-events-none' : ''}`}
                   >
                     <div className="flex items-center gap-2">
@@ -806,7 +806,19 @@ export default function Profile({
                   </button>
                 ) : (
                   <button 
-                    onClick={handleTogglePush}
+                    onClick={() => {
+                      // ABSOLUTE FIRST ACTION: Trigger native prompt synchronously
+                      if ('Notification' in window && Notification.permission === 'default') {
+                        Notification.requestPermission().then(newPermission => {
+                          setPushPermission(newPermission);
+                          if (newPermission === 'granted') {
+                            handleTogglePush();
+                          }
+                        });
+                      } else {
+                        handleTogglePush();
+                      }
+                    }}
                     disabled={isPushLoading}
                     className={`w-full py-3.5 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center shadow-md select-none outline-none ${
                       pushPermission === 'denied' 
