@@ -903,8 +903,21 @@ export default function Profile({
                   </button>
                 )}
                 {isDevMode && (
-                  <div className="text-[8px] text-gray-400 mt-2">
-                    Permission: {pushPermission} | API: {typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A'} | SW: {'serviceWorker' in navigator ? 'Yes' : 'No'}
+                  <div className="text-[8px] text-gray-400 mt-2 space-y-1">
+                    <div>Permission: {pushPermission} | API: {typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A'} | SW: {'serviceWorker' in navigator ? 'Yes' : 'No'}</div>
+                    <button onClick={() => {
+                       navigator.serviceWorker.getRegistration().then(reg => {
+                         alert(`SW Reg: ${reg ? 'Yes' : 'No'}\nSW Active: ${reg?.active ? 'Yes' : 'No'}\nPushManager: ${reg?.pushManager ? 'Yes' : 'No'}`);
+                       }).catch(e => alert(`SW Error: ${e.message}`));
+                    }} className="underline">SW Status prüfen</button>
+                    <span> | </span>
+                    <button onClick={async () => {
+                       try {
+                         const reg = await navigator.serviceWorker.ready;
+                         const sub = await reg.pushManager.getSubscription();
+                         alert(`Sub: ${sub ? 'Exists' : 'None'}\nEndpoint: ${sub?.endpoint ? sub.endpoint.substring(0, 30) + '...' : 'N/A'}`);
+                       } catch(e: any) { alert(`Sub Error: ${e.message}`); }
+                    }} className="underline">Sub Status prüfen</button>
                   </div>
                 )}
              </div>
