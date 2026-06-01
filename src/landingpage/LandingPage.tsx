@@ -73,7 +73,7 @@ export default function LandingPage() {
         <div className="w-full max-w-sm mx-auto flex flex-col gap-2 sm:gap-2.5 px-8 sm:px-10 shrink-0 mt-2 sm:mt-3">
           <div className="relative p-4 sm:p-5 rounded-[2rem_1rem_2rem_1rem] bg-white/60 border border-purple-200/80 dark:border-purple-900/40 shadow-md backdrop-blur-sm mb-3 mt-1 text-center">
             {/* Floating question mark sticking out of the top right border */}
-            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-100/90 to-purple-100/90 text-[#4A4468] flex items-center justify-center shadow-md border-2 border-white dark:border-[#17122A] z-20">
+            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-100/90 to-purple-100/90 text-[var(--secondary)] flex items-center justify-center shadow-md border-2 border-white dark:border-[#17122A] z-20">
               <span className="text-[15px] font-black select-none mt-[-1px]">?</span>
             </div>
 
