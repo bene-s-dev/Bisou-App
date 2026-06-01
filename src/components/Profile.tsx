@@ -914,6 +914,8 @@ export default function Profile({
                 {isDevMode && (
                   <div className="text-[8px] text-gray-400 mt-2 space-y-1">
                     <div>Permission: {pushPermission} | API: {typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'N/A'} | SW: {'serviceWorker' in navigator ? 'Yes' : 'No'}</div>
+                    <div id="dev-perm-api">Perm API: checking...</div>
+                    <div className="truncate">Origin: {typeof window !== 'undefined' ? window.location.origin : 'N/A'}</div>
                     <button onClick={() => {
                        navigator.serviceWorker.getRegistration().then(reg => {
                          alert(`SW Reg: ${reg ? 'Yes' : 'No'}\nSW Active: ${reg?.active ? 'Yes' : 'No'}\nPushManager: ${reg?.pushManager ? 'Yes' : 'No'}`);
@@ -927,6 +929,18 @@ export default function Profile({
                          alert(`Sub: ${sub ? 'Exists' : 'None'}\nEndpoint: ${sub?.endpoint ? sub.endpoint.substring(0, 30) + '...' : 'N/A'}`);
                        } catch(e: any) { alert(`Sub Error: ${e.message}`); }
                     }} className="underline">Sub Status prüfen</button>
+                    <span> | </span>
+                    <button onClick={() => {
+                      if (navigator.permissions) {
+                        navigator.permissions.query({ name: 'notifications' }).then(status => {
+                          const el = document.getElementById('dev-perm-api');
+                          if(el) el.innerText = `Perm API: ${status.state}`;
+                          alert(`System Permission API meldet: ${status.state}`);
+                        }).catch(e => alert(`Perm API Error: ${e.message}`));
+                      } else {
+                        alert("Perm API nicht unterstützt.");
+                      }
+                    }} className="underline">System-Rechte fragen</button>
                   </div>
                 )}
              </div>
