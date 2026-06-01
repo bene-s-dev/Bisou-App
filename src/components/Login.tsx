@@ -34,7 +34,8 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
   React.useEffect(() => {
     if (message?.type === 'success' && mode === 'register') {
       const checkSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
         if (session) {
           onLogin();
         }

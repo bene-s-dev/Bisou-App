@@ -137,6 +137,8 @@ const TypingChatBubble = () => {
     let currentText = '';
     let isDeleting = false;
     let charIndex = 0;
+    let timeoutId: any = null;
+    let newIntervalId: any = null;
     
     const interval = setInterval(() => {
       const currentPhrase = phrases[phraseIndex];
@@ -146,15 +148,15 @@ const TypingChatBubble = () => {
         if (charIndex === currentPhrase.length) {
           isDeleting = true;
           clearInterval(interval);
-          setTimeout(() => {
-            const newInterval = setInterval(() => {
+          timeoutId = setTimeout(() => {
+            newIntervalId = setInterval(() => {
               if (isDeleting) {
                 currentText = currentPhrase.slice(0, charIndex - 1);
                 charIndex--;
                 if (charIndex === 0) {
                   isDeleting = false;
                   setPhraseIndex((prev) => (prev + 1) % phrases.length);
-                  clearInterval(newInterval);
+                  clearInterval(newIntervalId);
                 }
                 setText(currentText);
               }
@@ -165,7 +167,11 @@ const TypingChatBubble = () => {
       setText(currentText);
     }, 120);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (timeoutId) clearTimeout(timeoutId);
+      if (newIntervalId) clearInterval(newIntervalId);
+    };
   }, [phraseIndex]);
 
   return (
@@ -229,6 +235,12 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   const { showAlert } = useDialog();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const isIOS = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
+  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
+
   const [localStep, setLocalStep] = useState(isIntroOnly ? 1 : 0);
   const step = isIntroOnly ? localStep : parseInt(new URLSearchParams(location.search).get('s') || (isReplay ? '1' : '0'));
 
@@ -248,7 +260,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     const finalStep = isAlreadyInstalled ? 4 : 5;
     if (step === finalStep && !isReplay && !isIntroOnly) {
       (async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const session = data?.session;
         if (session) {
           await supabase.from('profiles').update({ intro_completed: true }).eq('id', session.user.id);
         }
@@ -282,27 +295,27 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
     }
   }, []);
 
-  const isIOS = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
-  const isAndroid = /Android/i.test(navigator.userAgent);
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
-  const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
-
   useEffect(() => {
     if (isPWA) {
       localStorage.setItem('pwa_installed', 'true');
       setIsAlreadyInstalled(true);
     } else if ('getInstalledRelatedApps' in navigator) {
-      (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
-        if (apps && apps.length > 0) {
-          localStorage.setItem('pwa_installed', 'true');
-          setIsAlreadyInstalled(true);
-        } else {
-          localStorage.removeItem('pwa_installed');
-          setIsAlreadyInstalled(false);
-        }
-      }).catch((err: any) => {
-        console.log("Error checking installed apps:", err);
-      });
+      try {
+        (navigator as any).getInstalledRelatedApps().then((apps: any[]) => {
+          if (apps && apps.length > 0) {
+            localStorage.setItem('pwa_installed', 'true');
+            setIsAlreadyInstalled(true);
+          } else {
+            localStorage.removeItem('pwa_installed');
+            setIsAlreadyInstalled(false);
+          }
+        }).catch((err: any) => {
+          console.log("Error checking installed apps:", err);
+        });
+      } catch (e) {
+        console.warn("Failed to call getInstalledRelatedApps:", e);
+        setIsAlreadyInstalled(false);
+      }
     } else {
       // If we can't check and we are not in PWA mode, don't blindly trust localStorage
       setIsAlreadyInstalled(false);
@@ -318,7 +331,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   }, [displayState.previous]);
 
   const fetchMyProfile = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: resData } = await supabase.auth.getSession();
+    const session = resData?.session;
     if (session) {
       const { data } = await supabase.from('profiles').select('display_name, avatar_url').eq('id', session.user.id).maybeSingle();
       if (data) { setUserName(data.display_name); if (data.avatar_url) setAvatarPreview(data.avatar_url); }
@@ -328,7 +342,8 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
 
   const handleCropComplete = async (croppedBlob: Blob) => {
     setSelectedImage(null); setLoading(true);
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data } = await supabase.auth.getSession();
+    const session = data?.session;
     if (!session) return;
     const fileName = `${session.user.id}/${Date.now()}.jpg`;
     await supabase.storage.from('avatars').upload(fileName, croppedBlob, { contentType: 'image/jpeg', upsert: true });

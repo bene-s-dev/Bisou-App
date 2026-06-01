@@ -370,7 +370,8 @@ export default function App() {
       // 3. Robust Profile Handling (Handle missing profile case)
       if (!profileData) {
         // We use the metadata from the session if profile is missing
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
+        const currentSession = data?.session;
         if (currentSession?.user) {
           const newProfile = {
             id: userId,
@@ -495,7 +496,7 @@ export default function App() {
         setDashboardData(null);
         setLoading(false);
         initialFetchStarted = false;
-        if (location.pathname !== '/' && !location.pathname.startsWith('/signin')) {
+        if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/signin')) {
            navigate('/signin', { replace: true });
         }
       }
@@ -539,7 +540,7 @@ export default function App() {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [fetchProfile, session?.user.id, location.pathname, navigate]);
+  }, [fetchProfile, session?.user.id, navigate]);
 
 
   // --- Realtime Sync Subscriptions ---

@@ -46,7 +46,8 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
       if (!session || !partnerId) return;
 
       const thirtyDaysAgo = new Date();
@@ -345,7 +346,8 @@ export default function Dashboard({
       "Möchtest du deine heutigen Antworten wirklich löschen und neu starten?",
       async () => {
         try {
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data } = await supabase.auth.getUser();
+          const user = data?.user;
           if (!user) return;
           await supabase.from('answers').delete().eq('day_key', dayKey).eq('user_id', user.id);
         } catch (err) {

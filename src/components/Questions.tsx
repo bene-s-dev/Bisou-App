@@ -270,7 +270,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const loadData = useCallback(async (forceRefresh = false) => {
     try {
       if (!forceRefresh) setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
       if (!session) return;
 
       // 1. Fetch Questions
@@ -433,7 +434,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const session = data?.session;
       if (!session) throw new Error("No session");
       
       const sig = dailyQs.map(q => `[${q.q}]`).join("");
@@ -575,7 +577,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       async () => {
         try {
           setLoading(true);
-          const { data: { session } } = await supabase.auth.getSession();
+          const { data } = await supabase.auth.getSession();
+          const session = data?.session;
           if (session) await supabase.from('answers').delete().eq('day_key', dayKey).eq('user_id', session.user.id);
           
           setMyResults([]);

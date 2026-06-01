@@ -61,7 +61,8 @@ export default function Profile({
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
 
   const refreshUser = useCallback(async () => {
-    const { data: { user: latestUser } } = await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    const latestUser = data?.user;
     if (latestUser) {
       setUser(latestUser);
     }
@@ -315,7 +316,8 @@ export default function Profile({
   useEffect(() => {
     if (user?.new_email) {
       const interval = setInterval(async () => {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        const session = data?.session;
         if (session?.user && !session.user.new_email) {
           // Email confirmed! Force a reload or update local state
           window.location.reload();
