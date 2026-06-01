@@ -29,7 +29,7 @@ export default function LandingPage() {
       text: (
         <>
           Täglich neue inspirierende Fragen:<br />
-          Für lustige Fragen und spannende Momente.
+          Für gute Antworten und lustige Momente.
         </>
       )
     },
