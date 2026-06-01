@@ -368,102 +368,25 @@ export default function Profile({
     }
   }, [profile?.id, activeTab]);
 
-  const handleTogglePush = async () => {
-    if (!('serviceWorker' in navigator)) {
-      showAlert("Service Worker wird von diesem Browser nicht unterstützt.", "error");
-      return;
-    }
-
-    // Special check for iOS: Notifications only work in PWA mode
-    const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
-    
-    if (isIOS && !isStandalone) {
-      showAlert("Auf iOS funktionieren Benachrichtigungen nur, wenn du die App zum Home-Bildschirm hinzufügst.", "info");
-      setActiveTab('install');
-      return;
-    }
-
-    if (!('PushManager' in window)) {
-      showAlert("Push-Benachrichtigungen werden von diesem Browser nicht unterstützt.", "error");
-      return;
-    }
-
-    let permission = Notification.permission;
-    
-    // 1. Handle Blocked
-    if (permission === 'denied') {
-      showAlert("Benachrichtigungen wurden blockiert. Bitte aktiviere sie in den Website-Einstellungen deines Browsers.", "error");
-      return;
-    }
-
-    // 2. Handle Requesting (Must be very responsive for iOS)
-    if (permission === 'default') {
-      setIsPushLoading(true);
-      try {
-        // Direct call to requestPermission
-        permission = await Notification.requestPermission();
-        setPushPermission(permission);
-        if (permission !== 'granted') {
-          showAlert("Berechtigung für Benachrichtigungen wurde nicht erteilt.", "error");
-          setIsPushLoading(false);
-          return;
-        }
-      } catch (err) {
-        console.error("Permission request error:", err);
-        setIsPushLoading(false);
-        return;
-      }
-    }
-
-    // 3. Permission is GRANTED: Toggle logic
-    const targetState = !pushEnabled;
+  const executePushToggle = async (targetState: boolean) => {
     setIsPushLoading(true);
-
     try {
       const registration = await navigator.serviceWorker.ready;
       let subscription = await registration.pushManager.getSubscription();
 
       if (!targetState) {
-        // Toggle OFF: Unsubscribe from push
-        if (subscription) {
-          await subscription.unsubscribe();
-        }
-        // Remove from DB
-        await supabase
-          .from('push_subscriptions')
-          .delete()
-          .eq('user_id', profile.id);
-
+        if (subscription) await subscription.unsubscribe();
+        await supabase.from('push_subscriptions').delete().eq('user_id', profile.id);
         setPushEnabled(false);
         showAlert("Benachrichtigungen deaktiviert 🔒", "success");
       } else {
-        // Toggle ON: Subscribe to push
         if (!subscription) {
-          // Fetch the current VAPID public key dynamically from the server
-          const { data: vapidData, error: vapidError } = await supabase.functions.invoke('send-push-notification', {
-            method: 'GET'
-          });
-
-          if (vapidError || !vapidData?.vapidPublicKey) {
-            throw new Error("VAPID-Schlüssel konnte nicht abgerufen werden.");
-          }
-
+          const { data: vapidData, error: vapidError } = await supabase.functions.invoke('send-push-notification', { method: 'GET' });
+          if (vapidError || !vapidData?.vapidPublicKey) throw new Error("VAPID-Schlüssel konnte nicht abgerufen werden.");
           const convertedKey = urlBase64ToUint8Array(vapidData.vapidPublicKey);
-          subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: convertedKey
-          });
+          subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedKey });
         }
-
-        // Save to DB
-        const { error } = await supabase
-          .from('push_subscriptions')
-          .upsert({
-            user_id: profile.id,
-            subscription: subscription.toJSON()
-          }, { onConflict: 'user_id' });
-
+        const { error } = await supabase.from('push_subscriptions').upsert({ user_id: profile.id, subscription: subscription.toJSON() }, { onConflict: 'user_id' });
         if (error) throw error;
         setPushEnabled(true);
         showAlert("Benachrichtigungen aktiviert! 🔔", "success");
@@ -473,6 +396,51 @@ export default function Profile({
       showAlert("Fehler beim Aktivieren der Benachrichtigungen.", "error");
     } finally {
       setIsPushLoading(false);
+    }
+  };
+
+  const handleTogglePush = () => {
+    if (!('serviceWorker' in navigator)) {
+      showAlert("Service Worker wird nicht unterstützt.", "error");
+      return;
+    }
+
+    const isIOS = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase());
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    if (isIOS && !isStandalone) {
+      showAlert("Auf iOS funktionieren Benachrichtigungen nur in der installierten App.", "info");
+      setActiveTab('install');
+      return;
+    }
+
+    if (!('PushManager' in window)) {
+      showAlert("Push wird nicht unterstützt.", "error");
+      return;
+    }
+
+    // Capture current permission
+    const permission = Notification.permission;
+    
+    if (permission === 'denied') {
+      showAlert("Benachrichtigungen sind im Browser blockiert.", "error");
+      return;
+    }
+
+    if (permission === 'default') {
+      // MANDATORY: Call requestPermission IMMEDIATELY in the click handler
+      Notification.requestPermission().then(newPermission => {
+        setPushPermission(newPermission);
+        if (newPermission === 'granted') {
+          executePushToggle(true);
+        } else {
+          showAlert("Berechtigung wurde nicht erteilt.", "error");
+        }
+      }).catch(err => {
+        console.error("Permission error:", err);
+      });
+    } else {
+      // Permission already granted, just toggle
+      executePushToggle(!pushEnabled);
     }
   };
 
