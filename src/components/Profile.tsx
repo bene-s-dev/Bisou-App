@@ -418,16 +418,24 @@ export default function Profile({
       const { error } = await supabase.from('profiles').select('id', { count: 'exact', head: true }).limit(1);
       const end = performance.now();
       
-      let storageSize = 0;
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key) storageSize += (localStorage.getItem(key)?.length || 0) * 2;
+      let storageMB = 0;
+      if (navigator.storage && navigator.storage.estimate) {
+        const estimate = await navigator.storage.estimate();
+        storageMB = (estimate.usage || 0) / (1024 * 1024);
+      } else {
+        // Fallback for older browsers (localStorage only)
+        let storageSize = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key) storageSize += (localStorage.getItem(key)?.length || 0) * 2;
+        }
+        storageMB = storageSize / (1024 * 1024);
       }
 
       setSystemStatus({
         online: !error,
         latency: Math.round(end - start),
-        storageItems: Number((storageSize / (1024 * 1024)).toFixed(2)),
+        storageItems: Number(storageMB.toFixed(2)),
         lastChecked: new Date().toLocaleTimeString()
       });
     } catch (e) {
