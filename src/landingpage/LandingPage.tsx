@@ -61,10 +61,10 @@ export default function LandingPage() {
         <div className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-2 sm:px-6 relative">
           {/* Glowing blur spot */}
           <div 
-            className="absolute w-[110%] h-[60%] rounded-full opacity-100"
+            className="absolute w-[110%] h-[60%] rounded-full opacity-40"
             style={{
-              background: 'radial-gradient(ellipse, rgba(255, 107, 107, 0.9) 0%, rgba(129, 121, 224, 0.9) 50%, transparent 80%)',
-              filter: 'blur(24px)',
+              background: 'radial-gradient(ellipse, rgba(255, 107, 107, 0.5) 0%, rgba(129, 121, 224, 0.5) 50%, transparent 80%)',
+              filter: 'blur(35px)',
               pointerEvents: 'none',
               zIndex: 0,
             }}
