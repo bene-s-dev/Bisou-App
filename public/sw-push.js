@@ -5,7 +5,7 @@ self.addEventListener('push', function(event) {
       const options = {
         body: data.body,
         icon: '/favicon.png',
-        badge: '/favicon.png',
+        badge: '/badge.png', // Transparent white silhouette for Android status bar
         data: {
           url: data.url || '/'
         }

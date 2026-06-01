@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useDialog } from './DialogProvider';
 import ImageCropper from './ImageCropper';
+import { capitalizeName } from '../lib/stringUtils';
 import confetti from 'canvas-confetti';
 
 interface IntroProps {
@@ -348,7 +349,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                 </label>
               </div>
             </div>
-            <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {userName}! ❤️</h2>
+            <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {capitalizeName(userName)}! ❤️</h2>
             <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
               {avatarPreview 
                 ? "Tolles Bild! Das passt perfekt zu deinem profil." 

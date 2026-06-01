@@ -60,7 +60,16 @@ serve(async (req) => {
       .eq('id', user_id)
       .single()
 
-    const senderName = senderProfile?.display_name || 'Dein Partner'
+    const capitalizeName = (name: string): string => {
+      if (!name) return '';
+      return name
+        .trim()
+        .split(/\s+/)
+        .map(w => w.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join('-'))
+        .join(' ');
+    };
+
+    const senderName = capitalizeName(senderProfile?.display_name || 'Dein Partner')
 
     // 2. Get the partner's push subscription
     const { data: subData, error: subError } = await db

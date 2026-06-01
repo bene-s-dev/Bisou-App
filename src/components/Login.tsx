@@ -3,6 +3,7 @@ import { Mail, ArrowRight, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { translateError } from '../lib/translations';
+import { capitalizeName } from '../lib/stringUtils';
 
 interface LoginProps {
   onLogin: () => void;
@@ -59,7 +60,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
       password,
       options: {
         data: {
-          display_name: displayName,
+          display_name: capitalizeName(displayName),
         },
       },
     });

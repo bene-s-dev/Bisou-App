@@ -7,6 +7,7 @@ import DeleteAccountModal from './DeleteAccountModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
+import { capitalizeName } from '../lib/stringUtils';
 import Intro from './Intro';
 import confetti from 'canvas-confetti';
 
@@ -540,9 +541,9 @@ export default function Profile({
       }
 
       if (data?.skipped) {
-        showAlert(`${partnerProfile?.display_name || 'Partner'} hat Benachrichtigungen nicht aktiviert.`, "info");
+        showAlert(`${partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Partner'} hat Benachrichtigungen nicht aktiviert.`, "info");
       } else {
-        showAlert(`${partnerProfile?.display_name || 'Partner'} wurde angestupst! ❤️`, "success");
+        showAlert(`${partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Partner'} wurde angestupst! ❤️`, "success");
       }
     } catch (err: any) {
       showAlert(translateError(err.message), "error");
@@ -568,15 +569,17 @@ export default function Profile({
   };
 
   const handleUpdateName = async () => {
-    if (!newName.trim() || newName === profile?.display_name) {
+    const capitalized = capitalizeName(newName);
+    if (!capitalized || capitalized === profile?.display_name) {
       setIsEditingName(false);
       return;
     }
     setLoading(true);
     try {
-      const { error } = await supabase.from('profiles').update({ display_name: newName.trim() }).eq('id', profile.id);
+      const { error } = await supabase.from('profiles').update({ display_name: capitalized }).eq('id', profile.id);
       if (error) throw error;
-      setProfile({ ...profile, display_name: newName.trim() });
+      setProfile({ ...profile, display_name: capitalized });
+      setNewName(capitalized);
       setIsEditingName(false);
       showAlert("Name aktualisiert!", "success");
     } catch (err: any) {
@@ -680,7 +683,7 @@ export default function Profile({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-black text-[#1F1939] truncate">{partnerProfile?.display_name || 'Dein Partner'}</h3>
+                      <h3 className="text-sm font-black text-[#1F1939] truncate">{partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Dein Partner'}</h3>
                       <div className="flex items-center gap-1 mt-0.5">
                         <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
                         <span className="text-[11px] font-bold text-orange-600 tracking-tight">{partnerDetails.streak} Tage Serie</span>
@@ -1072,7 +1075,7 @@ export default function Profile({
                   className="flex items-center justify-center px-8 py-2.5 bg-white border-2 border-[var(--card-border)] rounded-full shadow-sm"
                 >
                   <span className="text-sm font-black text-[var(--secondary)] uppercase tracking-[0.1em] pt-0.5">
-                    {profile?.display_name || 'User'}
+                    {profile?.display_name ? capitalizeName(profile.display_name) : 'User'}
                   </span>
                 </div>
                 <button 

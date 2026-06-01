@@ -6,6 +6,7 @@ import { User as UserIcon, Lock, Heart as HeartIcon, Clock, Sparkles, Flame, X, 
 import { useNavigate } from 'react-router-dom';
 import { getDailyKey, getTimeUntilReset } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
+import { capitalizeName } from '../lib/stringUtils';
 
 interface DashboardProps {
   userName: string;
@@ -177,13 +178,13 @@ function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isO
                 <div className="flex flex-col items-center justify-center py-4 px-2 bg-purple-50 rounded-2xl border-2 border-purple-100 text-center">
                   <span className="text-2xl mb-1">{getTimeIcon(stats.myHabit)}</span>
                   <span className="text-lg font-black text-[#1F1939]">{stats.myHabit}:00</span>
-                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] mt-2">{userName.split(' ')[0]}</span>
+                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] mt-2">{capitalizeName(userName.split(' ')[0])}</span>
                   <span className="text-[9px] font-bold text-[var(--muted)] mt-0.5">{getTimeLabel(stats.myHabit)}</span>
                 </div>
                 <div className="flex flex-col items-center justify-center py-4 px-2 bg-orange-50 rounded-2xl border-2 border-orange-100 text-center">
                   <span className="text-2xl mb-1">{getTimeIcon(stats.partnerHabit)}</span>
                   <span className="text-lg font-black text-[#1F1939]">{stats.partnerHabit}:00</span>
-                  <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.1em] mt-2">{partnerName.split(' ')[0]}</span>
+                  <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.1em] mt-2">{capitalizeName(partnerName.split(' ')[0])}</span>
                   <span className="text-[9px] font-bold text-[var(--muted)] mt-0.5">{getTimeLabel(stats.partnerHabit)}</span>
                 </div>
               </div>
@@ -499,12 +500,12 @@ export default function Dashboard({
             <div className="flex items-center justify-center w-full mt-3 px-2">
               <div className="w-1/2 flex justify-end pr-0 min-w-0">
                 <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -mr-2 whitespace-nowrap">
-                  {partnerName}
+                  {capitalizeName(partnerName)}
                 </span>
               </div>
               <div className="w-1/2 flex justify-start pl-0 min-w-0">
                 <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -ml-2 whitespace-nowrap">
-                  {userName || 'Ich'}
+                  {userName ? capitalizeName(userName) : 'Ich'}
                 </span>
               </div>
             </div>
@@ -515,7 +516,7 @@ export default function Dashboard({
         <div className="mb-6 pl-1 pr-6 relative">
           <div className="float-right w-1/2 h-[1.2em] pointer-events-none" />
           <h2 className="text-xl font-black text-[#1F1939] tracking-tight text-left leading-[1.2]">
-            {rawGreeting}, <span className="text-[var(--secondary)]">{userName}</span>{isQuestion ? '?' : '!'} ❤️
+            {rawGreeting}, <span className="text-[var(--secondary)]">{capitalizeName(userName)}</span>{isQuestion ? '?' : '!'} ❤️
           </h2>
         </div>
         
