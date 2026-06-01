@@ -122,7 +122,7 @@ export default function LandingPage() {
               Kostenlos starten ✨
             </button>
             <p className="text-[9px] font-black text-[var(--muted)] tracking-wide opacity-85">
-              Bereit in unter 30 Sekunden.
+              Profil erstellen in unter 30 Sekunden.
             </p>
           </div>
         </div>

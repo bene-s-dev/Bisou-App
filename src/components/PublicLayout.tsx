@@ -23,7 +23,7 @@ export default function PublicLayout() {
   const isLandingPage = location.pathname === '/';
 
   return (
-    <div className="h-full w-screen overflow-y-auto scrollbar-soft text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative">
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden scrollbar-soft text-[#1F1939] font-['Plus_Jakarta_Sans',_sans-serif] flex flex-col relative">
       <div className="bg-public-gradient" />
 
       {/* Header */}
