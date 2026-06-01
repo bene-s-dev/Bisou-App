@@ -91,6 +91,10 @@ serve(async (req) => {
       title = 'Bisou'
       notifBody = `${senderName} hat die Verbindung getrennt.`
       url = '/profile'
+    } else if (type === 'nudge') {
+      title = 'Bisou ❤️'
+      notifBody = `${senderName} hat dich abgestupst!`
+      url = '/dashboard'
     }
 
     const payload = JSON.stringify({

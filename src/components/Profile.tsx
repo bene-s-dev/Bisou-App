@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Download, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon, Hand, Heart } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -74,6 +74,7 @@ export default function Profile({
   
   const [partnerCodeInput, setPartnerCodeInput] = useState('CB-');
   const [isLinking, setIsLinking] = useState(false);
+  const [isNudging, setIsNudging] = useState(false);
   const [shouldShake, setShouldShake] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
@@ -489,6 +490,46 @@ export default function Profile({
     );
   };
 
+  const handleNudge = async () => {
+    if (!profile?.id || !profile?.partner_id) return;
+    setIsNudging(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: profile.id,
+          partner_id: profile.partner_id,
+          type: 'nudge'
+        }
+      });
+
+      if (error) {
+        let detailMsg = error.message;
+        try {
+          const errText = await error.context.text();
+          const errJson = JSON.parse(errText);
+          if (errJson && errJson.error) {
+            detailMsg = errJson.error;
+          } else if (errJson && errJson.message) {
+            detailMsg = errJson.message;
+          } else {
+            detailMsg = errText;
+          }
+        } catch (_) {}
+        throw new Error(detailMsg);
+      }
+
+      if (data?.skipped) {
+        showAlert(`${partnerProfile?.display_name || 'Partner'} hat Benachrichtigungen nicht aktiviert.`, "info");
+      } else {
+        showAlert(`${partnerProfile?.display_name || 'Partner'} wurde angestupst! ❤️`, "success");
+      }
+    } catch (err: any) {
+      showAlert(translateError(err.message), "error");
+    } finally {
+      setIsNudging(false);
+    }
+  };
+
   const handleShareCode = async () => {
     if (!profile?.partner_code) return;
     const shareText = `Hey! Lass uns Bisou zusammen nutzen. Mein Partner-Code ist: ${profile.partner_code}\n\nHier anmelden: ${window.location.origin}`;
@@ -598,8 +639,18 @@ export default function Profile({
             </h2>
             {profile?.partner_id ? (
               <div className="w-full flex flex-col gap-2 relative z-10">
-                <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-4 flex flex-col gap-4 shadow-sm">
-                  <div className="flex items-center gap-3">
+                <div className="relative bg-white border-2 border-purple-50 rounded-[1.8rem] p-4 flex flex-col gap-4 shadow-sm">
+                  <button
+                    onClick={handleNudge}
+                    disabled={isNudging}
+                    className="absolute top-4 right-4 bg-purple-50 hover:bg-purple-100 text-[var(--secondary)] active:scale-95 disabled:opacity-50 transition-all rounded-full p-1.5 px-3 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider border border-purple-100/50 shadow-sm"
+                  >
+                    {isNudging && (
+                      <div className="w-3 h-3 border-2 border-[var(--secondary)] border-t-transparent rounded-full animate-spin" />
+                    )}
+                    <span>Anstupsen 👋</span>
+                  </button>
+                  <div className="flex items-center gap-3 pr-24">
                     <div className="w-14 h-14 rounded-[1.2rem] bg-purple-50 flex items-center justify-center border-2 border-white shadow-md overflow-hidden relative">
                       {partnerProfile?.avatar_url ? (
                         <img src={partnerProfile.avatar_url} alt="P" className="w-full h-full object-cover" />
@@ -616,17 +667,9 @@ export default function Profile({
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
-                      <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou verbunden seit:</span>
-                      <span className="text-[11px] font-black text-[var(--secondary)]">{getDaysConnected()} Tagen</span>
-                    </div>
-                    <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
-                      <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou seit:</span>
-                      <span className="text-[11px] font-black text-[var(--secondary)]">
-                        {partnerDetails.createdAt ? new Date(partnerDetails.createdAt).toLocaleDateString('de-DE', { month: 'short', year: 'numeric' }) : '-'}
-                      </span>
-                    </div>
+                  <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
+                    <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou verbunden seit:</span>
+                    <span className="text-[11px] font-black text-[var(--secondary)]">{getDaysConnected()} Tagen</span>
                   </div>
                 </div>
 
@@ -838,7 +881,7 @@ export default function Profile({
         return (
           <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="main">
             {/* E-Mail ändern Card */}
-            <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm mb-1 text-left w-full">
+            <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm text-left w-full">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
                   <KeyRound className="w-4 h-4" />

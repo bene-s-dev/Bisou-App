@@ -290,6 +290,7 @@ export default function Dashboard({
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [isPartnerHovered, setIsPartnerHovered] = useState(false);
 
   const navigate = useNavigate();
   const dayKey = getDailyKey();
@@ -359,7 +360,7 @@ export default function Dashboard({
       <div className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden">
         <div className="relative h-[110px] mb-8 flex flex-col items-center justify-center">
           <div className="flex -space-x-4">
-            <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-20" />
+            <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-20 opacity-70" />
             <div className="w-20 h-20 rounded-[2rem] skeleton border-2 border-white z-10" />
           </div>
         </div>
@@ -444,11 +445,25 @@ export default function Dashboard({
           <div className="relative flex flex-col items-center">
             {/* Avatars Row with Flame Pills attached */}
             <div className="flex -space-x-4">
-              {/* Partner Avatar */}
-              <div className="relative z-20">
+              {/* Partner Avatar (on the left, with soft gradient mask on the right edge) */}
+              <div 
+                className="relative z-20 w-20 h-20 sm:w-24 sm:h-24"
+                onMouseEnter={() => setIsPartnerHovered(true)}
+                onMouseLeave={() => setIsPartnerHovered(false)}
+              >
+                {/* Unclipped shadow element behind the masked avatar */}
+                <div className="absolute inset-0 rounded-[2rem] sm:rounded-[2.4rem] shadow-md pointer-events-none -z-10" />
                 <div 
                   onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
-                  className={`w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.4rem] border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+                  className={`w-full h-full rounded-[2rem] sm:rounded-[2.4rem] border-2 border-white flex items-center justify-center overflow-hidden transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+                  style={{
+                    maskImage: isPartnerHovered 
+                      ? 'linear-gradient(to right, black 80%, rgba(0,0,0,0.85) 100%)'
+                      : 'linear-gradient(to right, black 80%, rgba(0,0,0,0.4) 100%)',
+                    WebkitMaskImage: isPartnerHovered 
+                      ? 'linear-gradient(to right, black 80%, rgba(0,0,0,0.85) 100%)'
+                      : 'linear-gradient(to right, black 80%, rgba(0,0,0,0.4) 100%)',
+                  }}
                 >
                   {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--secondary)]" />)}
                 </div>
@@ -462,11 +477,11 @@ export default function Dashboard({
                 </div>
               </div>
 
-              {/* User Avatar */}
+              {/* User Avatar (on the right) */}
               <div className="relative z-10">
                 <div 
                   onClick={() => userAvatar && setFullscreenImage(userAvatar)}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.4rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden shadow-md transition-transform active:scale-95 cursor-pointer"
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.4rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 cursor-pointer"
                 >
                   {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--secondary)]" />)}
                 </div>
@@ -482,13 +497,13 @@ export default function Dashboard({
             </div>
 
             <div className="flex items-center justify-center w-full mt-3 px-2">
-              <div className="w-1/2 flex justify-end pr-2.5 min-w-0">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-right whitespace-nowrap">
+              <div className="w-1/2 flex justify-end pr-0 min-w-0">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -mr-2 whitespace-nowrap">
                   {partnerName}
                 </span>
               </div>
-              <div className="w-1/2 flex justify-start pl-2.5 min-w-0">
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-left whitespace-nowrap">
+              <div className="w-1/2 flex justify-start pl-0 min-w-0">
+                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center min-w-[80px] sm:min-w-[96px] -ml-2 whitespace-nowrap">
                   {userName || 'Ich'}
                 </span>
               </div>

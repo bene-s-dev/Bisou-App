@@ -32,6 +32,19 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script>
+      (function() {
+        try {
+          var isDark = localStorage.getItem('app_dark_mode') === 'true';
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.querySelectorAll('meta[name="theme-color"]').forEach(function(meta) {
+              meta.setAttribute('content', '#0C0A15');
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

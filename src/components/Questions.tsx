@@ -528,7 +528,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container" style={{ paddingBottom: 'var(--nav-clearance)' }}>
+          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container" style={{ paddingBottom: 'calc(9.5rem + var(--sab))' }}>
             <header className="mb-4">
               <div className="quiz-prog-dots">
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
@@ -578,27 +578,6 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   </div>
                 )}
               </div>
-            </div>
-            <div className="mt-auto pt-4 pb-0">
-              <button onClick={handleNext} disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} className="btn-static py-4 text-sm uppercase tracking-[0.15em] shadow-none disabled:opacity-40 font-black group">
-                {isSubmitting ? (
-                  'Wird geteilt...'
-                ) : (
-                  <>
-                    {step === 2 ? (
-                      <>
-                        Antworten senden
-                        <Send className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                      </>
-                    ) : (
-                      <>
-                        Weiter
-                        <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </>
-                )}
-              </button>
             </div>
           </div>
         ) : (
@@ -657,6 +636,38 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
               />
           </div>
         </div>
+      )}
+
+      {step < 3 && createPortal(
+        <div 
+          className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90]" 
+          style={{ bottom: 'calc(5.5rem + var(--sab))' }}
+        >
+          <button 
+            onClick={handleNext} 
+            disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} 
+            className="btn-static py-4 text-sm uppercase tracking-[0.15em] shadow-[var(--shadow-soft)] disabled:opacity-40 font-black group"
+          >
+            {isSubmitting ? (
+              'Wird geteilt...'
+            ) : (
+              <>
+                {step === 2 ? (
+                  <>
+                    Antworten senden
+                    <Send className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                  </>
+                ) : (
+                  <>
+                    Weiter
+                    <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </>
+            )}
+          </button>
+        </div>,
+        document.body
       )}
 
       {step >= 3 && createPortal(

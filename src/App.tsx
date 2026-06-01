@@ -50,13 +50,17 @@ function AppLayout({
   }, []);
 
   useEffect(() => {
+    const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      themeMetas.forEach(meta => meta.setAttribute('content', '#0C0A15'));
     } else {
       document.documentElement.classList.remove('dark');
+      themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
     }
     return () => {
       document.documentElement.classList.remove('dark');
+      themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
     };
   }, [isDarkMode]);
 
@@ -218,7 +222,7 @@ export default function App() {
       const [profileRes, questionsRes] = await Promise.all([
         supabase
           .from('profiles')
-          .select('*, partner:partner_id(id, display_name, avatar_url)')
+          .select('*')
           .eq('id', userId)
           .maybeSingle(),
         supabase
@@ -264,14 +268,14 @@ export default function App() {
           const { data: inserted, error: insertError } = await supabase
             .from('profiles')
             .insert([newProfile])
-            .select('*, partner:partner_id(id, display_name, avatar_url)')
+            .select('*')
             .maybeSingle();
 
           if (inserted) {
             profileData = inserted;
           } else {
             // Last resort retry
-            const { data: retryData } = await supabase.from('profiles').select('*, partner:partner_id(id, display_name, avatar_url)').eq('id', userId).maybeSingle();
+            const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
             profileData = retryData;
           }
         }
@@ -279,7 +283,17 @@ export default function App() {
 
       if (profileData) {
         setProfile(profileData);
-        setPartnerProfile(profileData.partner || null);
+        
+        let pProfile = null;
+        if (profileData.partner_id) {
+          const { data: pData } = await supabase
+            .from('profiles')
+            .select('id, display_name, avatar_url')
+            .eq('id', profileData.partner_id)
+            .maybeSingle();
+          pProfile = pData;
+        }
+        setPartnerProfile(pProfile);
 
         const userIds = [userId];
         if (profileData.partner_id) userIds.push(profileData.partner_id);
