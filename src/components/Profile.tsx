@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, KeyRound, LogOut, Sun, Moon, Hand, Heart, RefreshCcw } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, Mail, LogOut, Sun, Moon, Hand, Heart, RefreshCcw } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -938,7 +938,7 @@ export default function Profile({
             <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm text-left w-full">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
-                  <KeyRound className="w-4 h-4" />
+                  <Mail className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
