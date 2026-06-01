@@ -501,12 +501,16 @@ export default function Profile({
     if (currentPermission === 'default') {
       try {
         let handled = false;
+        if (isDevMode) alert("Starte requestPermission...");
         const handlePermission = (p: NotificationPermission) => {
           if (handled) return;
           handled = true;
+          if (isDevMode) alert(`Ergebnis von requestPermission: ${p}`);
           setPushPermission(p);
           if (p === 'granted') {
             executePushToggle(true);
+          } else if (p === 'default') {
+            showAlert("Die Anfrage wurde ignoriert oder geschlossen.", "info");
           }
         };
 
@@ -514,11 +518,13 @@ export default function Profile({
         if (req && typeof req.then === 'function') {
           req.then(handlePermission).catch(err => {
             console.error("Permission request error", err);
+            if (isDevMode) alert(`Promise catch: ${err.message}`);
             showAlert("Fehler bei der Berechtigungsanfrage.", "error");
           });
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Permission request crash:", err);
+        if (isDevMode) alert(`Crash: ${err.message}`);
         showAlert("Dein Browser hat ein Problem mit der Berechtigungsanfrage.", "error");
       }
     } else {
