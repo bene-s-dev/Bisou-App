@@ -372,7 +372,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
             <h2 className="text-3xl font-black text-[#1F1939] tracking-tight mb-3">Hallo {capitalizeName(userName)}! ❤️</h2>
             <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[260px] mx-auto">
               {avatarPreview 
-                ? "Tolles Bild! Das passt perfekt zu deinem profil." 
+                ? "Tolles Bild! Das passt perfekt zu deinem Profil." 
                 : "Ein Foto macht dein Profil persönlicher. Füge eins hinzu, damit dein Bisou-Partner dich direkt erkennt."}
             </p>
           </div>
