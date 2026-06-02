@@ -1283,7 +1283,10 @@ export default function Profile({
 
   return (
     <div className="animate-entrance flex flex-col h-full bg-[#F8F7FF] relative">
-      <header className="pt-4 pb-0 flex flex-col items-center gap-4 shrink-0 relative z-10 w-full">
+      <header 
+        className="pt-4 pb-0 flex flex-col items-center gap-4 shrink-0 relative z-10 w-full"
+        style={{ paddingTop: 'calc(1rem + var(--sat, 0px))' }}
+      >
         <div className="w-full max-w-md mx-auto flex flex-col items-center gap-4">
           <div className="flex items-center justify-center w-full relative h-[40px]">
             {/* The heading and back button were removed per request, preserving height to avoid shifting */}
@@ -1353,7 +1356,10 @@ export default function Profile({
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto scrollbar-soft pb-32 pt-0">
+      <div 
+        className="flex-1 overflow-y-auto scrollbar-soft pb-32 pt-0"
+        style={{ paddingBottom: 'calc(8rem + var(--sab, 0px))' }}
+      >
         {renderContent()}
       </div>
 

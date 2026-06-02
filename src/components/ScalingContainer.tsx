@@ -61,7 +61,7 @@ export default function ScalingContainer({
         ref={wrapperRef}
         style={{ 
           width: `${targetWidth}px`,
-          height: onlyScaleWidth ? '100%' : `${targetHeight}px`,
+          height: onlyScaleWidth ? (scale ? `calc(100% / ${scale})` : '100%') : `${targetHeight}px`,
           transform: `scale(${scale})`,
           transformOrigin: align === 'center' ? 'center center' : 'top center',
           flexShrink: 0,

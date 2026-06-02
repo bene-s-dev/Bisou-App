@@ -651,7 +651,13 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
         {isEncrypting && <EncryptionOverlay />}
         {step < 3 ? (
           // --- QUIZ VIEW ---
-          <div className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container pwa-quiz-view-container">
+          <div 
+            className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container pwa-quiz-view-container"
+            style={{ 
+              paddingTop: 'calc(72px + var(--sat, 0px))',
+              paddingBottom: 'calc(9.5rem + var(--sab, 0px))'
+            }}
+          >
             <header className="mb-4">
               <div className="quiz-prog-dots">
                 {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
@@ -734,7 +740,13 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             />
             <div className="flex-1 relative min-h-0">
               <div className="h-full overflow-y-auto scroll-smooth show-scrollbar">
-                <div className="space-y-10 pb-72 pt-28 pr-1">
+                <div 
+                  className="space-y-10 pb-72 pt-28 pr-1"
+                  style={{ 
+                    paddingTop: 'calc(7rem + var(--sat, 0px))',
+                    paddingBottom: 'calc(18rem + var(--sab, 0px))'
+                  }}
+                >
                 {dailyQs.map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];

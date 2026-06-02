@@ -441,7 +441,13 @@ export default function Dashboard({
 
   return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
-      <div className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden">
+      <div 
+        className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden"
+        style={{
+          paddingTop: 'calc(72px + var(--sat, 0px))',
+          paddingBottom: 'calc(80px + var(--sab, 0px))'
+        }}
+      >
         
         {/* Header: Avatars and Streaks */}
         <div className="flex flex-col items-center mb-5 sm:mb-7 shrink-0">
