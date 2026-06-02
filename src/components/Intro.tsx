@@ -453,7 +453,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                         <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
                           <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                            Tippe unten auf <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-50 rounded-lg text-[var(--secondary)] font-black"><Share2 className="w-3 h-3" /> Teilen</span>
+                            Tippe in Safari/Chrome auf <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-50 rounded-lg text-[var(--secondary)] font-black"><Share2 className="w-3 h-3" /> Teilen</span>
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -496,13 +496,13 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                         <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
                           <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                            Tippe auf die drei Punkte <span className="font-black">(Menü)</span> oben rechts in Chrome.
+                            Tippe auf die drei Punkte <span className="font-black">(Menü)</span> oben rechts im Browser.
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">2</div>
                           <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                            Wähle <span className="text-[var(--secondary)] font-black">"App installieren"</span> oder <span className="text-[var(--secondary)] font-black">"Zum Startbildschirm hinzufügen"</span>.
+                            Wähle <span className="text-[var(--secondary)] font-black">"App installieren"</span>
                           </p>
                         </div>
                       </div>
