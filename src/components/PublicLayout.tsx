@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { ShieldCheck, LogIn } from 'lucide-react';
@@ -6,18 +6,6 @@ import { ShieldCheck, LogIn } from 'lucide-react';
 export default function PublicLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [wordIndex, setWordIndex] = useState(0);
-  const [isFirstRender, setIsFirstRender] = useState(true);
-
-  useEffect(() => {
-    setIsFirstRender(false);
-    const interval = setInterval(() => {
-      setWordIndex((prev) => (prev === 0 ? 1 : 0));
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const isAuthPage = ['/signin', '/signup', '/reset-password'].includes(location.pathname);
   const isLandingPage = location.pathname === '/';
@@ -52,38 +40,8 @@ export default function PublicLayout() {
         </button>
         
         <div className="text-[var(--text)] text-base font-bold flex items-center justify-center select-none w-full" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-          <div className="flex items-center justify-center">
-            <span className="whitespace-nowrap">Jeden Tag ein&nbsp;</span>
-
-            <span className="relative inline-flex items-center justify-center text-[var(--primary)] h-[1.2em]">
-              {/* Invisible spacer to maintain width of the largest word */}
-              <span className="invisible px-[1px] whitespace-nowrap">Küsschen</span>
-              
-              <span 
-                className={`absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap px-[1px] ${
-                  isFirstRender 
-                    ? 'opacity-100' 
-                    : wordIndex === 0 
-                      ? 'animate-slogan-down-in' 
-                      : 'animate-slogan-up-out'
-                }`}
-              >
-                bisschen
-              </span>
-              <span 
-                className={`absolute inset-0 flex items-center justify-center overflow-hidden whitespace-nowrap px-[1px] ${
-                  isFirstRender 
-                    ? 'opacity-0' 
-                    : wordIndex === 1 
-                      ? 'animate-slogan-up-in' 
-                      : 'animate-slogan-down-out'
-                }`}
-              >
-                Küsschen
-              </span>
-            </span>
-
-            <span className="whitespace-nowrap">&nbsp;näher.</span>
+          <div className="flex items-center justify-center text-center">
+            <span>Jeden Tag ein&nbsp;<span className="text-[var(--primary)]">Moment</span>&nbsp;für euch.</span>
           </div>
         </div>
       </header>

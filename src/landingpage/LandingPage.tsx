@@ -1,9 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Lock, Users } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [userCount, setUserCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchUserCount() {
+      const { data, error } = await supabase.rpc('get_user_count');
+      if (!error && typeof data === 'number') {
+        // Optional: add an artificial offset if desired, or just show real count
+        setUserCount(data);
+      }
+    }
+    fetchUserCount();
+  }, []);
 
   const features = [
     { 
@@ -70,18 +83,20 @@ export default function LandingPage() {
         </div>
 
         {/* Feature List (Vertical List) */}
-        <div className="w-full max-w-sm mx-auto flex flex-col gap-2 sm:gap-2.5 px-8 sm:px-10 shrink-0 mt-2 sm:mt-3">
-          <div className="relative p-4 sm:p-5 rounded-[2rem_1rem_2rem_1rem] bg-white/60 border border-purple-200/80 dark:border-purple-900/40 shadow-md backdrop-blur-sm mb-3 mt-1 text-center">
-            {/* Floating question mark sticking out of the top right border */}
-            <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-gradient-to-tr from-pink-100/90 to-purple-100/90 text-[var(--secondary)] flex items-center justify-center shadow-md border-2 border-white dark:border-[#17122A] z-20">
-              <span className="text-[15px] font-black select-none mt-[-1px]">?</span>
+        <div className="w-full max-w-sm mx-auto flex flex-col gap-2 sm:gap-2.5 px-8 sm:px-10 shrink-0 mt-0">
+          <div className="relative p-3 sm:p-3.5 rounded-[1.5rem_0.75rem_1.5rem_0.75rem] bg-white/60 border border-purple-200/80 dark:border-purple-900/40 shadow-md backdrop-blur-sm mb-2 mt-0 text-center">
+            {/* Pill sticking out of the top right border */}
+            <div className="absolute top-0 -translate-y-1/2 right-2 sm:right-4 px-2 py-[1px] rounded-full bg-gradient-to-tr from-pink-100/90 to-purple-100/90 text-[var(--secondary)] shadow-sm border border-white dark:border-[#17122A] z-20 flex items-center justify-center">
+              <span className="text-[9.5px] sm:text-[10.5px] font-black tracking-normal leading-none">
+                Was ist Bisou?
+              </span>
             </div>
 
             {/* Background chat bubbles centered as very light outlines */}
-            <MessageCircle className="absolute top-1/2 left-[44%] -translate-x-1/2 -translate-y-1/2 w-24 h-24 text-purple-300/20 dark:text-purple-800/10 -rotate-12 pointer-events-none z-0" fill="none" stroke="currentColor" strokeWidth={1.2} />
-            <MessageCircle className="absolute top-1/2 left-[56%] -translate-x-1/2 -translate-y-1/2 w-24 h-24 text-pink-300/20 dark:text-pink-800/10 rotate-12 pointer-events-none z-0" fill="none" stroke="currentColor" strokeWidth={1.2} />
+            <MessageCircle className="absolute top-1/2 left-[44%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 text-purple-300/20 dark:text-purple-800/10 -rotate-12 pointer-events-none z-0" fill="none" stroke="currentColor" strokeWidth={1.2} />
+            <MessageCircle className="absolute top-1/2 left-[56%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 text-pink-300/20 dark:text-pink-800/10 rotate-12 pointer-events-none z-0" fill="none" stroke="currentColor" strokeWidth={1.2} />
             
-            <p className="relative z-10 text-[12.5px] sm:text-[14px] font-bold text-[#4A4468] tracking-normal leading-relaxed text-balance">
+            <p className="relative z-10 text-[11.5px] sm:text-[13px] font-bold text-[#4A4468] tracking-normal leading-snug text-balance">
               Bisou (frz. Küsschen) ist eine App,<br />
               in der du jeden Tag neue Fragen bekommst, über die du mit einem geliebten Menschen {"sprechen\u00a0kannst."}
             </p>
@@ -115,6 +130,14 @@ export default function LandingPage() {
           />
           
           <div className="w-full flex flex-col items-center justify-center gap-2 sm:gap-3 relative z-10">
+            {userCount !== null && (
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-[#17122A]/80 border border-purple-200/80 dark:border-purple-900/50 shadow-sm backdrop-blur-sm mb-1 sm:mb-1.5 transition-all">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
+                <span className="text-[9.5px] font-bold text-[#4A4468] dark:text-purple-200">
+                  Bereits {userCount} glückliche Nutzer
+                </span>
+              </div>
+            )}
             <button 
               onClick={() => navigate('/signup')} 
               className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-[0_0_24px_rgba(255,107,107,0.45),_0_0_12px_rgba(129,121,224,0.4)] hover:scale-[1.02] transition-transform"
