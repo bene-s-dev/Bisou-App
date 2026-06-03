@@ -1126,11 +1126,11 @@ export default function Profile({
           <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="app-info">
             {[
               { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
-              { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => setShowMoreAppsModal(true) },
               { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
               { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
               { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
-              { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } }
+              { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } },
+              { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => setShowMoreAppsModal(true) }
             ].map(item => (
               <button 
                 key={item.id} 
@@ -1748,7 +1748,7 @@ export default function Profile({
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[14px] font-black text-[#1F1939]">BeneCloud</span>
-                      <span className="text-[11px] font-bold text-gray-500">Private Cloud bald verfügbar</span>
+                      <span className="text-[11px] font-bold text-gray-500">Private Cloud (bald verfügbar)</span>
                     </div>
                   </div>
                 </div>
