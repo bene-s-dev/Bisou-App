@@ -114,6 +114,16 @@ export default function LandingPage() {
               </p>
             </div>
           ))}
+          {userCount !== null && (
+            <div className="flex justify-center mt-0 sm:mt-1">
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-[#17122A]/80 border border-purple-200/80 dark:border-purple-900/50 shadow-sm backdrop-blur-sm transition-all">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
+                <span className="text-[9.5px] font-bold text-[#4A4468] dark:text-purple-200">
+                  Bereits {userCount} glückliche Nutzer
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* CTA Section */}
@@ -130,14 +140,6 @@ export default function LandingPage() {
           />
           
           <div className="w-full flex flex-col items-center justify-center gap-2 sm:gap-3 relative z-10">
-            {userCount !== null && (
-              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-[#17122A]/80 border border-purple-200/80 dark:border-purple-900/50 shadow-sm backdrop-blur-sm mb-1 sm:mb-1.5 transition-all">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
-                <span className="text-[9.5px] font-bold text-[#4A4468] dark:text-purple-200">
-                  Bereits {userCount} glückliche Nutzer
-                </span>
-              </div>
-            )}
             <button 
               onClick={() => navigate('/signup')} 
               className="btn-primary py-4 sm:py-5 px-6 sm:px-8 text-[13px] sm:text-[15px] font-black uppercase tracking-[0.15em] w-full shadow-[0_0_24px_rgba(255,107,107,0.45),_0_0_12px_rgba(129,121,224,0.4)] hover:scale-[1.02] transition-transform"
