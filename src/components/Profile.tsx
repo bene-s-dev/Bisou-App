@@ -1643,57 +1643,7 @@ export default function Profile({
                   </div>
                 )}
 
-                <button
-                  onClick={async () => {
-                    try {
-                      showAlert("Server-Push wird angefordert...", "info");
-                      
-                      const senderId = profile?.partner_id || profile?.id;
-                      const receiverId = profile?.id;
-                      
-                      if (!receiverId) {
-                        throw new Error("Benutzer-ID nicht geladen.");
-                      }
-                      
-                      const { data, error } = await supabase.functions.invoke('send-push-notification', {
-                        body: {
-                          user_id: senderId,
-                          partner_id: receiverId,
-                          type: 'answer_submitted'
-                        }
-                      });
-                      
-                      if (error) {
-                        let detailMsg = error.message;
-                        try {
-                          const errText = await error.context.text();
-                          const errJson = JSON.parse(errText);
-                          if (errJson && errJson.error) {
-                            detailMsg = errJson.error;
-                          } else if (errJson && errJson.message) {
-                            detailMsg = errJson.message;
-                          } else {
-                            detailMsg = errText;
-                          }
-                        } catch (_) {}
-                        throw new Error(detailMsg);
-                      }
-                      
-                      if (data?.skipped) {
-                        showAlert("Server meldet: Keine aktive Push-Subscription gefunden. Bitte erst Push-Benachrichtigungen aktivieren.", "error");
-                      } else {
-                        showAlert("Server-Push erfolgreich getriggert! 🔔", "success");
-                      }
-                    } catch (err: any) {
-                      console.error("Server push test error:", err);
-                      showAlert("Server-Push fehlgeschlagen: " + err.message, "error");
-                    }
-                  }}
-                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
-                >
-                  <Bell className="w-3.5 h-3.5 shrink-0" />
-                  <span>Server-Push testen</span>
-                </button>
+
 
 
               </div>
@@ -1741,7 +1691,7 @@ export default function Profile({
                   </div>
                 </a>
 
-                <div className="flex flex-col gap-3 p-4 sm:p-5 rounded-2xl bg-gray-50 border-2 border-gray-100 opacity-80">
+                <div className="flex flex-col gap-3 p-4 sm:p-5 rounded-2xl bg-gray-50 border-2 border-gray-100 opacity-40 grayscale">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
                       <Cloud className="w-5 h-5 text-blue-500" />

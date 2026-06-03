@@ -952,8 +952,8 @@ body.modal-open #root {
 }
 
 .pwa-questions-reset-header {
-  padding-top: 1.5rem; /* Fallback */
-  padding-top: calc(1.5rem + var(--sat, 0px));
+  padding-top: 1rem; /* Fallback */
+  padding-top: calc(1rem + var(--sat, 0px));
 }
 
 .pwa-quiz-view-container {

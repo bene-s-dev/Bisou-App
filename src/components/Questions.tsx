@@ -746,9 +746,9 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             <div className="flex-1 relative min-h-0">
               <div className="h-full overflow-y-auto scroll-smooth show-scrollbar">
                 <div 
-                  className="space-y-10 pb-72 pt-28 pr-1"
+                  className="space-y-10 pb-72 pt-24 pr-1"
                   style={{ 
-                    paddingTop: 'calc(7rem + var(--sat, 0px))',
+                    paddingTop: 'calc(6rem + var(--sat, 0px))',
                     paddingBottom: 'calc(18rem + var(--sab, 0px))'
                   }}
                 >
@@ -838,8 +838,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md px-4 z-[100] pointer-events-none pwa-questions-reset-header" 
           >
             <div className="flex justify-end">
-              <button onClick={resetQuiz} className="pointer-events-auto text-[9px] font-black text-red-400 uppercase tracking-[0.2em] hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/50 rounded-full border border-red-100 shadow-sm mt-1">
-                Antworten zurücksetzen <RefreshCcw className="w-3 h-3" />
+              <button onClick={resetQuiz} className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1 py-1 px-2.5 bg-red-50/50 rounded-full border border-red-100 shadow-sm">
+                Eigene Antworten zurücksetzen <RefreshCcw className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
