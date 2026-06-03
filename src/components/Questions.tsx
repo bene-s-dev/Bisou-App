@@ -205,7 +205,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const sortableRef = useRef<HTMLDivElement>(null);
   const sortableInstance = useRef<Sortable | null>(null);
   const dayKey = getDailyKey();
-  const MAX_TEXT_LENGTH = 100;
+  const MAX_TEXT_LENGTH = 265;
 
   // --- PERSISTENCE ---
   // Load progress from localStorage on mount if not already completed
@@ -715,9 +715,14 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                         maxLength={MAX_TEXT_LENGTH}
                       />
                       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
-                        <span className={`text-[9px] font-black tracking-[0.2em] uppercase px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
-                          {textVal.length} / {MAX_TEXT_LENGTH}
-                        </span>
+                        <div className={`flex items-baseline gap-1 px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
+                          <span className="text-[9px] font-black tracking-[0.2em] uppercase">
+                            {textVal.length} / {MAX_TEXT_LENGTH}
+                          </span>
+                          <span className="text-[6.5px] font-bold lowercase normal-case tracking-normal opacity-70">
+                            (oddly specific number)
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
