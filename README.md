@@ -1,5 +1,5 @@
 
-  # <a href="https://bisou.beneclara.de">Bisou</a> - Jeden Tag ein Küsschen näher.
+  # <a href="https://bisou.benelabs.de">Bisou</a> - Jeden Tag ein Küsschen näher.
   
 
   <br>
