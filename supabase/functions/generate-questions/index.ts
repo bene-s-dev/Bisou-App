@@ -48,17 +48,17 @@ serve(async (req) => {
     Das Format MUSS exakt so aussehen:
     {
       "tot": { 
-        "q": "Eine Entweder-Oder Frage (aus einem der gewählten Themengebiete)", 
+        "q": "Eine Entweder-Oder Frage (aus einem der Themengebiete)", 
         "h": "Ein kurzer, passender Hilfstext", 
         "o": ["Option A", "Option B"] 
       },
       "ranking": { 
-        "q": "Eine Frage bei der 4 Dinge geordnet werden müssen", 
+        "q": "Eine Frage bei der 4 Dinge geordnet werden müssen (aus einem der Themengebiete)", 
         "h": "Ein kurzer, passender Hilfstext", 
         "o": ["Ding 1", "Ding 2", "Ding 3", "Ding 4"] 
       },
       "text": { 
-        "q": "Eine offene Frage, die mit Text beantwortet wird", 
+        "q": "Eine offene Frage, die mit Text beantwortet wird (aus einem der gewählten Themengebiete)", 
         "h": "Ein kurzer, passender Hilfstext", 
         "o": [] 
       }
