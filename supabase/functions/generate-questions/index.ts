@@ -74,7 +74,8 @@ serve(async (req) => {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { 
-          response_mime_type: 'application/json'
+          response_mime_type: 'application/json',
+          temperature: 1.5 
         }
       })
     })
