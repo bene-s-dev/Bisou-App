@@ -37,13 +37,13 @@ serve(async (req) => {
     - Finanzen, Karriere & Zukunftsplanung
     - Hobbys, Urlaub, Abenteuer & Freizeit
     - Philosophische Fragen, Moral & Werte
-    - Absurde Alltagssituationen & Humor
+    - Alltagssituationen & Humor
     - Streiten, Verzeihen & Persönlichkeitsentwicklung
     - Popkultur, Filme, Musik & Essen
     - Gemeinsamer Haushalt & Macken
     - Träume, Ängste & Geheimnisse
     
-    Achte darauf, dass die Themengebiete für jede der drei Fragen stark unterschiedlich sind. Sei extrem kreativ, nutze keine Standardfragen!
+    Achte darauf, dass die Themengebiete für jede der drei Fragen stark unterschiedlich sind. Sei kreativ, nutze keine Standardfragen!
 
     Das Format MUSS exakt so aussehen:
     {
@@ -75,7 +75,7 @@ serve(async (req) => {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: { 
           response_mime_type: 'application/json',
-          temperature: 1.2
+          temperature: 1.1
         }
       })
     })
