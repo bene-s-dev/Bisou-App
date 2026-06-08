@@ -32,16 +32,29 @@ serve(async (req) => {
     // 2. Prompt Gemini for the 3 daily questions
     const prompt = `Generiere 3 absolut abwechslungsreiche und einzigartige Fragen für eine Beziehungs-App (Bisou) im Format JSON.
     WICHTIG: Damit die Fragen nicht immer gleich sind, wähle für JEDE der 3 Fragen zufällig EINES der folgenden Themengebiete aus:
-    - Kindheitserinnerungen & Familie
-    - Intimität, Romantik & Zärtlichkeit
-    - Finanzen, Karriere & Zukunftsplanung
-    - Hobbys, Urlaub, Abenteuer & Freizeit
-    - Philosophische Fragen, Moral & Werte
-    - Alltagssituationen & Humor
-    - Streiten, Verzeihen & Persönlichkeitsentwicklung
-    - Popkultur, Filme, Musik & Essen
-    - Gemeinsamer Haushalt & Macken
-    - Träume, Ängste & Geheimnisse
+   
+    - Kindheitserinnerungen 
+    - Familie
+    - Intimität & Zärtlichkeit 
+    - Romantik
+    - Finanzen
+    - Karriere
+    - Zukunftsplanung
+    - Hobbys
+    - Urlaub
+    - Freizeit
+    - Philosophische Fragen
+    - Moral & Werte
+    - Streiten, Verzeihen                     
+    - Persönlichkeitsentwicklung
+    - Popkultur 
+    - Filme
+    - Musik
+    - Essen
+    - Gemeinsamer Haushalt
+    - Träume
+    - Ängste
+    - Geheimnisse
     
     Achte darauf, dass die Themengebiete für jede der drei Fragen stark unterschiedlich sind. Sei kreativ, nutze keine Standardfragen!
 
