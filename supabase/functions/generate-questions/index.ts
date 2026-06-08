@@ -71,7 +71,7 @@ serve(async (req) => {
         "o": ["Ding 1", "Ding 2", "Ding 3", "Ding 4"] 
       },
       "text": { 
-        "q": "Eine offene Frage, die mit Text beantwortet wird (aus einem der gewählten Themengebiete)", 
+        "q": "Eine offene Frage, die mit Text beantwortet wird (aus einem der Themengebiete)", 
         "h": "Ein kurzer, passender Hilfstext", 
         "o": [] 
       }
