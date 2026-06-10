@@ -30,54 +30,47 @@ serve(async (req) => {
     }
 
     // 2. Prompt Gemini for the 3 daily questions
-    const prompt = `Generiere 3 absolut abwechslungsreiche und einzigartige Fragen für eine Beziehungs-App (Bisou) im Format JSON.
-    WICHTIG: Damit die Fragen nicht immer gleich sind, wähle für JEDE der 3 Fragen zufällig EINES der folgenden Themengebiete aus:
-   
-    - Kindheitserinnerungen 
-    - Familie
-    - Intimität & Zärtlichkeit 
-    - Romantik
-    - Finanzen
-    - Karriere
-    - Zukunftsplanung
-    - Hobbys
-    - Urlaub
-    - Freizeit
-    - Philosophische Fragen
-    - Moral & Werte
-    - Streiten, Verzeihen                     
-    - Persönlichkeitsentwicklung
-    - Popkultur 
-    - Filme
-    - Musik
-    - Essen
-    - Gemeinsamer Haushalt
-    - Träume
-    - Ängste
-    - Geheimnisse
     
-    Achte darauf, dass die Themengebiete für jede der drei Fragen stark unterschiedlich sind. Sei kreativ, nutze keine Standardfragen!
+const tagDesMonats = new Date().getDate(); 
 
-    Das Format MUSS exakt so aussehen:
-    {
-      "tot": { 
-        "q": "Eine Entweder-Oder Frage (aus einem der Themengebiete)", 
-        "h": "Ein kurzer, passender Hilfstext", 
-        "o": ["Option A", "Option B"] 
-      },
-      "ranking": { 
-        "q": "Eine Frage bei der 4 Dinge geordnet werden müssen (aus einem der Themengebiete)", 
-        "h": "Ein kurzer, passender Hilfstext", 
-        "o": ["Ding 1", "Ding 2", "Ding 3", "Ding 4"] 
-      },
-      "text": { 
-        "q": "Eine offene Frage, die mit Text beantwortet wird (aus einem der Themengebiete)", 
-        "h": "Ein kurzer, passender Hilfstext", 
-        "o": [] 
-      }
-    }
-    
-    Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markierungen zurück.`
+const prompt = `Du bist ein kreativer Spieleentwickler für die Beziehungs-App (Bisou). Deine Aufgabe ist es, 3 abwechslungsreiche Fragen im JSON-Format zu generieren.
+
+HEUTIGER TAG DES MONATS: ${tagDesMonats}
+
+1. THEMEN-POOL (Gerade/Ungerade Tage):
+Schau auf die Zahl des heutigen Tages, um den Themen-Pool zu bestimmen:
+- Ist der Tag UNGERADE (1, 3, 5, 7...), wähle für die 3 Fragen unterschiedliche Themen NUR aus GRUPPE A: [Kindheitserinnerungen, Familie, Intimität & Zärtlichkeit, Romantik, Philosophische Fragen, Moral & Werte, Streiten & Verzeihen, Persönlichkeitsentwicklung, Träume, Ängste, Geheimnisse].
+- Ist der Tag GERADE (2, 4, 6, 8...), wähle für die 3 Fragen unterschiedliche Themen NUR aus GRUPPE B: [Finanzen, Karriere, Zukunftsplanung, Hobbys, Urlaub, Freizeit, Popkultur, Filme, Musik, Essen, Gemeinsamer Haushalt].
+
+2. TONALITÄTS-ROULETTE:
+Es gibt drei Stimmungen für die Fragen. Ordne diese drei Stimmungen den Formaten (tot, ranking, text) völlig frei und jedes Mal neu zu:
+- Stimmung X: [Leicht, humorvoll, locker oder unterhaltsam]
+- Stimmung Y: [Praktisch, alltagsnah oder prioritätenorientiert]
+- Stimmung Z: [Tiefgründig, reflektiert oder verbindend]
+
+WICHTIG FÜR DIE VARIANZ:
+Klassische und bewährte Beziehungsfragen sind absolut willkommen! Achte einfach nur darauf, dass die drei Fragen heute eine bunte Mischung aus den oben erlaubten Themen und den drei Stimmungen bilden, damit das tägliche Erlebnis für die Nutzer frisch bleibt.
+
+Das Format MUSS exakt so aussehen:
+{
+  "tot": { 
+    "q": "Eine Entweder-Oder Frage (Stimmung frei zugeteilt)", 
+    "h": "Ein kurzer, passender Hilfstext", 
+    "o": ["Option A", "Option B"] 
+  },
+  "ranking": { 
+    "q": "Eine Frage, bei der 4 Dinge geordnet werden müssen (Stimmung frei zugeteilt)", 
+    "h": "Ein kurzer, passender Hilfstext", 
+    "o": ["Ding 1", "Ding 2", "Ding 3", "Ding 4"] 
+  },
+  "text": { 
+    "q": "Eine offene Frage, die mit Text beantwortet wird (Stimmung frei zugeteilt)", 
+    "h": "Ein kurzer, passender Hilfstext", 
+    "o": [] 
+  }
+}
+
+Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markdown-Formatierung (\`\`\`json ...) zurück.`;
 
     const api = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + k
 
