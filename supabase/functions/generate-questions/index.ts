@@ -70,7 +70,7 @@ Das Format MUSS exakt so aussehen:
   }
 }
 
-Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markdown-Formatierung (\`\`\`json ...) zurück.`;
+ Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markierungen zurück.`;
 
     const api = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + k
 
