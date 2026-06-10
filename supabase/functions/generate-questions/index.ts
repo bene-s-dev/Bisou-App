@@ -61,7 +61,7 @@ Das Format MUSS exakt so aussehen:
   "ranking": { 
     "q": "Eine Frage, bei der 4 Dinge geordnet werden müssen (Stimmung frei zugeteilt)", 
     "h": "Ein kurzer, passender Hilfstext", 
-    "o": ["Ding 1", "Ding 2", "Ding 3", "Ding 4"] 
+    "o": ["Ding 1 (STRENGSTENS MAX. 70 ZEICHEN)", "Ding 2 (STRENGSTENS MAX. 70 ZEICHEN)", "Ding 3 (STRENGSTENS MAX. 70 ZEICHEN)", "Ding 4 (STRENGSTENS MAX. 70 ZEICHEN)"] 
   },
   "text": { 
     "q": "Eine offene Frage, die mit Text beantwortet wird (Stimmung frei zugeteilt)", 
