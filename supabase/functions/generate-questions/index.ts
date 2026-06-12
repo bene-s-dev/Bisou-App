@@ -135,7 +135,7 @@ Um maximale Abwechslung zu garantieren, befolge für den heutigen Tag exakt dies
 3. "text" Frage (Offene Frage): Thema muss "${themaText}" sein.
 
 STIMMUNG & PERSPEKTIVE (WICHTIG!):
-Die drei Fragen dürfen sich niemals ähnlich anfühlen. Nutze dein logisches Denken (Thinking), um die Stimmung extrem stark zu variieren. Mache eine Frage eher leicht/humorvoll, eine sehr tiefgründig/reflektiert und eine extrem alltglich/praktisch. Wechsle auch die Erzählwinkel (z.B. ein hypothetisches Szenario vs. ein ganz kleines Alltagsdetail).`;
+Die drei Fragen dürfen sich niemals ähnlich anfühlen. Nutze dein logisches Denken (Thinking), um die Stimmung extrem stark zu variieren. Mache eine Frage eher leicht/humorvoll, eine sehr tiefgründig/reflektiert und eine extrem alltäglich/praktisch. Wechsle auch die Erzählwinkel (z.B. ein hypothetisches Szenario vs. ein ganz kleines Alltagsdetail).`;
 
     // ==========================================
     // API CALL ZU GEMINI MIT THINKING & ZOD
