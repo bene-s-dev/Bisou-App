@@ -16,13 +16,13 @@ serve(async (req) => {
   const u = Deno.env.get('SUPABASE_URL') || ''
   const s = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
   const db = createClient(u, s)
-  
+
   let dayKey;
   try {
     const body = await req.json();
     dayKey = body.day_key || body.dayKey;
   } catch (e) {}
-  
+
   if (!dayKey) {
     dayKey = new Date().toISOString().split('T')[0];
   }
@@ -37,9 +37,34 @@ serve(async (req) => {
     }
 
     // ==========================================================
+    // NEU: HISTORIE AUS SUPABASE LADEN (Die letzten 60 Tage)
+    // ==========================================================
+    const { data: historie } = await db
+      .from('daily_questions')
+      .select('questions')
+      .order('day_key', { ascending: false })
+      .limit(60);
+
+    // Extrahiere die reinen Fragentexte für die Ausschlussliste
+    const bisherigeFragen: string[] = [];
+    if (historie && Array.isArray(historie)) {
+      historie.forEach(row => {
+        if (row.questions) {
+          if (row.questions.tot?.q) bisherigeFragen.push(`- ${row.questions.tot.q}`);
+          if (row.questions.ranking?.q) bisherigeFragen.push(`- ${row.questions.ranking.q}`);
+          if (row.questions.text?.q) bisherigeFragen.push(`- ${row.questions.text.q}`);
+        }
+      });
+    }
+    
+    const ausgeschlosseneFragenText = bisherigeFragen.length > 0 
+      ? bisherigeFragen.join('\n') 
+      : 'Keine (das ist einer der ersten Durchläufe)';
+
+    // ==========================================================
     // LOGIK FÜR MAXIMALE TÄGLICHE VARIANZ (ALLE THEMEN GEÖFFNET)
     // ==========================================================
-    
+
     // Alle 22 Themen in einem einzigen großen Pool
     const alleThemen = [
       'Kindheitserinnerungen', 'Familie', 'Intimität & Zärtlichkeit', 'Romantik', 
@@ -74,16 +99,19 @@ serve(async (req) => {
       'Reflektion über emotionale Nähe, Vertrauen und Gefühle',
       'Ein spielerischer Blick auf Macken, Angewohnheiten oder Marotten'
     ];
-    
+
     const gemischtePerspektiven = shuffleArray(perspektiven);
     const winkelTot = gemischtePerspektiven[0];
     const winkelRanking = gemischtePerspektiven[1];
     const winkelText = gemischtePerspektiven[2];
 
     // ==========================================
-    // PROMPT MIT ECHTEM TÄGLICHEN ZUFALLS-MIX
+    // PROMPT MIT ECHTEM TÄGLICHEN ZUFALLS-MIX & AUSSCHLUSSLISTE
     // ==========================================
     const prompt = `Du bist ein creative Spieleentwickler für die Beziehungs-App (Bisou). Deine Aufgabe ist es, exakt 3 abwechslungsreiche Fragen im JSON-Format zu generieren.
+
+WICHTIG: Folgende Fragen wurden den Nutzern bereits gestellt. Generiere NIEMALS Fragen, die inhaltlich oder semantisch mit den folgenden identisch oder sehr ähnlich sind:
+${ausgeschlosseneFragenText}
 
 Um absolute Einzigartigkeit zu garantieren und Wiederholungen zu vermeiden, wurden dir die Rahmenbedingungen für heute fest zugeteilt. Weiche nicht davon ab!
 
@@ -128,7 +156,7 @@ Das Format MUSS exakt so aussehen:
 Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markdown-Formatierung (\`\`\`json ...) zurück.`;
 
     // 2. Prompt Gemini for the 3 daily questions
-    const api = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + k
+    const api = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + k
 
     const geminiRes = await fetch(api, {
       method: 'POST',
@@ -143,12 +171,12 @@ Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markdown-Formatieru
     })
 
     const json = await geminiRes.json()
-    
+
     if (!geminiRes.ok) {
        console.error("Gemini API Error:", json);
        throw new Error(`Gemini API Fehler (${geminiRes.status}): ${json.error?.message || JSON.stringify(json)}`);
     }
-    
+
     if (!json.candidates?.[0]?.content?.parts?.[0]?.text) {
        console.error("Gemini Empty Response:", json);
        throw new Error("Gemini lieferte keine Inhalte zurück.");
@@ -161,7 +189,7 @@ Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markdown-Formatieru
       day_key: dayKey, 
       questions: content 
     })
-    
+
     if (insertError) throw insertError;
 
     return new Response(JSON.stringify({ questions: content }), { 
