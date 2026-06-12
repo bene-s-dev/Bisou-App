@@ -144,7 +144,7 @@ Die drei Fragen dürfen sich niemals ähnlich anfühlen. Nutze dein logisches De
       contents: prompt,
       config: {
         thinkingConfig: {
-          thinkingLevel: ThinkingLevel.STANDARD,
+          thinkingLevel: ThinkingLevel.HIGH,
         },
         responseFormat: { 
           text: { 
