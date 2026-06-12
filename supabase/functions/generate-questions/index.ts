@@ -92,7 +92,7 @@ serve(async (req) => {
       ['Intimität', 'Fernreisen', 'Philosophische Fragen'], // Tag 4
       ['Familie', 'Karrierewege', 'Moralvorstellungen'], // Tag 5
       ['Selbsterkenntnis', 'Kochen', 'Persönliche Ängste'], // Tag 6
-      ['Vertrauen', 'Absurde Was-wäre-wenn-Szenarien', 'Sehnsüchte'], // Tag 7
+      ['Vertrauen', 'Was-wäre-wenn-Szenarien', 'Sehnsüchte'], // Tag 7
       ['Flirtverhalten', 'Große Investitionen', 'Macken des Partners'], // Tag 8
       ['Versöhnung', 'Musikgeschmack', 'Wohnen'], // Tag 9
       ['Jugendjahre', 'Freizeitgestaltung', 'Tabuthemen'], // Tag 10
@@ -124,7 +124,7 @@ serve(async (req) => {
     // ==========================================
     // KOMPRIMIERTER PROMPT
     // ==========================================
-    const prompt = `Du bist ein kreativer Spieleentwickler für die Beziehungs-App (Bisou). Generiere exakt 3 Fragen.
+    const prompt = `Du bist ein kreativer Fragenautor für die Beziehungs-App (Bisou). Generiere exakt 3 Fragen.
 
 WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich oder semantisch identisch sind:
 ${ausgeschlosseneFragenText}
