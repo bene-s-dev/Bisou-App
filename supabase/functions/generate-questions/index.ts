@@ -156,7 +156,7 @@ Das Format MUSS exakt so aussehen:
 Sprache: Deutsch. Wichtig: Gib NUR das pure JSON-Objekt ohne Markdown-Formatierung (\`\`\`json ...) zurück.`;
 
     // 2. Prompt Gemini for the 3 daily questions
-    const api = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + k
+    const api = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=' + k
 
     const geminiRes = await fetch(api, {
       method: 'POST',
