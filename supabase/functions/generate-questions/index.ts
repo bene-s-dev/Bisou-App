@@ -14,7 +14,8 @@ const questionBaseSchema = z.object({
 
 const dailyQuestionsSchema = z.object({
   tot: questionBaseSchema.extend({
-    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage")
+    // Hier wird nun ein Limit von maximal 50 Zeichen pro Option erzwungen
+    o: z.array(z.string().max(50)).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage, jede Option darf maximal 50 Zeichen lang sein")
   }),
   ranking: questionBaseSchema.extend({
     o: z.array(z.string().max(70)).length(4).describe("Exakt 4 Optionen, jede Option darf maximal 70 Zeichen lang sein")
@@ -129,12 +130,12 @@ WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Ge
 ${ausgeschlosseneFragenText}
 
 Um maximale Abwechslung zu garantieren, befolge für den heutigen Tag exakt diese Themen-Vorgaben:
-1. "tot" Frage (Entweder-Oder): Thema muss "${themaTot}" sein.
-2. "ranking" Frage (4 Dinge ordnen): Thema muss "${themaRanking}" sein.
+1. "tot" Frage (Entweder-Oder): Thema muss "${themaTot}" sein. Die 2 Antwortoptionen müssen extrem kurz sein (maximal 50 Zeichen pro Option!).
+2. "ranking" Frage (4 Dinge ordnen): Thema muss "${themaRanking}" sein. Die 4 Antwortoptionen dürfen maximal 70 Zeichen lang sein.
 3. "text" Frage (Offene Frage): Thema muss "${themaText}" sein.
 
 STIMMUNG & PERSPEKTIVE (WICHTIG!):
-Die drei Fragen dürfen sich niemals ähnlich anfühlen. Nutze dein logisches Denken (Thinking), um die Stimmung extrem stark zu variieren. Mache eine Frage eher leicht/humorvoll, eine sehr tiefgründig/reflektiert und eine extrem alltäglich/praktisch. Wechsle auch die Erzählwinkel (z.B. ein hypothetisches Szenario vs. ein ganz kleines Alltagsdetail).`;
+Die drei Fragen dürfen sich niemals ähnlich anfühlen. Nutze dein logisches Denken (Thinking), um die Stimmung extrem stark zu variieren. Mache eine Frage eher leicht/humorvoll, eine sehr tiefgründig/reflektiert und eine extrem alltglich/praktisch. Wechsle auch die Erzählwinkel (z.B. ein hypothetisches Szenario vs. ein ganz kleines Alltagsdetail).`;
 
     // ==========================================
     // API CALL ZU GEMINI MIT THINKING & ZOD
