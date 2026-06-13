@@ -7,20 +7,20 @@ import { zodToJsonSchema } from "npm:zod-to-json-schema"
 // ==========================================
 // ZOD-SCHEMA FÜR STRUKTURIERTE AUSGABE
 // ==========================================
-const questionBaseSchema = z.object({
-  q: z.string().describe("Die eigentliche Frage"),
-  h: z.string().describe("Ein kurzer, passender Hilfstext"),
-});
-
 const dailyQuestionsSchema = z.object({
-  tot: questionBaseSchema.extend({
-    // Hier wird nun ein Limit von maximal 50 Zeichen pro Option erzwungen
-    o: z.array(z.string().max(50)).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage, jede Option darf maximal 50 Zeichen lang sein")
+  tot: z.object({
+    q: z.string().describe("Die eigentliche Frage, Länge ca. 50 bis 130 Zeichen"),
+    h: z.string().describe("Ein kurzer, passender Hilfstext"),
+    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage, Länge jeweils ca. 10 bis 70 Zeichen")
   }),
-  ranking: questionBaseSchema.extend({
-    o: z.array(z.string().max(70)).length(4).describe("Exakt 4 Optionen, jede Option darf maximal 70 Zeichen lang sein")
+  ranking: z.object({
+    q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
+    h: z.string().describe("Ein kurzer, passender Hilfstext"),
+    o: z.array(z.string()).length(4).describe("Exakt 4 Optionen, Länge jeweils ca. 10 bis 60 Zeichen")
   }),
-  text: questionBaseSchema.extend({
+  text: z.object({
+    q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
+    h: z.string().describe("Ein kurzer, passender Hilfstext"),
     o: z.array(z.string()).length(0).describe("Muss ein leeres Array sein")
   })
 });
@@ -129,10 +129,10 @@ serve(async (req) => {
 WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich oder semantisch identisch sind:
 ${ausgeschlosseneFragenText}
 
-Um maximale Abwechslung zu garantieren, befolge für den heutigen Tag exakt diese Themen-Vorgaben:
-1. "tot" Frage (Entweder-Oder): Thema muss "${themaTot}" sein. Die 2 Antwortoptionen müssen extrem kurz sein (maximal 50 Zeichen pro Option!).
-2. "ranking" Frage (4 Dinge ordnen): Thema muss "${themaRanking}" sein. Die 4 Antwortoptionen dürfen maximal 70 Zeichen lang sein.
-3. "text" Frage (Offene Frage): Thema muss "${themaText}" sein.
+Um maximale Abwechslung zu garantieren, befolge für den heutigen Tag exakt diese Themen-Vorgaben UND UNGEFÄHRE ZEICHENLIMITS:
+1. "tot" (Entweder-Oder): Thema muss "${themaTot}" sein. Frage: ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.
+2. "ranking" (4 Dinge ordnen): Thema muss "${themaRanking}" sein. Frage: ca. 40-130 Zeichen. Die 4 Antwortoptionen sollen jeweils ca. 10-60 Zeichen lang sein.
+3. "text" (Offene Frage): Thema muss "${themaText}" sein. Frage: ca. 40-130 Zeichen.
 
 STIMMUNG & PERSPEKTIVE (WICHTIG!):
 Die drei Fragen dürfen sich niemals ähnlich anfühlen. Nutze dein logisches Denken (Thinking), um die Stimmung extrem stark zu variieren. Mache eine Frage eher leicht/humorvoll, eine sehr tiefgründig/reflektiert und eine extrem alltäglich/praktisch. Wechsle auch die Erzählwinkel (z.B. ein hypothetisches Szenario vs. ein ganz kleines Alltagsdetail).`;
