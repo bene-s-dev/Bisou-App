@@ -156,3 +156,12 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# App specific dev and obsolete files
+.antigravitycli/
+scratch/
+dev-dist/
+cleanup_obsolete.sql
+complete_supabase_setup.sql
+dump_profiles.cjs
+vorschaugross.png
