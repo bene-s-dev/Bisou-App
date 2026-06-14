@@ -207,7 +207,7 @@ export default function StatsModal({
       </div>
 
       {heartprintType && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-purple-950/20 will-change-[opacity] transition-all animate-fade-in">
+        <div className="modal-backdrop px-4 !z-[3000] will-change-[opacity] transition-all animate-fade-in">
           <div className="absolute inset-0" onClick={() => setHeartprintType(null)} />
           <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative contain-layout z-10 animate-entrance shadow-2xl border border-purple-100/50">
             <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
