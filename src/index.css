@@ -515,11 +515,12 @@ body.modal-open #root {
 }
 
 .heartprint-info-pulse {
-  animation: heartprint-info-pulse 2s ease-in-out infinite;
+  animation: heartprint-info-pulse 2.5s ease-in-out infinite;
+  color: var(--secondary);
 }
 @keyframes heartprint-info-pulse {
-  0%, 100% { color: var(--secondary); opacity: 0.45; }
-  50% { color: var(--primary); opacity: 1; }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
 .animate-calming-gradient {
