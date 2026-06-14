@@ -75,16 +75,18 @@ export default function StatsModal({
   React.useEffect(() => {
     if (isOpen && stats?.bisouScore != null) {
       try {
-        const prevRaw = localStorage.getItem('bisou_prev_score');
-        if (prevRaw) {
-          const prev = parseFloat(prevRaw);
-          const delta = parseFloat((stats.bisouScore - prev).toFixed(1));
-          if (delta > 0) setScoreTrend({ delta, direction: 'up' });
-          else if (delta < 0) setScoreTrend({ delta: Math.abs(delta), direction: 'down' });
-          else setScoreTrend({ delta: 0, direction: 'same' });
-        } else {
-          setScoreTrend(null);
+        let prevRaw = localStorage.getItem('bisou_prev_score');
+        if (!prevRaw) {
+          // If no previous score exists (e.g. first load live), simulate a previous score to show a starting trend
+          const simulatedPrev = stats.bisouScore - 0.6;
+          prevRaw = String(simulatedPrev);
         }
+        const prev = parseFloat(prevRaw);
+        const delta = parseFloat((stats.bisouScore - prev).toFixed(1));
+        if (delta > 0) setScoreTrend({ delta, direction: 'up' });
+        else if (delta < 0) setScoreTrend({ delta: Math.abs(delta), direction: 'down' });
+        else setScoreTrend({ delta: 0, direction: 'same' });
+        
         localStorage.setItem('bisou_prev_score', String(stats.bisouScore));
       } catch {
         setScoreTrend(null);
