@@ -53,12 +53,87 @@ serve(async (req) => {
       )
     }
 
-    // 1. Get the sender's display name
-    const { data: senderProfile } = await db
+    // Validate the caller's JWT token
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Missing Authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const tempClient = createClient(SUPABASE_URL, Deno.env.get('SUPABASE_ANON_KEY') || '', {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    const { data: { user }, error: userError } = await tempClient.auth.getUser()
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (user.id !== user_id) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 1. Get the sender's profile details (including last_nudge_at, nudge_count, partner_id)
+    const { data: senderProfile, error: profileErr } = await db
       .from('profiles')
-      .select('display_name')
+      .select('display_name, partner_id, last_nudge_at, nudge_count')
       .eq('id', user_id)
       .single()
+
+    if (profileErr || !senderProfile) {
+      return new Response(
+        JSON.stringify({ error: 'Sender profile not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Ensure the sender is actually linked to the target partner_id
+    if (senderProfile.partner_id !== partner_id) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: partner mismatch' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Enforce nudge cooldown on the server side
+    let nudgeCount = senderProfile.nudge_count || 0
+    if (type === 'nudge') {
+      const BASE_COOLDOWN_MS = 20 * 1000
+      const RESET_WINDOW_MS = 30 * 60 * 1000 // 30 minutes
+
+      if (senderProfile.last_nudge_at) {
+        const lastNudgeTime = new Date(senderProfile.last_nudge_at).getTime()
+        const elapsed = Date.now() - lastNudgeTime
+
+        if (elapsed > RESET_WINDOW_MS) {
+          nudgeCount = 0
+        }
+
+        if (nudgeCount > 0) {
+          const requiredCooldown = nudgeCount * BASE_COOLDOWN_MS
+          if (elapsed < requiredCooldown) {
+            const remainingMs = requiredCooldown - elapsed
+            const minutes = Math.floor(remainingMs / 60000)
+            const seconds = Math.floor((remainingMs % 60000) / 1000)
+            const timeString = minutes > 0 
+              ? `${minutes} Min. und ${seconds} Sek.` 
+              : `${seconds} Sek.`
+            return new Response(
+              JSON.stringify({ error: `Hör auf, deinen Bisou-Partner zu nerven! Nächster Anstupster möglich in: ${timeString}` }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+        }
+      }
+    }
 
     const capitalizeName = (name: string): string => {
       if (!name) return '';
@@ -143,6 +218,21 @@ serve(async (req) => {
       const errorText = await pushResult.text()
       console.error('Push send failed:', pushResult.status, errorText)
       throw new Error(`Push failed with status ${pushResult.status}: ${errorText}`)
+    }
+
+    // Update nudge tracking columns in database only for successful (and non-skipped) nudge actions
+    if (type === 'nudge') {
+      const nextNudgeCount = nudgeCount + 1
+      const { error: updateErr } = await db
+        .from('profiles')
+        .update({
+          last_nudge_at: new Date().toISOString(),
+          nudge_count: nextNudgeCount
+        })
+        .eq('id', user_id)
+      if (updateErr) {
+        console.error('Error updating nudge columns in profiles table:', updateErr)
+      }
     }
 
     return new Response(

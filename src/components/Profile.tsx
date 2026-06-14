@@ -794,11 +794,18 @@ export default function Profile({
     const BASE_COOLDOWN_MS = 20 * 1000;
     const RESET_WINDOW_MS = 30 * 60 * 1000; // reset progression after 30 minutes of inactivity
     
-    const lastNudgeTimeStr = localStorage.getItem(`last_nudge_${profile.id}`);
-    let nudgeCount = parseInt(localStorage.getItem(`nudge_count_${profile.id}`) || '0', 10);
+    const dbLastNudgeTime = profile.last_nudge_at ? new Date(profile.last_nudge_at).getTime() : 0;
+    const dbNudgeCount = profile.nudge_count || 0;
     
-    if (lastNudgeTimeStr) {
-      const lastNudgeTime = parseInt(lastNudgeTimeStr, 10);
+    const lastNudgeTimeStr = localStorage.getItem(`last_nudge_${profile.id}`);
+    const localLastNudgeTime = lastNudgeTimeStr ? parseInt(lastNudgeTimeStr, 10) : 0;
+    const localNudgeCount = parseInt(localStorage.getItem(`nudge_count_${profile.id}`) || '0', 10);
+    
+    // Use the most recent of the two (DB vs LocalStorage)
+    const lastNudgeTime = Math.max(dbLastNudgeTime, localLastNudgeTime);
+    let nudgeCount = lastNudgeTime === dbLastNudgeTime ? dbNudgeCount : localNudgeCount;
+    
+    if (lastNudgeTime > 0) {
       const elapsed = Date.now() - lastNudgeTime;
       
       // Reset progression count if the user has been inactive for more than 30 minutes
@@ -852,8 +859,17 @@ export default function Profile({
       } else {
         showAlert(`${partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Partner'} wurde angestupst! ❤️`, "success");
         // Save timestamp and increment count ONLY for successful, non-skipped nudge actions
-        localStorage.setItem(`last_nudge_${profile.id}`, Date.now().toString());
-        localStorage.setItem(`nudge_count_${profile.id}`, (nudgeCount + 1).toString());
+        const nextNudgeTime = Date.now();
+        const nextNudgeCount = nudgeCount + 1;
+        localStorage.setItem(`last_nudge_${profile.id}`, nextNudgeTime.toString());
+        localStorage.setItem(`nudge_count_${profile.id}`, nextNudgeCount.toString());
+        if (onProfileUpdate) {
+          onProfileUpdate({
+            ...profile,
+            last_nudge_at: new Date(nextNudgeTime).toISOString(),
+            nudge_count: nextNudgeCount
+          });
+        }
       }
     } catch (err: any) {
       showAlert(translateError(err.message), "error");
@@ -1925,7 +1941,15 @@ export default function Profile({
         isOpen={showDeleteModal} 
         onClose={() => setShowDeleteModal(false)} 
         onConfirm={async () => {
-          setShowDeleteModal(false);
+          try {
+            const { error } = await supabase.rpc('delete_user_account');
+            if (error) throw error;
+            
+            setShowDeleteModal(false);
+            onLogout();
+          } catch (err: any) {
+            showAlert(translateError(err.message), "error");
+          }
         }} 
       />
 

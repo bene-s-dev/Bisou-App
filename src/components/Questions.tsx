@@ -6,8 +6,10 @@ import Sortable from 'sortablejs';
 import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, MailOpen, Lock } from 'lucide-react';
 import { getDailyKey } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
+import { translateError } from '../lib/translations';
 
 interface QuestionsProps {
+  profile?: any;
   userName: string;
   partnerName: string;
   partnerId?: string | null;
@@ -176,7 +178,7 @@ const getResultsFromData = (data: any, uid: string | null | undefined) => {
   return safeSplit(mainPart, " | ");
 };
 
-export default function Questions({ userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
+export default function Questions({ profile, userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
   const { showAlert, showConfirm } = useDialog();
 
   // --- INITIAL STATE DERIVATION ---
@@ -593,28 +595,62 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   };
 
   const resetQuiz = async () => {
+    if (profile?.last_answer_reset_at) {
+      const lastReset = new Date(profile.last_answer_reset_at).getTime();
+      const elapsed = Date.now() - lastReset;
+      const cooldownMs = 7 * 24 * 60 * 60 * 1000;
+
+      if (elapsed < cooldownMs) {
+        const remainingMs = cooldownMs - elapsed;
+        const days = Math.floor(remainingMs / (24 * 60 * 60 * 1000));
+        const hours = Math.floor((remainingMs % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+        const minutes = Math.floor((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+
+        let timeString = '';
+        if (days >= 1) {
+          timeString = days === 1 ? '1 Tag' : `${days} Tagen`;
+        } else if (hours >= 1) {
+          timeString = hours === 1 ? '1 Stunde' : `${hours} Stunden`;
+        } else {
+          timeString = `${Math.max(1, minutes)} Minuten`;
+        }
+
+        showAlert(`Du kannst deine Antworten nur einmal alle 7 Tage zurücksetzen. Nächster Neustart möglich in ${timeString}.`, "error");
+        return;
+      }
+    }
+
     showConfirm(
-      "Möchtest du heute wirklich neu starten? Deine bisherigen Antworten werden gelöscht.",
+      <span>
+        Möchtest du heute wirklich neu starten? Deine bisherigen Antworten werden gelöscht.{" "}
+        <span className="block mt-2">
+          <strong className="text-red-500 dark:text-red-400">Achtung:</strong> Das Zurücksetzen ist nur{" "}
+          <strong>einmal alle 7 Tage</strong> möglich!
+        </span>
+      </span>,
       async () => {
         try {
           setLoading(true);
-          const { data } = await supabase.auth.getSession();
-          const session = data?.session;
-          if (session) await supabase.from('answers').delete().eq('day_key', dayKey).eq('user_id', session.user.id);
           
-          setMyResults([]);
-          setStep(0);
-          setPartnerResults(null);
-          setSelectedTot(null);
-          setTextVal('');
-          setRankingOptions([]);
-          setIsSubmitting(false);
-          setRevealResults(false);
+          console.log("RPC 'reset_today_answers' wird aufgerufen mit dayKey:", dayKey);
+          const { data, error: rpcError } = await supabase.rpc('reset_today_answers', {
+            day_key_param: dayKey
+          });
+          console.log("RPC Ergebnis:", data, "RPC Fehler:", rpcError);
+
+          if (rpcError) {
+            throw new Error(rpcError.message);
+          }
+          
+          // Clear cached local progress
+          localStorage.removeItem(`quiz_progress_${dayKey}`);
           
           await onComplete();
           setLoading(false);
-        } catch (e) {
+        } catch (e: any) {
+          console.error("Fehler beim Zurücksetzen der Fragen:", e);
           setLoading(false);
+          showAlert(translateError(e.message), "error");
         }
       },
       { title: "Fragen neu starten", confirmLabel: "Ja, Neustart", cancelLabel: "Abbrechen" }

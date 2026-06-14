@@ -768,6 +768,7 @@ export default function App() {
                     onRefreshData={refreshData}
                   />} />
                   <Route path="questions" element={profile.partner_id ? <Questions 
+                    profile={profile}
                     userName={profile.display_name} 
                     partnerName={partnerProfile?.display_name || 'Partner'} 
                     partnerId={profile.partner_id} 

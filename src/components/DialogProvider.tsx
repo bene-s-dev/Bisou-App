@@ -12,14 +12,14 @@ interface DialogOptions {
 
 interface DialogContextType {
   showAlert: (message: string, type?: DialogType) => void;
-  showConfirm: (message: string, onConfirm: () => void, options?: DialogOptions) => void;
+  showConfirm: (message: React.ReactNode, onConfirm: () => void, options?: DialogOptions) => void;
 }
 
 const DialogContext = createContext<DialogContextType | undefined>(undefined);
 
 export function DialogProvider({ children }: { children: React.ReactNode }) {
   const [alert, setAlert] = useState<{ message: string; type: DialogType } | null>(null);
-  const [confirm, setConfirm] = useState<{ message: string; onConfirm: () => void; options?: DialogOptions } | null>(null);
+  const [confirm, setConfirm] = useState<{ message: React.ReactNode; onConfirm: () => void; options?: DialogOptions } | null>(null);
 
   const showAlert = useCallback((message: string, type: DialogType = 'info') => {
     setAlert({ message, type });
@@ -32,7 +32,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     setConfirm(null);
   }, []);
 
-  const showConfirm = useCallback((message: string, onConfirm: () => void, options?: DialogOptions) => {
+  const showConfirm = useCallback((message: React.ReactNode, onConfirm: () => void, options?: DialogOptions) => {
     setConfirm({ message, onConfirm, options });
     window.history.pushState({ modal: 'confirm' }, '');
   }, []);
@@ -89,9 +89,9 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
             <h3 className="text-xl font-black mb-4 uppercase tracking-tight leading-tight text-[#1F1939] dark:text-[#F5F3FF]">
               {confirm.options?.title || 'Bist du sicher?'}
             </h3>
-            <p className="text-sm font-bold leading-relaxed mb-8 px-2 text-[#4A4468] dark:text-[#D6D2FA]">
+            <div className="text-sm font-bold leading-relaxed mb-8 px-2 text-[#4A4468] dark:text-[#D6D2FA]">
               {confirm.message}
-            </p>
+            </div>
             <div className="flex flex-col gap-3">
               <button 
                 onClick={handleConfirm} 
