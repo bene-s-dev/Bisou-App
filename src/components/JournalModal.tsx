@@ -12,6 +12,27 @@ const getLocalDateString = (date: Date) => {
   return `${y}-${m}-${d}`;
 };
 
+const getMonthsInRange = (startDateStr: string, endDateStr: string) => {
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  
+  const months: { year: number; month: number; name: string }[] = [];
+  
+  let current = new Date(start.getFullYear(), start.getMonth(), 1);
+  const last = new Date(end.getFullYear(), end.getMonth(), 1);
+  
+  while (current <= last) {
+    months.push({
+      year: current.getFullYear(),
+      month: current.getMonth(),
+      name: current.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
+  
+  return months.reverse();
+};
+
 export default function JournalModal({ 
   isOpen, 
   onClose, 
@@ -238,36 +259,64 @@ export default function JournalModal({
         </div>
 
         {showCalendar ? (
-          <div className="flex-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-            <div className="grid grid-cols-7 gap-2 mb-4">
-              {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
-                <div key={d} className="text-[8px] font-black text-[#8E89AA] text-center">{d}</div>
-              ))}
-              {Array.from({ length: 35 }).map((_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() - (34 - i));
-                const key = getLocalDateString(d);
-                const active = activeDays.has(key);
-                const isSelected = selectedDateKey === key;
-                const isBeforeStart = key < START_DATE_STR;
-                const isAfterToday = key > getLocalDateString(new Date());
-                const isDisabled = isBeforeStart || isAfterToday;
-                return (
-                  <button 
-                    key={i}
-                    disabled={isDisabled}
-                    onClick={() => { setSelectedDate(new Date(d)); setShowCalendar(false); }}
-                    className={`aspect-square rounded-lg flex flex-col items-center justify-center relative border transition-all
-                      ${isSelected ? 'border-[var(--secondary)] bg-purple-50' : 'border-transparent bg-gray-50/50'}
-                      ${isDisabled ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}
-                    `}
-                  >
-                    <span className={`text-[10px] font-black ${isSelected ? 'text-[var(--secondary)]' : 'text-[#4A4468]'}`}>{d.getDate()}</span>
-                    {active && !isDisabled && <div className="w-1 h-1 bg-[var(--secondary)] rounded-full mt-0.5" />}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="flex-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 scrollbar-soft pr-1 space-y-6">
+            {getMonthsInRange(
+              (() => {
+                const sixtyDaysAgo = new Date();
+                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+                const sixtyStr = getLocalDateString(sixtyDaysAgo);
+                return sixtyStr < START_DATE_STR ? START_DATE_STR : sixtyStr;
+              })(),
+              getLocalDateString(new Date())
+            ).map(({ year, month, name }) => {
+              const numDays = new Date(year, month + 1, 0).getDate();
+              const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+              
+              return (
+                <div key={`${year}-${month}`} className="border-b border-purple-50 last:border-b-0 pb-4">
+                  <h4 className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider mb-3 px-1">{name}</h4>
+                  
+                  <div className="grid grid-cols-7 gap-2">
+                    {/* Weekday headers for this month */}
+                    {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
+                      <div key={d} className="text-[8px] font-black text-[#8E89AA] text-center mb-1">{d}</div>
+                    ))}
+                    
+                    {/* Empty cells for starting alignment */}
+                    {Array.from({ length: firstDayIndex }).map((_, i) => (
+                      <div key={`empty-${i}`} className="aspect-square" />
+                    ))}
+                    
+                    {/* Days */}
+                    {Array.from({ length: numDays }).map((_, i) => {
+                      const dayNum = i + 1;
+                      const d = new Date(year, month, dayNum);
+                      const key = getLocalDateString(d);
+                      const active = activeDays.has(key);
+                      const isSelected = selectedDateKey === key;
+                      const isBeforeStart = key < START_DATE_STR;
+                      const isAfterToday = key > getLocalDateString(new Date());
+                      const isDisabled = isBeforeStart || isAfterToday;
+                      
+                      return (
+                        <button 
+                          key={dayNum}
+                          disabled={isDisabled}
+                          onClick={() => { setSelectedDate(d); setShowCalendar(false); }}
+                          className={`aspect-square rounded-lg flex flex-col items-center justify-center relative border transition-all
+                            ${isSelected ? 'border-[var(--secondary)] bg-purple-50' : 'border-transparent bg-gray-50/50'}
+                            ${isDisabled ? 'opacity-20 cursor-not-allowed pointer-events-none' : 'hover:bg-purple-50/50'}
+                          `}
+                        >
+                          <span className={`text-[10px] font-black ${isSelected ? 'text-[var(--secondary)]' : 'text-[#4A4468]'}`}>{dayNum}</span>
+                          {active && !isDisabled && <div className="w-1 h-1 bg-[var(--secondary)] rounded-full mt-0.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div 
