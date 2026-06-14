@@ -406,7 +406,11 @@ export default function App() {
       }
 
       if (qData) {
-        localStorage.setItem('last_question_fetch', new Date().toISOString());
+        const lastDayKey = localStorage.getItem('last_question_day_key');
+        if (lastDayKey !== dayKey) {
+          localStorage.setItem('last_question_fetch', new Date().toISOString());
+          localStorage.setItem('last_question_day_key', dayKey);
+        }
       }
 
       const currentQs = (qData && qData.tot && qData.ranking && qData.text) 

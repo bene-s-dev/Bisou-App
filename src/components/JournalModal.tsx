@@ -59,6 +59,13 @@ export default function JournalModal({
     return today;
   });
   const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarViewDate, setCalendarViewDate] = useState(() => new Date(selectedDate));
+
+  useEffect(() => {
+    if (showCalendar) {
+      setCalendarViewDate(new Date(selectedDate));
+    }
+  }, [showCalendar, selectedDate]);
 
   const selectedDateKey = useMemo(() => {
     return getLocalDateString(selectedDate);
@@ -259,35 +266,71 @@ export default function JournalModal({
         </div>
 
         {showCalendar ? (
-          <div className="flex-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 scrollbar-soft pr-1 space-y-6">
-            {getMonthsInRange(
-              (() => {
-                const sixtyDaysAgo = new Date();
-                sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-                const sixtyStr = getLocalDateString(sixtyDaysAgo);
-                return sixtyStr < START_DATE_STR ? START_DATE_STR : sixtyStr;
-              })(),
-              getLocalDateString(new Date())
-            ).map(({ year, month, name }) => {
-              const numDays = new Date(year, month + 1, 0).getDate();
-              const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+          <div className="flex-1 flex flex-col min-h-0 animate-in fade-in zoom-in-95 duration-200">
+            {/* Calendar Month Navigation Header */}
+            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-4 shrink-0">
+              <button 
+                onClick={() => {
+                  setCalendarViewDate(prev => {
+                    const next = new Date(prev);
+                    next.setMonth(next.getMonth() - 1);
+                    return next;
+                  });
+                }}
+                disabled={(() => {
+                  const prevMonthLastDay = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth(), 0);
+                  return getLocalDateString(prevMonthLastDay) < START_DATE_STR;
+                })()}
+                className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
               
-              return (
-                <div key={`${year}-${month}`} className="border-b border-purple-50 last:border-b-0 pb-4">
-                  <h4 className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider mb-3 px-1">{name}</h4>
-                  
+              <div className="text-center font-bold">
+                <p className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider">
+                  {calendarViewDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+              
+              <button 
+                onClick={() => {
+                  setCalendarViewDate(prev => {
+                    const next = new Date(prev);
+                    next.setMonth(next.getMonth() + 1);
+                    return next;
+                  });
+                }}
+                disabled={(() => {
+                  const nextMonthFirstDay = new Date(calendarViewDate.getFullYear(), calendarViewDate.getMonth() + 1, 1);
+                  return getLocalDateString(nextMonthFirstDay) > getLocalDateString(new Date());
+                })()}
+                className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="flex-1 overflow-y-auto scrollbar-soft pr-1">
+              {(() => {
+                const year = calendarViewDate.getFullYear();
+                const month = calendarViewDate.getMonth();
+                const numDays = new Date(year, month + 1, 0).getDate();
+                const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+                
+                return (
                   <div className="grid grid-cols-7 gap-2">
-                    {/* Weekday headers for this month */}
+                    {/* Weekday headers */}
                     {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
                       <div key={d} className="text-[8px] font-black text-[#8E89AA] text-center mb-1">{d}</div>
                     ))}
                     
-                    {/* Empty cells for starting alignment */}
+                    {/* Empty padding cells */}
                     {Array.from({ length: firstDayIndex }).map((_, i) => (
                       <div key={`empty-${i}`} className="aspect-square" />
                     ))}
                     
-                    {/* Days */}
+                    {/* Day buttons */}
                     {Array.from({ length: numDays }).map((_, i) => {
                       const dayNum = i + 1;
                       const d = new Date(year, month, dayNum);
@@ -314,9 +357,9 @@ export default function JournalModal({
                       );
                     })}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })()}
+            </div>
           </div>
         ) : (
           <div 
