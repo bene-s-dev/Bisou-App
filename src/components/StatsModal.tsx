@@ -236,7 +236,7 @@ export default function StatsModal({
               </p>
               <button 
                 onClick={() => setHeartprintType('all')}
-                className="w-3.5 h-3.5 rounded-full text-[var(--secondary)] flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0"
+                className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0 -mt-[1px] heartprint-info-pulse"
               >
                 <HelpCircle className="w-full h-full" strokeWidth={2.5} />
               </button>
