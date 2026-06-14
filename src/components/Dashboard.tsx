@@ -430,7 +430,7 @@ export default function Dashboard({
             <button onClick={() => navigate('/profile?tab=partner')} className="btn-primary py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
           </div>
         ) : (
-          <div className="status-box pt-4 px-4 pb-3 mb-2">
+          <div className="status-box pt-4 px-4 pb-1 mb-2">
             <h3 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] text-center mb-4">Fragen von heute</h3>
             
             <div className="flex flex-col gap-3">
@@ -463,14 +463,25 @@ export default function Dashboard({
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-4">
-              <div className="flex items-center gap-2.5">
-                <button 
-                  onClick={onStartQuestions} 
-                  className="flex-1 btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
-                >
-                  {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
-                </button>
+            <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex-1 flex flex-col items-center gap-3">
+                  <button 
+                    onClick={onStartQuestions} 
+                    className="w-full btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
+                  >
+                    {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
+                  </button>
+                  
+                  <div className="flex items-center justify-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
+                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
+                    <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest">
+                      {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+
                 <button 
                   onClick={() => setShowStatsModal(true)} 
                   className="p-3 bg-purple-50 rounded-[18px] text-[var(--secondary)] active:scale-95 transition-all border-2 border-purple-100 shadow-sm stats-icon-pulse shrink-0"
@@ -479,31 +490,21 @@ export default function Dashboard({
                 </button>
               </div>
 
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center gap-2">
-                  <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
-                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
-                  <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest ml-1">
-                    {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-1 -mt-2 -mb-1">
-                  <svg 
-                    className="w-2.5 h-2.5 text-[var(--secondary)] opacity-60" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    strokeWidth="2.5" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/>
-                  </svg>
-                  <p className="text-[7.5px] font-bold text-[var(--muted)] text-center opacity-40">
-                    InfinteFlow<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>
-                  </p>
-                </div>
+              <div className="flex items-center justify-center gap-1 pb-1">
+                <svg 
+                  className="w-2.5 h-2.5 text-[var(--secondary)] opacity-60" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2.5" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/>
+                </svg>
+                <p className="text-[7.5px] font-bold text-[var(--muted)] text-center opacity-40">
+                  InfiniteFlow<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>
+                </p>
               </div>
             </div>
           </div>

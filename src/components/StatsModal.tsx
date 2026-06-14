@@ -83,7 +83,7 @@ export default function StatsModal({
             </div>
             <div>
               <h3 className="font-black text-[#1F1939] text-base leading-tight">Eure Bisou-Statistik</h3>
-              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">Die letzten 30 Tage</p>
+              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">der letzten 30 Tage</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
