@@ -114,9 +114,9 @@ serve(async (req) => {
       };
     };
 
-    // 3. Compute matches for TOT and Ranking, collect text pairs
     let totSum = 0;
     let rankingSum = 0;
+    let rankingDaysCount = 0;
     const textPairs: { day_key: string; text1: string; text2: string }[] = [];
 
     daysWithBoth.forEach(ma => {
@@ -133,9 +133,7 @@ serve(async (req) => {
         // Ranking-Frage: Positions-Abstands-Analyse
         const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
         const n = commonItems.length;
-        if (n <= 1) {
-          rankingSum += 100;
-        } else {
+        if (n > 1) {
           let sumSqDiff = 0;
           for (const item of commonItems) {
             const myPos = myP.ranking.indexOf(item);
@@ -143,8 +141,11 @@ serve(async (req) => {
             sumSqDiff += Math.pow(myPos - partnerPos, 2);
           }
           const maxSqDiff = (n * (n * n - 1)) / 3;
-          const sim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
-          rankingSum += Math.max(0, Math.min(100, sim));
+          const rawSim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
+          // Apply an encouraging square-root scaling to make the score feel more balanced and fair
+          const sim = Math.sqrt(Math.max(0, rawSim) / 100) * 100;
+          rankingSum += sim;
+          rankingDaysCount++;
         }
 
         // Setup Free Text pairs for comparison
@@ -160,7 +161,9 @@ serve(async (req) => {
 
     const totalDays = daysWithBoth.length;
     const totMatchAvg = Math.round(totSum / totalDays);
-    const rankingMatchAvg = Math.round(rankingSum / totalDays);
+    const rankingMatchAvg = rankingDaysCount > 0 
+      ? Math.round(rankingSum / rankingDaysCount) 
+      : 0;
 
     // 4. Free Text match (semantic comparison via Gemini API or fallback)
     let textMatchAvg = 0;
@@ -233,9 +236,9 @@ serve(async (req) => {
             }
           } else {
             const rawSimilarity = cosineSimilarity(v1, v2)
-            // Apply generous scaling: map [0.2, 1] to [0, 1] with power curve 0.4 for very high/generous similarity
-            const normalized = Math.max(0, (rawSimilarity - 0.2) / 0.8)
-            const similarityPercent = Math.min(100, Math.max(0, Math.round(Math.pow(normalized, 0.4) * 1000) / 10))
+            // Map [0.3, 0.9] to [0, 100] linearly for a fair, balanced score
+            const normalized = Math.max(0, (rawSimilarity - 0.3) / 0.6)
+            const similarityPercent = Math.min(100, Math.max(0, Math.round(normalized * 1000) / 10))
             textSimilarities[pair.day_key] = similarityPercent
           }
         }
