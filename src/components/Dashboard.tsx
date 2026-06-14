@@ -153,7 +153,11 @@ export default function Dashboard({
       }
 
       const { data: statsData, error: statsError } = await supabase.functions.invoke('calculate-stats', {
-        body: { userId: session.user.id, partnerId }
+        body: { 
+          userId: session.user.id, 
+          partnerId,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        }
       });
 
       if (statsError) throw statsError;

@@ -37,7 +37,7 @@ serve(async (req) => {
     const db = createClient(u, s)
 
     const body = await req.json()
-    const { userId, partnerId } = body
+    const { userId, partnerId, timezone } = body
 
     if (!userId || !partnerId) {
       return new Response(
@@ -50,28 +50,17 @@ serve(async (req) => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
 
-    const { data: answers, error: dbErr } = await db
-      .from('answers')
-      .select('*')
-      .gte('day_key', dateStr)
-      .in('user_id', [userId, partnerId]);
+    // Fetch answers and streaks in parallel
+    const [answersRes, streaksRes] = await Promise.all([
+      db.from('answers').select('*').gte('day_key', dateStr).in('user_id', [userId, partnerId]),
+      db.from('streaks').select('*').in('user_id', [userId, partnerId])
+    ]);
 
-    if (dbErr) throw dbErr;
+    if (answersRes.error) throw answersRes.error;
+    if (streaksRes.error) throw streaksRes.error;
 
-    if (!answers || answers.length === 0) {
-      return new Response(
-        JSON.stringify({
-          totalAnswers: 0,
-          myHabit: 0,
-          partnerHabit: 0,
-          totMatch: 0,
-          rankingMatch: 0,
-          textMatch: 0,
-          bisouScore: 0
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const answers = answersRes.data || [];
+    const streaks = streaksRes.data || [];
 
     const myAnswers = answers.filter(a => a.user_id === userId);
     const partnerAnswers = answers.filter(a => a.user_id === partnerId);
@@ -81,10 +70,28 @@ serve(async (req) => {
       partnerAnswers.some(pa => pa.day_key === ma.day_key)
     );
 
+    // Calculate together active days based on streaks table intersection
+    let totalAnswers = daysWithBoth.length;
+    if (streaks && streaks.length > 0) {
+      const myStreak = streaks.find(s => s.user_id === userId);
+      const partnerStreak = streaks.find(s => s.user_id === partnerId);
+      
+      const myHist = Array.isArray(myStreak?.streak_history) ? myStreak.streak_history : [];
+      const partnerHist = Array.isArray(partnerStreak?.streak_history) ? partnerStreak.streak_history : [];
+
+      const myHist30 = myHist.filter(d => d >= dateStr);
+      const partnerHist30 = partnerHist.filter(d => d >= dateStr);
+
+      const commonDates = myHist30.filter(d => partnerHist30.includes(d));
+      if (commonDates.length > 0) {
+        totalAnswers = commonDates.length;
+      }
+    }
+
     if (daysWithBoth.length === 0) {
       return new Response(
         JSON.stringify({
-          totalAnswers: 0,
+          totalAnswers,
           myHabit: 0,
           partnerHabit: 0,
           totMatch: 0,
@@ -245,18 +252,29 @@ serve(async (req) => {
     const weightedPercent = (totMatchAvg * 0.7) + (rankingMatchAvg * 0.2) + (textMatchAvg * 0.1);
     const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
 
-    // 6. Habits (Avg Hour)
+    // 6. Habits (Avg Hour) in target timezone
     const getAvgHour = (ans: any[]) => {
       if (ans.length === 0) return 0;
       const totalHours = ans.reduce((acc, a) => {
-        const hour = new Date(a.created_at).getHours();
+        let hour = 0;
+        try {
+          const formatter = new Intl.DateTimeFormat('en-US', {
+            hour: '2-digit',
+            hour12: false,
+            timeZone: timezone || 'Europe/Berlin'
+          });
+          const formatted = formatter.format(new Date(a.created_at));
+          hour = parseInt(formatted, 10) % 24;
+        } catch (e) {
+          hour = (new Date(a.created_at).getUTCHours() + 2) % 24;
+        }
         return acc + hour;
       }, 0);
-      return Math.round(totalHours / ans.length);
+      return Math.round(totalHours / ans.length) % 24;
     };
 
     const finalStats = {
-      totalAnswers: totalDays,
+      totalAnswers,
       myHabit: getAvgHour(myAnswers),
       partnerHabit: getAvgHour(partnerAnswers),
       totMatch: totMatchAvg,
