@@ -120,7 +120,7 @@ export default function StatsModal({
                   <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
                 </div>
               </div>
-              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between">
+              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setShowHeartprintModal(true)}>
                 <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-black text-[var(--primary)]">{stats.bisouScore.toFixed(1)}</span>
@@ -206,7 +206,7 @@ export default function StatsModal({
                 <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
                   <Sparkles className="w-4.5 h-4.5 text-[var(--secondary)]" />
                 </div>
-                <h4 className="font-black text-[#1F1939] text-sm leading-tight">HeartPrint™ by Bisou-Algorithmus</h4>
+                <h4 className="text-sm leading-tight"><span className="font-black text-[#1F1939]">HeartPrint™</span> <span className="font-normal text-[9px] text-[var(--muted)]">by Bisou</span><span className="font-black text-[#1F1939]">-Algorithmus</span></h4>
               </div>
               <button 
                 onClick={() => setShowHeartprintModal(false)} 

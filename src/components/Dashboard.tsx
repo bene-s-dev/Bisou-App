@@ -471,7 +471,7 @@ export default function Dashboard({
 
                   <button 
                     onClick={() => setShowStatsModal(true)} 
-                    className="p-2 bg-purple-50 rounded-xl text-[var(--secondary)] active:scale-95 transition-all border border-purple-100 shadow-sm"
+                    className="p-2 bg-purple-50 rounded-xl text-[var(--secondary)] active:scale-95 transition-all border border-purple-100 shadow-sm stats-icon-pulse"
                   >
                     <BarChart3 className="w-4 h-4" />
                   </button>
