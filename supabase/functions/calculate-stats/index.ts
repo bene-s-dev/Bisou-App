@@ -1,0 +1,279 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { GoogleGenAI } from "npm:@google/genai"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a || !b || a.length === 0 || b.length === 0 || a.length !== b.length) {
+    return 0;
+  }
+  let dotProduct = 0;
+  let mA = 0;
+  let mB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    mA += a[i] * a[i];
+    mB += b[i] * b[i];
+  }
+  mA = Math.sqrt(mA);
+  mB = Math.sqrt(mB);
+  if (mA === 0 || mB === 0) return 0;
+  return dotProduct / (mA * mB);
+}
+
+serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const u = Deno.env.get('SUPABASE_URL') || ''
+    const s = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const db = createClient(u, s)
+
+    const body = await req.json()
+    const { userId, partnerId } = body
+
+    if (!userId || !partnerId) {
+      return new Response(
+        JSON.stringify({ error: 'userId and partnerId are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+    const { data: answers, error: dbErr } = await db
+      .from('answers')
+      .select('*')
+      .gte('day_key', dateStr)
+      .in('user_id', [userId, partnerId]);
+
+    if (dbErr) throw dbErr;
+
+    if (!answers || answers.length === 0) {
+      return new Response(
+        JSON.stringify({
+          totalAnswers: 0,
+          myHabit: 0,
+          partnerHabit: 0,
+          totMatch: 0,
+          rankingMatch: 0,
+          textMatch: 0,
+          bisouScore: 0
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const myAnswers = answers.filter(a => a.user_id === userId);
+    const partnerAnswers = answers.filter(a => a.user_id === partnerId);
+
+    // 1. Total Questions (Days where both answered)
+    const daysWithBoth = myAnswers.filter(ma => 
+      partnerAnswers.some(pa => pa.day_key === ma.day_key)
+    );
+
+    if (daysWithBoth.length === 0) {
+      return new Response(
+        JSON.stringify({
+          totalAnswers: 0,
+          myHabit: 0,
+          partnerHabit: 0,
+          totMatch: 0,
+          rankingMatch: 0,
+          textMatch: 0,
+          bisouScore: 0
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 2. Parse answer string format: "q0_ans | q1_ans | q2_ans [sig]"
+    const parseChoice = (choiceStr: string) => {
+      const mainPart = String(choiceStr || '').split(" [")[0];
+      const parts = mainPart.split(" | ");
+      return {
+        tot: (parts[0] || '').trim(),
+        ranking: parts[1] ? parts[1].split(" > ").map(s => s.trim()) : [],
+        text: (parts[2] || '').trim()
+      };
+    };
+
+    // 3. Compute matches for TOT and Ranking, collect text pairs
+    let totSum = 0;
+    let rankingSum = 0;
+    const textPairs: { day_key: string; text1: string; text2: string }[] = [];
+
+    daysWithBoth.forEach(ma => {
+      const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
+      if (pa) {
+        const myP = parseChoice(ma.choice);
+        const partnerP = parseChoice(pa.choice);
+
+        // Dies-oder-Das-Frage: Binärer Logik-Abgleich
+        if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
+          totSum += 100;
+        }
+
+        // Ranking-Frage: Positions-Abstands-Analyse
+        const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
+        const n = commonItems.length;
+        if (n <= 1) {
+          rankingSum += 100;
+        } else {
+          let sumSqDiff = 0;
+          for (const item of commonItems) {
+            const myPos = myP.ranking.indexOf(item);
+            const partnerPos = partnerP.ranking.indexOf(item);
+            sumSqDiff += Math.pow(myPos - partnerPos, 2);
+          }
+          const maxSqDiff = (n * (n * n - 1)) / 3;
+          const sim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
+          rankingSum += Math.max(0, Math.min(100, sim));
+        }
+
+        // Setup Free Text pairs for comparison
+        if (myP.text || partnerP.text) {
+          textPairs.push({
+            day_key: ma.day_key,
+            text1: myP.text,
+            text2: partnerP.text
+          });
+        }
+      }
+    });
+
+    const totalDays = daysWithBoth.length;
+    const totMatchAvg = Math.round(totSum / totalDays);
+    const rankingMatchAvg = Math.round(rankingSum / totalDays);
+
+    // 4. Free Text match (semantic comparison via Gemini API or fallback)
+    let textMatchAvg = 0;
+    const textSimilarities: Record<string, number> = {};
+
+    if (textPairs.length > 0) {
+      const k = Deno.env.get('GEMINI_API_KEY') || ''
+      const uniqueTexts = new Set<string>()
+      for (const pair of textPairs) {
+        const t1 = String(pair.text1 || '').trim()
+        const t2 = String(pair.text2 || '').trim()
+        if (t1 && t2 && t1 !== t2) {
+          uniqueTexts.add(t1)
+          uniqueTexts.add(t2)
+        }
+      }
+
+      const textToVectorMap = new Map<string, number[]>()
+
+      if (uniqueTexts.size > 0 && k) {
+        const ai = new GoogleGenAI({ apiKey: k });
+        const textList = Array.from(uniqueTexts)
+        await Promise.all(
+          textList.map(async (text) => {
+            try {
+              const response = await ai.models.embedContent({
+                model: 'gemini-embedding-001',
+                contents: text,
+              })
+              const vector = response.embedding?.values || response.embeddings?.[0]?.values
+              if (vector && Array.isArray(vector)) {
+                textToVectorMap.set(text, vector)
+              }
+            } catch (e: any) {
+              console.error(`Error generating embedding for "${text}":`, e.message)
+            }
+          })
+        )
+      }
+
+      textPairs.forEach(pair => {
+        const t1 = String(pair.text1 || '').trim()
+        const t2 = String(pair.text2 || '').trim()
+
+        if (!t1 || !t2) {
+          textSimilarities[pair.day_key] = 0;
+        } else if (t1 === t2) {
+          textSimilarities[pair.day_key] = 100;
+        } else {
+          const v1 = textToVectorMap.get(t1)
+          const v2 = textToVectorMap.get(t2)
+
+          if (!v1 || !v2) {
+            // Local Jaccard overlap fallback if embeddings failed
+            const clean1 = t1.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            const clean2 = t2.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            if (!clean1 || !clean2) {
+              textSimilarities[pair.day_key] = 0;
+            } else {
+              const words1 = clean1.split(/\s+/);
+              const words2 = clean2.split(/\s+/);
+              const set1 = new Set(words1);
+              const set2 = new Set(words2);
+              let intersect = 0;
+              for (const w of set1) {
+                if (set2.has(w)) intersect++;
+              }
+              const union = new Set([...words1, ...words2]).size;
+              textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
+            }
+          } else {
+            const rawSimilarity = cosineSimilarity(v1, v2)
+            // Apply generous scaling: map [0.2, 1] to [0, 1] with power curve 0.4 for very high/generous similarity
+            const normalized = Math.max(0, (rawSimilarity - 0.2) / 0.8)
+            const similarityPercent = Math.min(100, Math.max(0, Math.round(Math.pow(normalized, 0.4) * 1000) / 10))
+            textSimilarities[pair.day_key] = similarityPercent
+          }
+        }
+      });
+
+      let textSum = 0;
+      daysWithBoth.forEach(ma => {
+        textSum += textSimilarities[ma.day_key] || 0;
+      });
+      textMatchAvg = Math.round(textSum / totalDays);
+    }
+
+    // 5. Calculate Bisou Score (0-10, one decimal place) with weights: dies/das (70%), ranking (20%), freitext (10%)
+    const weightedPercent = (totMatchAvg * 0.7) + (rankingMatchAvg * 0.2) + (textMatchAvg * 0.1);
+    const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
+
+    // 6. Habits (Avg Hour)
+    const getAvgHour = (ans: any[]) => {
+      if (ans.length === 0) return 0;
+      const totalHours = ans.reduce((acc, a) => {
+        const hour = new Date(a.created_at).getHours();
+        return acc + hour;
+      }, 0);
+      return Math.round(totalHours / ans.length);
+    };
+
+    const finalStats = {
+      totalAnswers: totalDays,
+      myHabit: getAvgHour(myAnswers),
+      partnerHabit: getAvgHour(partnerAnswers),
+      totMatch: totMatchAvg,
+      rankingMatch: rankingMatchAvg,
+      textMatch: textMatchAvg,
+      bisouScore
+    };
+
+    return new Response(
+      JSON.stringify(finalStats),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (err: any) {
+    console.error("Calculate stats function error:", err.message)
+    return new Response(
+      JSON.stringify({ error: err.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})

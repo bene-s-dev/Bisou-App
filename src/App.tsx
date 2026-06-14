@@ -547,7 +547,7 @@ export default function App() {
         localStorage.removeItem('cached_profile');
         localStorage.removeItem('cached_partner_profile');
         localStorage.removeItem('cached_dashboard_data');
-        localStorage.removeItem('cached_bisou_stats');
+        localStorage.removeItem('cached_bisou_stats_v3');
         // Broadcast to other tabs
         authChannel.postMessage({ type: 'SIGNED_OUT' });
       }
@@ -565,7 +565,7 @@ export default function App() {
         localStorage.removeItem('cached_profile');
         localStorage.removeItem('cached_partner_profile');
         localStorage.removeItem('cached_dashboard_data');
-        localStorage.removeItem('cached_bisou_stats');
+        localStorage.removeItem('cached_bisou_stats_v3');
         if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/signin')) {
            navigate('/signin', { replace: true });
         }
@@ -689,7 +689,7 @@ export default function App() {
       localStorage.removeItem('cached_profile');
       localStorage.removeItem('cached_partner_profile');
       localStorage.removeItem('cached_dashboard_data');
-      localStorage.removeItem('cached_bisou_stats');
+      localStorage.removeItem('cached_bisou_stats_v3');
       
       // Broadcast logout to other tabs BEFORE calling signOut (to avoid race with storage events)
       authChannel.postMessage({ type: 'SIGNED_OUT' });

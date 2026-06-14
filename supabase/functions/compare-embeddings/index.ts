@@ -37,7 +37,8 @@ serve(async (req) => {
     }
 
     const body = await req.json()
-    const { pairs } = body
+    const { pairs, model: requestedModel } = body
+    const embeddingModel = requestedModel || 'gemini-embedding-001'
 
     if (!pairs || !Array.isArray(pairs)) {
       return new Response(
@@ -60,17 +61,17 @@ serve(async (req) => {
     // 2. Fetch embeddings in parallel for all unique texts
     const ai = new GoogleGenAI({ apiKey: k });
     const textToVectorMap = new Map<string, number[]>()
-
+ 
     if (uniqueTexts.size > 0) {
       const textList = Array.from(uniqueTexts)
       await Promise.all(
         textList.map(async (text) => {
           try {
             const response = await ai.models.embedContent({
-              model: 'text-embedding-004',
+              model: embeddingModel,
               contents: text,
             })
-            const vector = response.embedding?.values
+            const vector = response.embedding?.values || response.embeddings?.[0]?.values
             if (vector && Array.isArray(vector)) {
               textToVectorMap.set(text, vector)
             }
@@ -80,36 +81,36 @@ serve(async (req) => {
         })
       )
     }
-
+ 
     // 3. Compute similarities for all pairs
     const results = pairs.map((pair) => {
       const t1 = String(pair.text1 || '').trim()
       const t2 = String(pair.text2 || '').trim()
-
+ 
       if (!t1 || !t2) {
         return { day_key: pair.day_key, similarity: 0 }
       }
-
+ 
       if (t1 === t2) {
         return { day_key: pair.day_key, similarity: 100 }
       }
-
+ 
       const v1 = textToVectorMap.get(t1)
       const v2 = textToVectorMap.get(t2)
-
+ 
       if (!v1 || !v2) {
         // If we failed to get embedding, default to fallback check
         // (e.g. word overlap or exact comparison)
         return { day_key: pair.day_key, similarity: 0 }
       }
-
+ 
       const rawSimilarity = cosineSimilarity(v1, v2)
       // Standard cosine similarity ranges from -1 to 1, but for text embeddings it's almost always > 0.
       // We scale it from 0 to 100
       const percent = Math.max(0, Math.min(100, rawSimilarity * 100))
       return { day_key: pair.day_key, similarity: Math.round(percent * 10) / 10 }
     })
-
+ 
     return new Response(
       JSON.stringify({ results }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

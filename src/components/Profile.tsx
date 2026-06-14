@@ -122,7 +122,7 @@ export default function Profile({
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [stats, setStats] = useState<any>(() => {
     try {
-      const cached = localStorage.getItem('cached_bisou_stats');
+      const cached = localStorage.getItem('cached_bisou_stats_v3');
       return cached ? JSON.parse(cached) : null;
     } catch (e) {
       return null;
@@ -430,7 +430,7 @@ export default function Profile({
 
   const fetchStats = useCallback(async () => {
     try {
-      const hasCached = !!localStorage.getItem('cached_bisou_stats');
+      const hasCached = !!localStorage.getItem('cached_bisou_stats_v3');
       if (!hasCached) {
         setLoadingStats(true);
       }
@@ -442,179 +442,16 @@ export default function Profile({
         return;
       }
 
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-
-      const { data: answers } = await supabase
-        .from('answers')
-        .select('*')
-        .gte('day_key', dateStr)
-        .in('user_id', [session.user.id, partnerId]);
-
-      if (!answers) {
-        if (!hasCached) setLoadingStats(false);
-        return;
-      }
-
-      const myAnswers = answers.filter(a => a.user_id === session.user.id);
-      const partnerAnswers = answers.filter(a => a.user_id === partnerId);
-
-      // 1. Total Questions (Days where both answered)
-      const daysWithBoth = myAnswers.filter(ma => 
-        partnerAnswers.some(pa => pa.day_key === ma.day_key)
-      );
-
-      if (daysWithBoth.length === 0) {
-        const newStats = {
-          totalAnswers: 0,
-          myHabit: 0,
-          partnerHabit: 0,
-          totMatch: 0,
-          rankingMatch: 0,
-          textMatch: 0,
-          bisouScore: 0
-        };
-        setStats(newStats);
-        localStorage.setItem('cached_bisou_stats', JSON.stringify(newStats));
-        setLoadingStats(false);
-        return;
-      }
-
-      // 2. Parse answer string format: "q0_ans | q1_ans | q2_ans [sig]"
-      const parseChoice = (choiceStr: string) => {
-        const mainPart = String(choiceStr || '').split(" [")[0];
-        const parts = mainPart.split(" | ");
-        return {
-          tot: (parts[0] || '').trim(),
-          ranking: parts[1] ? parts[1].split(" > ").map(s => s.trim()) : [],
-          text: (parts[2] || '').trim()
-        };
-      };
-
-      // 3. Compute matches for TOT and Ranking, collect text pairs for semantic compare
-      let totSum = 0;
-      let rankingSum = 0;
-      const textPairs: { day_key: string; text1: string; text2: string }[] = [];
-
-      daysWithBoth.forEach(ma => {
-        const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
-        if (pa) {
-          const myP = parseChoice(ma.choice);
-          const partnerP = parseChoice(pa.choice);
-
-          // Dies-oder-Das-Frage: Binärer Logik-Abgleich
-          if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
-            totSum += 100;
-          }
-
-          // Ranking-Frage: Positions-Abstands-Analyse via quadratischer Positions-Differenz
-          const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
-          const n = commonItems.length;
-          if (n <= 1) {
-            rankingSum += 100;
-          } else {
-            let sumSqDiff = 0;
-            for (const item of commonItems) {
-              const myPos = myP.ranking.indexOf(item);
-              const partnerPos = partnerP.ranking.indexOf(item);
-              sumSqDiff += Math.pow(myPos - partnerPos, 2);
-            }
-            const maxSqDiff = (n * (n * n - 1)) / 3;
-            const sim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
-            rankingSum += Math.max(0, Math.min(100, sim));
-          }
-
-          // Setup Free Text pairs for compare
-          if (myP.text || partnerP.text) {
-            textPairs.push({
-              day_key: ma.day_key,
-              text1: myP.text,
-              text2: partnerP.text
-            });
-          }
-        }
+      const { data: statsData, error: statsError } = await supabase.functions.invoke('calculate-stats', {
+        body: { userId: session.user.id, partnerId }
       });
 
-      const totalDays = daysWithBoth.length;
-      const totMatchAvg = Math.round(totSum / totalDays);
-      const rankingMatchAvg = Math.round(rankingSum / totalDays);
+      if (statsError) throw statsError;
 
-      // 4. Free Text match (semantic comparison via Edge Function or fallback Jaccard overlap)
-      let textMatchAvg = 0;
-      const textSimilarities: Record<string, number> = {};
-
-      if (textPairs.length > 0) {
-        try {
-          const { data: edgeData, error: edgeErr } = await supabase.functions.invoke('compare-embeddings', {
-            body: { pairs: textPairs }
-          });
-          if (edgeErr) throw edgeErr;
-
-          if (edgeData?.results && Array.isArray(edgeData.results)) {
-            edgeData.results.forEach((res: any) => {
-              textSimilarities[res.day_key] = res.similarity;
-            });
-          } else {
-            throw new Error("Invalid response from compare-embeddings Edge Function");
-          }
-        } catch (e) {
-          console.warn("Failed semantic embedding compare, falling back to local Jaccard word-overlap:", e);
-          textPairs.forEach(pair => {
-            const clean1 = pair.text1.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-            const clean2 = pair.text2.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-            if (!clean1 || !clean2) {
-              textSimilarities[pair.day_key] = 0;
-            } else if (clean1 === clean2) {
-              textSimilarities[pair.day_key] = 100;
-            } else {
-              const words1 = clean1.split(/\s+/);
-              const words2 = clean2.split(/\s+/);
-              const set1 = new Set(words1);
-              const set2 = new Set(words2);
-              
-              let intersect = 0;
-              for (const w of set1) {
-                if (set2.has(w)) intersect++;
-              }
-              const union = new Set([...words1, ...words2]).size;
-              textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
-            }
-          });
-        }
-
-        let textSum = 0;
-        daysWithBoth.forEach(ma => {
-          textSum += textSimilarities[ma.day_key] || 0;
-        });
-        textMatchAvg = Math.round(textSum / totalDays);
+      if (statsData) {
+        setStats(statsData);
+        localStorage.setItem('cached_bisou_stats_v3', JSON.stringify(statsData));
       }
-
-      // 5. Calculate Bisou Score (0-10, one decimal place) with weights: dies/das (70%), ranking (20%), freitext (10%)
-      const weightedPercent = (totMatchAvg * 0.7) + (rankingMatchAvg * 0.2) + (textMatchAvg * 0.1);
-      const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
-
-      // 6. Habits (Avg Hour)
-      const getAvgHour = (ans: any[]) => {
-        if (ans.length === 0) return 0;
-        const totalHours = ans.reduce((acc, a) => {
-          const hour = new Date(a.created_at).getHours();
-          return acc + hour;
-        }, 0);
-        return Math.round(totalHours / ans.length);
-      };
-
-      const newStats = {
-        totalAnswers: totalDays,
-        myHabit: getAvgHour(myAnswers),
-        partnerHabit: getAvgHour(partnerAnswers),
-        totMatch: totMatchAvg,
-        rankingMatch: rankingMatchAvg,
-        textMatch: textMatchAvg,
-        bisouScore
-      };
-      setStats(newStats);
-      localStorage.setItem('cached_bisou_stats', JSON.stringify(newStats));
     } catch (err) {
       console.error("Stats error:", err);
     } finally {

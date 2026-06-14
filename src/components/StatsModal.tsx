@@ -177,7 +177,7 @@ export default function StatsModal({
             </div>
 
             <p className="text-[8px] text-[var(--muted)] text-center mt-3 opacity-50 uppercase tracking-[0.12em]">
-              Berechnet mit dem HeartPrint™-Algorithmus
+              Berechnet mit dem HeartPrint<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>-Algorithmus
             </p>
           </div>
         ) : (
