@@ -28,6 +28,36 @@ export default function StatsModal({
   loading
 }: StatsModalProps) {
   const [heartprintType, setHeartprintType] = useState<'tot' | 'ranking' | 'text' | 'all' | null>(null);
+  const [displayScore, setDisplayScore] = useState(0);
+
+  // Animate Bisou Score from 0 to target when modal opens or stats change
+  React.useEffect(() => {
+    if (isOpen && stats?.bisouScore) {
+      const target = stats.bisouScore;
+      const duration = 1500; // 1.5 seconds
+      const start = 0;
+      const startTime = performance.now();
+
+      const animate = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function: easeOutQuart
+        const easeProgress = 1 - Math.pow(1 - progress, 4);
+        
+        const currentScore = start + (target - start) * easeProgress;
+        setDisplayScore(currentScore);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    } else if (!isOpen) {
+      setDisplayScore(0);
+    }
+  }, [isOpen, stats?.bisouScore]);
 
   if (!isOpen) return null;
 
@@ -123,7 +153,7 @@ export default function StatsModal({
               <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
                 <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-[var(--primary)]">{stats.bisouScore.toFixed(1)}</span>
+                  <span className="text-2xl font-black text-[var(--primary)]">{displayScore.toFixed(1)}</span>
                   <span className="text-[9px] font-bold text-rose-400">/ 10</span>
                 </div>
               </div>
