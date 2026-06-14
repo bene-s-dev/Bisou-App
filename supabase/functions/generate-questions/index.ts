@@ -121,9 +121,9 @@ serve(async (req) => {
     const todaysThemes = themeSets[dayOfYear % themeSets.length];
     const [themaTot, themaRanking, themaText] = todaysThemes;
 
-    const prompt = `Du bist ein einfühlsamer, bodenständiger Fragenautor für die Pärchen-App (Bisou). Generiere exakt 3 Fragen.
+    const prompt = `Du bist ein einfühlsamer, bodenständiger Fragenautor für eine Pärchen-App. Generiere exakt 3 Fragen.
 
-WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich, semantisch identisch oder strukturell wiederholend sind:
+WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich, semantisch identisch oder strukturell wiederholend sind, überlege, welche Fragen nicht langweilig und wiederholend sind, wenn man folgende Fragen aus den vergangenen Tagen kennt:
 ${ausgeschlosseneFragenText}
 
 Befolge für den heutigen Tag exakt diese Themen-Vorgaben und Zeichenlimits:
@@ -133,9 +133,7 @@ Befolge für den heutigen Tag exakt diese Themen-Vorgaben und Zeichenlimits:
 
 STIMMUNG & TONFALL (WICHTIG!):
 - Schreibe alltagsnahe, nahbare und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
-- Vermeide absurde Gedankenexperimente, seltsame/bizarre hypothetische Szenarien oder allzu abstrakte, verkopfte philosophische Rätsel. Die Fragen müssen bodenständig sein.
-- Variiere die Stimmung: Eine Frage soll leicht/humorvoll sein (z.B. über kleine Alltagsmacken oder lustige Gewohnheiten), eine alltagsbezogen/praktisch (z.B. über Haushalt, Kochen oder Freizeit) und eine etwas tiefgründiger (z.B. über emotionale Bedürfnisse oder schöne Erinnerungen).
-- Verwende natürliche Umgangssprache (Du-Form) ohne gekünstelt poetisch oder übertrieben psychologisch zu klingen.`;
+- Vermeide absurde Gedankenexperimente, seltsame/bizarre hypothetische Szenarien oder allzu abstrakte, verkopfte philosophische Rätsel. Die Fragen müssen bodenständig sein.`;
 
     // ==========================================
     // API CALL ZU GEMINI MIT THINKING & ZOD
@@ -153,7 +151,7 @@ STIMMUNG & TONFALL (WICHTIG!):
             schema: zodToJsonSchema(dailyQuestionsSchema) 
           } 
         },
-        temperature: 1.1 // Hohe Temperatur für mehr Kreativität innerhalb der Vorgaben
+        temperature: 1.0 // Hohe Temperatur für mehr Kreativität innerhalb der Vorgaben
       }
     });
 
