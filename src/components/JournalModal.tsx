@@ -49,13 +49,18 @@ export default function JournalModal({
     }
   }, [isOpen]);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   // Handle mobile hardware back button / browser navigation
   useEffect(() => {
     if (isOpen) {
       window.history.pushState({ modal: 'journal' }, '');
       
       const handlePopState = (e: PopStateEvent) => {
-        onClose();
+        onCloseRef.current();
       };
       
       window.addEventListener('popstate', handlePopState);
@@ -66,7 +71,7 @@ export default function JournalModal({
         }
       };
     }
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   const fetchHistory = async () => {
     setLoading(true);
