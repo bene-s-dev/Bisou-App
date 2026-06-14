@@ -509,6 +509,7 @@ export default function Dashboard({
       </div>
 
       <StatsModal 
+        key={showStatsModal ? 'stats-open' : 'stats-closed'}
         isOpen={showStatsModal} 
         onClose={() => setShowStatsModal(false)} 
         partnerName={partnerName}

@@ -32,20 +32,31 @@ export default function StatsModal({
 
   // Animate Bisou Score from 0 to target when modal opens or stats change
   React.useEffect(() => {
-    if (isOpen && stats?.bisouScore) {
-      const target = stats.bisouScore;
-      const duration = 1500; // 1.5 seconds
-      const start = 0;
-      const startTime = performance.now();
+    if (isOpen) {
+      console.log("Animation started to 8.5");
+      const target = 8.5; 
+      const duration = 5300; // Reduced by one third (approx 5.3s)
+      const delay = 500; 
+      let startTime: number | null = null;
 
       const animate = (currentTime: number) => {
+        if (!startTime) startTime = currentTime;
         const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
         
-        // Easing function: easeOutQuart
-        const easeProgress = 1 - Math.pow(1 - progress, 4);
+        if (elapsed < delay) {
+          setDisplayScore(0);
+          requestAnimationFrame(animate);
+          return;
+        }
+
+        const progress = Math.min((elapsed - delay) / duration, 1);
         
-        const currentScore = start + (target - start) * easeProgress;
+        // Harmonisierte Kurve für 8 Sekunden:
+        // Kontinuierlicher Ease-Out (Potenz 2.5). 
+        // Startet flüssig, bremst stetig ab, ohne abrupt "stehen" zu bleiben.
+        const easeOut = 1 - Math.pow(1 - progress, 2.5);
+        
+        const currentScore = target * easeOut;
         setDisplayScore(currentScore);
 
         if (progress < 1) {
@@ -53,11 +64,12 @@ export default function StatsModal({
         }
       };
 
-      requestAnimationFrame(animate);
-    } else if (!isOpen) {
+      const raf = requestAnimationFrame(animate);
+      return () => cancelAnimationFrame(raf);
+    } else {
       setDisplayScore(0);
     }
-  }, [isOpen, stats?.bisouScore]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -152,9 +164,11 @@ export default function StatsModal({
               </div>
               <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
                 <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-[var(--primary)]">{displayScore.toFixed(1)}</span>
-                  <span className="text-[9px] font-bold text-rose-400">/ 10</span>
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
+                    {displayScore.toFixed(1)}
+                  </span>
+                  <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
                 </div>
               </div>
             </div>
