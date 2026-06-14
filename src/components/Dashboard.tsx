@@ -122,7 +122,10 @@ export default function Dashboard({
 }: DashboardProps) {
   const { showAlert, showConfirm } = useDialog();
   const [showComparison, setShowComparison] = useState(false);
-  const [countdown, setCountdown] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [countdown, setCountdown] = useState(() => {
+    const remaining = getTimeUntilReset();
+    return { hours: remaining.hours, minutes: remaining.minutes, seconds: remaining.seconds };
+  });
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
