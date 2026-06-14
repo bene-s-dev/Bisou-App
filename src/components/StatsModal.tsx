@@ -229,10 +229,10 @@ export default function StatsModal({
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">70% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Direkter, binärer Abgleich eurer Entweder-Oder-Antworten
+                    Binärer Abgleich eurer Entweder-Oder-Antworten
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Berechnung: Wählen beide dieselbe Option, zählt dies als 100% Match, sonst 0%. Da es hier nur Übereinstimmung oder Nicht-Übereinstimmung gibt, bildet dies das direkte Fundament eurer Alltags-Harmonie.
+                    Wählen beide dieselbe Option, zählt dies als 100% Match, sonst 0%.
                   </p>
                 </div>
 
@@ -243,10 +243,10 @@ export default function StatsModal({
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">20% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Positions-Abstands-Analyse (quadratische Differenz)
+                    Positions-Abstands-Analyse
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Motivierende Glättung: Kleine Abweichungen (z. B. Platz 2 statt Platz 3) ziehen den Score kaum nach unten. Eine Quadratwurzel-Kurve federt leichte Meinungsunterschiede sanft ab. Erst bei komplett entgegengesetzter Sortierung nähert sich der Wert 0%.
+                    Kleine Abweichungen (z. B. Platz 2 statt Platz 3) ziehen den Score kaum nach unten. Eine Quadratwurzel-Kurve federt leichte Meinungsunterschiede sanft ab. Erst bei komplett entgegengesetzter Sortierung nähert sich der Wert 0%.
                   </p>
                 </div>
 
@@ -260,7 +260,7 @@ export default function StatsModal({
                     Semantischer Sinn-Vergleich
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Fairer Abgleich: Wir vergleichen den Sinn, nicht die Schreibweise. Antwortet einer "Pasta" und der andere "Nudeln", erkennt HeartPrint die Ähnlichkeit und vergibt hohe Prozentwerte (z. B. ~78% statt 0%).
+                    Verglichen wird der Sinn, nicht die Schreibweise. Antwortet einer "Pasta" und der andere "Nudeln", erkennt HeartPrint die Ähnlichkeit und vergibt hohe Prozentwerte (z. B. ~78% statt 0%).
                   </p>
                 </div>
               </div>
