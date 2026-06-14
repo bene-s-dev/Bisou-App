@@ -211,11 +211,14 @@ export default function StatsModal({
           <div className="absolute inset-0" onClick={() => setHeartprintType(null)} />
           <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative contain-layout z-10 animate-entrance shadow-2xl border border-purple-100/50">
             <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
-                  <Sparkles className="w-4.5 h-4.5 text-[var(--secondary)]" />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5 text-[var(--secondary)]" />
                 </div>
-                <h4 className="text-sm leading-tight"><span className="font-black text-[#1F1939]">HeartPrint™</span> <span className="font-normal text-[9px] text-[var(--muted)]">by Bisou</span><span className="font-black text-[#1F1939]">-Algorithmus</span></h4>
+                <div className="relative">
+                  <h4 className="text-[13px] font-black text-[#1F1939] leading-none">HeartPrint™-Algorithmus</h4>
+                  <span className="absolute left-0 top-[calc(100%+4px)] font-bold text-[9px] text-[var(--muted)] opacity-70 leading-none whitespace-nowrap">by Bisou</span>
+                </div>
               </div>
               <button 
                 onClick={() => setHeartprintType(null)} 
@@ -227,7 +230,7 @@ export default function StatsModal({
 
             <div className="flex-1 overflow-y-auto scrollbar-soft px-1.5 pb-2 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
               <p className="px-0.5">
-                Der <strong>Bisou-Score</strong> (0 bis 10) misst euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
+                Der <strong>Bisou-Score</strong> misst euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
               </p>
 
               <div className="space-y-3 px-0.5">
