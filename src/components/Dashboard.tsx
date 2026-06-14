@@ -529,11 +529,11 @@ export default function Dashboard({
           className="modal-backdrop z-[3000] animate-in fade-in duration-300"
           onClick={() => setFullscreenImage(null)}
         >
-          <div className="relative max-w-[90%] max-h-full animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+          <div className="relative w-full max-w-[280px] aspect-square animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
             <img 
               src={fullscreenImage} 
               alt="Fullscreen Avatar" 
-              className="max-w-full max-h-[80vh] rounded-[3rem] shadow-2xl border-4 border-white/20 object-contain"
+              className="w-full h-full rounded-[3rem] shadow-2xl border-4 border-white/20 object-cover"
             />
             <button 
               className="absolute -top-12 right-0 p-3 text-white/70 hover:text-white transition-colors"
