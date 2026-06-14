@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart3, X, Sparkles, Clock } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
@@ -27,6 +27,8 @@ export default function StatsModal({
   stats,
   loading
 }: StatsModalProps) {
+  const [showHeartprintModal, setShowHeartprintModal] = useState(false);
+
   if (!isOpen) return null;
 
   return createPortal(
@@ -176,9 +178,17 @@ export default function StatsModal({
               </div>
             </div>
 
-            <p className="text-[8px] text-[var(--muted)] text-center mt-3 opacity-50 uppercase tracking-[0.12em]">
-              Berechnet mit dem HeartPrint<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>-Algorithmus
-            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
+                Berechnet mit dem HeartPrint<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>-Algorithmus
+              </p>
+              <button 
+                onClick={() => setShowHeartprintModal(true)}
+                className="w-4 h-4 rounded-full bg-purple-100 text-[var(--secondary)] flex items-center justify-center text-[9px] font-black hover:bg-purple-200 transition-colors focus:outline-none shrink-0"
+              >
+                i
+              </button>
+            </div>
           </div>
         ) : (
           <div className="text-center py-6">
@@ -186,6 +196,79 @@ export default function StatsModal({
           </div>
         )}
       </div>
+
+      {showHeartprintModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 backdrop-blur-md bg-purple-950/20 will-change-[opacity,backdrop-filter] transition-all animate-fade-in">
+          <div className="absolute inset-0" onClick={() => setShowHeartprintModal(false)} />
+          <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative contain-layout z-10 animate-entrance shadow-2xl border border-purple-100/50">
+            <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-4.5 h-4.5 text-[var(--secondary)]" />
+                </div>
+                <h4 className="font-black text-[#1F1939] text-sm leading-tight">HeartPrint™ Algorithmus</h4>
+              </div>
+              <button 
+                onClick={() => setShowHeartprintModal(false)} 
+                className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto scrollbar-soft pr-1 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
+              <p>
+                Der <strong>Bisou-Score</strong> (0 bis 10) misst euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
+              </p>
+
+              <div className="space-y-2.5">
+                {/* Dies/Das */}
+                <div className="bg-purple-50/40 rounded-2xl p-3 border border-purple-100/50">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies / Das</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">70% Gewichtung</span>
+                  </div>
+                  <p className="text-[10px] opacity-90 leading-normal mb-1">
+                    Direkter, binärer Abgleich eurer Entweder-Oder-Antworten
+                  </p>
+                  <p className="text-[9px] opacity-70 leading-normal">
+                    Berechnung: Wählen beide dieselbe Option, zählt dies als 100% Match, sonst 0%. Da es hier nur Übereinstimmung oder Nicht-Übereinstimmung gibt, bildet dies das direkte Fundament eurer Alltags-Harmonie.
+                  </p>
+                </div>
+
+                {/* Ranking */}
+                <div className="bg-purple-50/40 rounded-2xl p-3 border border-purple-100/50">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">2. Ranglisten</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">20% Gewichtung</span>
+                  </div>
+                  <p className="text-[10px] opacity-90 leading-normal mb-1">
+                    Positions-Abstands-Analyse (quadratische Differenz)
+                  </p>
+                  <p className="text-[9px] opacity-70 leading-normal">
+                    Motivierende Glättung: Kleine Abweichungen (z. B. Platz 2 statt Platz 3) ziehen den Score kaum nach unten. Eine Quadratwurzel-Kurve federt leichte Meinungsunterschiede sanft ab. Erst bei komplett entgegengesetzter Sortierung nähert sich der Wert 0%.
+                  </p>
+                </div>
+
+                {/* Freitext */}
+                <div className="bg-purple-50/40 rounded-2xl p-3 border border-purple-100/50">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Freitexte</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">10% Gewichtung</span>
+                  </div>
+                  <p className="text-[10px] opacity-90 leading-normal mb-1">
+                    Semantischer Sinn-Vergleich
+                  </p>
+                  <p className="text-[9px] opacity-70 leading-normal">
+                    Fairer Abgleich: Wir vergleichen den Sinn, nicht die Schreibweise. Antwortet einer "Pasta" und der andere "Nudeln", erkennt HeartPrint die Ähnlichkeit und vergibt hohe Prozentwerte (z. B. ~78% statt 0%).
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>,
     document.body
   );
