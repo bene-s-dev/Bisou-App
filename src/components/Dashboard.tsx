@@ -333,8 +333,8 @@ export default function Dashboard({
 
   return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
-      {/* Dev Mode Badge */}
-      {import.meta.env.DEV && (
+      {/* Dev Mode Badge (Visible in local DEV or if user-enabled dev mode in localStorage) */}
+      {((import.meta.env.DEV && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) || localStorage.getItem('bisou_dev_mode') === 'true') && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
           <div className="bg-orange-500/15 backdrop-blur-md border border-orange-200/50 py-1 px-3 rounded-full flex items-center gap-1.5 shadow-sm">
             <div className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
@@ -496,7 +496,7 @@ export default function Dashboard({
                   <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/>
                 </svg>
                 <p className="text-[7.5px] font-bold text-[var(--muted)] text-center opacity-40">
-                  InfiniteFlow<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>
+                  InfiniteFlow
                 </p>
               </div>
             </div>
