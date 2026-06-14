@@ -165,3 +165,23 @@ cleanup_obsolete.sql
 complete_supabase_setup.sql
 dump_profiles.cjs
 vorschaugross.png
+
+# Android / Bubblewrap build outputs & signing keys
+.gradle/
+app/build/
+build/
+android.keystore
+*.apk
+*.aab
+*.idsig
+manifest-checksum.txt
+app/
+gradle/
+gradlew
+gradlew.bat
+build.gradle
+settings.gradle
+gradle.properties
+store_icon.png
+
+

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "de.benelabs.bisou.twa",
+      "sha256_cert_fingerprints": [
+        "26:58:1F:4E:6D:A5:C1:BF:D2:52:B7:3E:DD:58:72:D9:B2:9B:8C:DD:1E:16:88:4E:B9:22:1C:D6:45:00:39:06"
+      ]
+    }
+  }
+]
