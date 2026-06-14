@@ -139,6 +139,15 @@ export default function Dashboard({
 
   const [loadingStats, setLoadingStats] = useState(!stats);
 
+  useEffect(() => {
+    if (fullscreenImage) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [fullscreenImage]);
+
   const fetchStats = useCallback(async () => {
     try {
       const hasCached = !!localStorage.getItem('cached_bisou_stats_v3');
@@ -515,7 +524,7 @@ export default function Dashboard({
         partnerName={partnerName}
       />
 
-      {fullscreenImage && (
+      {fullscreenImage && createPortal(
         <div 
           className="modal-backdrop z-[3000] animate-in fade-in duration-300"
           onClick={() => setFullscreenImage(null)}
@@ -533,7 +542,8 @@ export default function Dashboard({
               <X className="w-8 h-8" />
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
