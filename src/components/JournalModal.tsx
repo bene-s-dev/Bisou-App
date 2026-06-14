@@ -1,7 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
-import { BookOpen, Calendar, X, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { BookOpen, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock } from 'lucide-react';
+
+const START_DATE_STR = '2026-06-14';
+
+const getLocalDateString = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 export default function JournalModal({ 
   isOpen, 
@@ -19,14 +28,19 @@ export default function JournalModal({
   const [history, setHistory] = useState<any[]>([]);
   const [questionsHistory, setQuestionsHistory] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    const todayStr = getLocalDateString(today);
+    if (todayStr < START_DATE_STR) {
+      return new Date(START_DATE_STR);
+    }
+    return today;
+  });
   const [showCalendar, setShowCalendar] = useState(false);
 
   const selectedDateKey = useMemo(() => {
-    const y = selectedDate.getFullYear();
-    const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const d = String(selectedDate.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return getLocalDateString(selectedDate);
   }, [selectedDate]);
 
   useEffect(() => {
@@ -35,12 +49,34 @@ export default function JournalModal({
     }
   }, [isOpen]);
 
+  // Handle mobile hardware back button / browser navigation
+  useEffect(() => {
+    if (isOpen) {
+      window.history.pushState({ modal: 'journal' }, '');
+      
+      const handlePopState = (e: PopStateEvent) => {
+        onClose();
+      };
+      
+      window.addEventListener('popstate', handlePopState);
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+        if (window.history.state?.modal === 'journal') {
+          window.history.back();
+        }
+      };
+    }
+  }, [isOpen, onClose]);
+
   const fetchHistory = async () => {
     setLoading(true);
     try {
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
-      const dateStr = sixtyDaysAgo.toISOString().split('T')[0];
+      let dateStr = getLocalDateString(sixtyDaysAgo);
+      if (dateStr < START_DATE_STR) {
+        dateStr = START_DATE_STR;
+      }
 
       const [answersRes, questionsRes] = await Promise.all([
         supabase.from('answers')
@@ -109,23 +145,70 @@ export default function JournalModal({
       ],
       myAnswered: !!myAns,
       partnerAnswered: !!partnerAns,
-      bothAnswered: !!myAns && !!partnerAns
+      bothAnswered: !!myAns && !!partnerAns,
+      isPartnerLocked: !!partnerAns && !myAns
     };
   }, [history, questionsHistory, selectedDateKey, userId, partnerId]);
 
   const navigateDate = (days: number) => {
     const next = new Date(selectedDate);
     next.setDate(next.getDate() + days);
+    const nextKey = getLocalDateString(next);
+    
+    // Don't navigate before START_DATE
+    if (days < 0 && nextKey < START_DATE_STR) {
+      return;
+    }
+    // Don't navigate after today
+    const todayKey = getLocalDateString(new Date());
+    if (days > 0 && nextKey > todayKey) {
+      return;
+    }
+    
     setSelectedDate(next);
+  };
+
+  const touchStartRef = useRef<{ x: number, y: number } | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchStartRef.current.x - touchEndX;
+    const deltaY = Math.abs(touchStartRef.current.y - touchEndY);
+    
+    // Swipe left (finger moves left) -> Next Day, Swipe right (finger moves right) -> Previous Day
+    if (Math.abs(deltaX) > 50 && deltaY < 60) {
+      if (deltaX > 0) {
+        navigateDate(1);
+      } else {
+        navigateDate(-1);
+      }
+    }
+    touchStartRef.current = null;
   };
 
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="modal-backdrop px-4 z-[4000]">
+    <div className="modal-backdrop !p-0 sm:!p-4 z-[4000]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="modal-content p-6 max-h-[85vh] flex flex-col">
-        {/* ... rest of header ... */}
+      <div 
+        className="modal-content p-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative"
+        style={{
+          paddingTop: 'calc(1.5rem + var(--sat, 0px))',
+          paddingBottom: 'calc(1.5rem + var(--sab, 0px))',
+          touchAction: 'pan-y',
+          overscrollBehaviorX: 'contain'
+        }}
+      >
         <div className="flex items-center justify-between mb-6 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
@@ -133,17 +216,19 @@ export default function JournalModal({
             </div>
             <div>
               <h3 className="font-black text-[#1F1939] text-base leading-tight">Bisou-Journal</h3>
-              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">Eure gemeinsame Reise</p>
+              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">Reise in die Vergangenheit</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowCalendar(!showCalendar)}
-              className={`p-2 rounded-xl transition-all ${showCalendar ? 'bg-[var(--secondary)] text-white' : 'bg-purple-50 text-[var(--muted)]'}`}
+              className={`p-2 rounded-xl transition-all ${showCalendar ? 'bg-[var(--secondary)] text-white' : 'bg-purple-50 text-[var(--secondary)] hover:bg-purple-100'}`}
             >
               <Calendar className="w-4 h-4" />
             </button>
-            <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
+            <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
@@ -156,29 +241,43 @@ export default function JournalModal({
               {Array.from({ length: 35 }).map((_, i) => {
                 const d = new Date();
                 d.setDate(d.getDate() - (34 - i));
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const key = getLocalDateString(d);
                 const active = activeDays.has(key);
                 const isSelected = selectedDateKey === key;
+                const isBeforeStart = key < START_DATE_STR;
+                const isAfterToday = key > getLocalDateString(new Date());
+                const isDisabled = isBeforeStart || isAfterToday;
                 return (
                   <button 
                     key={i}
+                    disabled={isDisabled}
                     onClick={() => { setSelectedDate(new Date(d)); setShowCalendar(false); }}
                     className={`aspect-square rounded-lg flex flex-col items-center justify-center relative border transition-all
                       ${isSelected ? 'border-[var(--secondary)] bg-purple-50' : 'border-transparent bg-gray-50/50'}
+                      ${isDisabled ? 'opacity-20 cursor-not-allowed pointer-events-none' : ''}
                     `}
                   >
                     <span className={`text-[10px] font-black ${isSelected ? 'text-[var(--secondary)]' : 'text-[#4A4468]'}`}>{d.getDate()}</span>
-                    {active && <div className="w-1 h-1 bg-[var(--secondary)] rounded-full mt-0.5" />}
+                    {active && !isDisabled && <div className="w-1 h-1 bg-[var(--secondary)] rounded-full mt-0.5" />}
                   </button>
                 );
               })}
             </div>
-            <p className="text-[8px] text-center text-[var(--muted)] italic opacity-60">Die letzten 60 Tage sind im Journal verfügbar.</p>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col min-h-0">
+          <div 
+            className="flex-1 flex flex-col min-h-0"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-6 shrink-0">
-              <button onClick={() => navigateDate(-1)} className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all"><ChevronLeft className="w-4 h-4" /></button>
+              <button 
+                onClick={() => navigateDate(-1)} 
+                disabled={selectedDateKey <= START_DATE_STR}
+                className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
               <div className="text-center">
                 <p className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider">
                   {selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -186,8 +285,8 @@ export default function JournalModal({
               </div>
               <button 
                 onClick={() => navigateDate(1)} 
-                disabled={selectedDateKey === new Date().toISOString().split('T')[0]}
-                className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30"
+                disabled={selectedDateKey >= getLocalDateString(new Date())}
+                className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

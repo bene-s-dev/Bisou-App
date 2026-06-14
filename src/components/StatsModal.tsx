@@ -75,7 +75,7 @@ export default function StatsModal({
   return createPortal(
     <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="modal-content p-6 will-change-transform contain-layout max-h-[92vh] overflow-y-auto">
+      <div className="modal-content p-6 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
@@ -250,9 +250,9 @@ export default function StatsModal({
       </div>
 
       {heartprintType && (
-        <div className="modal-backdrop px-4 !z-[3000] will-change-[opacity] transition-all animate-fade-in">
+        <div className="modal-backdrop !backdrop-blur-none px-4 !z-[3000] will-change-[opacity] transition-all animate-fade-in">
           <div className="absolute inset-0" onClick={() => setHeartprintType(null)} />
-          <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative contain-layout z-10 animate-entrance shadow-2xl border border-purple-100/50">
+          <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative z-10 animate-entrance shadow-2xl border border-purple-100/50">
             <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
               <div className="flex items-start gap-2.5">
                 <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
