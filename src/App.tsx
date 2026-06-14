@@ -17,7 +17,7 @@ const Intro = React.lazy(() => import('./components/Intro'));
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const Questions = React.lazy(() => import('./components/Questions'));
 const Profile = React.lazy(() => import('./components/Profile'));
-const ResetPassword = React.lazy(() => import('./components/ResetPassword'));
+import ResetPassword from './components/ResetPassword';
 import { getDailyKey, isStreakActive } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider, useDialog } from './components/DialogProvider';

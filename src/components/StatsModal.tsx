@@ -29,12 +29,22 @@ export default function StatsModal({
 }: StatsModalProps) {
   const [heartprintType, setHeartprintType] = useState<'tot' | 'ranking' | 'text' | 'all' | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
+  const [displayTotMatch, setDisplayTotMatch] = useState(0);
+  const [displayRankingMatch, setDisplayRankingMatch] = useState(0);
+  const [displayTextMatch, setDisplayTextMatch] = useState(0);
+  const [displaySoonMatch, setDisplaySoonMatch] = useState(0);
   const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
 
-  // Animate Bisou Score from 0 to target when modal opens or stats change
+  // Animate Bisou Score and match percentages from 0 to target when modal opens or stats change
   React.useEffect(() => {
-    if (isOpen && stats?.bisouScore) {
-      const target = stats.bisouScore; 
+    if (isOpen && stats) {
+      const targets = {
+        score: stats.bisouScore || 0,
+        tot: stats.totMatch || 0,
+        ranking: stats.rankingMatch || 0,
+        text: stats.textMatch || 0,
+        soon: 0
+      }; 
       const duration = 5300; 
       const delay = 500; 
       let startTime: number | null = null;
@@ -45,19 +55,22 @@ export default function StatsModal({
         
         if (elapsed < delay) {
           setDisplayScore(0);
+          setDisplayTotMatch(0);
+          setDisplayRankingMatch(0);
+          setDisplayTextMatch(0);
+          setDisplaySoonMatch(0);
           requestAnimationFrame(animate);
           return;
         }
 
         const progress = Math.min((elapsed - delay) / duration, 1);
-        
-        // Harmonisierte Kurve für ca 5.3 Sekunden:
-        // Kontinuierlicher Ease-Out (Potenz 2.5). 
-        // Startet flüssig, bremst stetig ab, ohne abrupt "stehen" zu bleiben.
         const easeOut = 1 - Math.pow(1 - progress, 2.5);
         
-        const currentScore = target * easeOut;
-        setDisplayScore(currentScore);
+        setDisplayScore(targets.score * easeOut);
+        setDisplayTotMatch(Math.round(targets.tot * easeOut));
+        setDisplayRankingMatch(Math.round(targets.ranking * easeOut));
+        setDisplayTextMatch(Math.round(targets.text * easeOut));
+        setDisplaySoonMatch(0);
 
         if (progress < 1) {
           requestAnimationFrame(animate);
@@ -68,8 +81,12 @@ export default function StatsModal({
       return () => cancelAnimationFrame(raf);
     } else if (!isOpen) {
       setDisplayScore(0);
+      setDisplayTotMatch(0);
+      setDisplayRankingMatch(0);
+      setDisplayTextMatch(0);
+      setDisplaySoonMatch(0);
     }
-  }, [isOpen, stats?.bisouScore]);
+  }, [isOpen, stats]);
 
   // Calculate trend from previous score
   React.useEffect(() => {
@@ -77,7 +94,6 @@ export default function StatsModal({
       try {
         let prevRaw = localStorage.getItem('bisou_prev_score');
         if (!prevRaw) {
-          // If no previous score exists (e.g. first load live), simulate a previous score to show a starting trend
           const simulatedPrev = stats.bisouScore - 0.6;
           prevRaw = String(simulatedPrev);
         }
@@ -117,7 +133,6 @@ export default function StatsModal({
 
         {loading ? (
           <div className="space-y-3 animate-in fade-in duration-500">
-            {/* Top Stats Cards Skeleton */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px] animate-pulse">
                 <div className="w-20 h-2 bg-purple-200/50 rounded-full" />
@@ -129,29 +144,22 @@ export default function StatsModal({
               </div>
             </div>
 
-            {/* Match Rates Skeleton */}
+            {/* Match Rates Skeleton 2x2 */}
             <div className="bg-white border-2 border-purple-50 rounded-2xl p-4 animate-pulse">
               <div className="flex items-center gap-1.5 mb-3">
                 <div className="w-3.5 h-3.5 bg-purple-200/50 rounded-full" />
                 <div className="w-20 h-2 bg-purple-200/50 rounded-full" />
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="h-[56px] rounded-xl bg-purple-50/40 border border-purple-50/50 flex flex-col items-center justify-center gap-1.5">
-                  <div className="w-10 h-1.5 bg-purple-200/50 rounded-full" />
-                  <div className="w-8 h-4 bg-purple-200/50 rounded-full" />
-                </div>
-                <div className="h-[56px] rounded-xl bg-purple-50/40 border border-purple-50/50 flex flex-col items-center justify-center gap-1.5">
-                  <div className="w-10 h-1.5 bg-purple-200/50 rounded-full" />
-                  <div className="w-8 h-4 bg-purple-200/50 rounded-full" />
-                </div>
-                <div className="h-[56px] rounded-xl bg-purple-50/40 border border-purple-50/50 flex flex-col items-center justify-center gap-1.5">
-                  <div className="w-10 h-1.5 bg-purple-200/50 rounded-full" />
-                  <div className="w-8 h-4 bg-purple-200/50 rounded-full" />
-                </div>
+              <div className="grid grid-cols-2 gap-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-[56px] rounded-xl bg-purple-50/40 border border-purple-50/50 flex flex-col items-center justify-center gap-1.5">
+                    <div className="w-10 h-1.5 bg-purple-200/50 rounded-full" />
+                    <div className="w-8 h-4 bg-purple-200/50 rounded-full" />
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Answer Habits Skeleton */}
             <div className="bg-white border-2 border-purple-50 rounded-2xl p-4 animate-pulse">
               <div className="flex items-center gap-1.5 mb-3">
                 <div className="w-3.5 h-3.5 bg-purple-200/50 rounded-full" />
@@ -171,23 +179,22 @@ export default function StatsModal({
               </div>
             </div>
 
-            {/* Algorithm Footer Skeleton */}
             <div className="flex justify-center mt-3 animate-pulse">
               <div className="w-48 h-2 bg-purple-200/30 rounded-full" />
             </div>
           </div>
         ) : stats ? (
           <div className="space-y-3">
-            {/* Top Stats Cards */}
+            {/* Top Area stats */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100 flex flex-col justify-between">
+              <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
                 <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1.5">Gemeinsam Aktiv</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
                   <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
                 </div>
               </div>
-              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
+              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
                 <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
                 <div className="flex items-baseline justify-between">
                   <div className="flex items-baseline">
@@ -214,45 +221,50 @@ export default function StatsModal({
               </div>
             </div>
 
-            {/* Match rates per question type */}
+            {/* Match rates 2x2 Grid */}
             <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
               <div className="flex items-center gap-1.5 mb-3">
                 <Sparkles className="w-3.5 h-3.5 text-[var(--secondary)]" />
                 <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
               </div>
               
-              <div className="grid grid-cols-4 gap-1.5 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center">
                 {/* TOT Match */}
                 <div 
                   onClick={() => setHeartprintType('tot')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
                 >
-                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies/Das</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{stats.totMatch}%</span>
+                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies oder das</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{displayTotMatch}%</span>
                 </div>
 
                 {/* Ranking Match */}
                 <div 
                   onClick={() => setHeartprintType('ranking')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
                 >
                   <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{stats.rankingMatch}%</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{displayRankingMatch}%</span>
                 </div>
 
                 {/* Text Match */}
                 <div 
                   onClick={() => setHeartprintType('text')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
                 >
                   <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{stats.textMatch}%</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
                 </div>
 
                 {/* Coming Soon */}
-                <div className="flex flex-col items-center justify-center p-1.5 bg-gray-50/40 rounded-xl border border-dashed border-gray-200 min-h-[52px] gap-0.5">
-                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde<br/>eher</span>
-                  <span className="text-[6px] font-bold text-[var(--muted)] opacity-40 uppercase tracking-wider leading-tight text-center">Bald verfügbar</span>
+                <div className="relative flex flex-col items-center justify-center p-1.5 bg-gray-100/50 rounded-xl border border-dashed border-gray-200 min-h-[52px] overflow-hidden">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-[0.5px] bg-white/10 pointer-events-none">
+                    <span className="bg-white/90 text-[var(--muted)] text-[6px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
+                      Bald verfügbar
+                    </span>
+                  </div>
+                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
+                  <span className="text-sm font-black text-[var(--muted)] opacity-30">{displaySoonMatch}%</span>
                 </div>
               </div>
             </div>
@@ -265,14 +277,14 @@ export default function StatsModal({
               </div>
               
               <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-50">
+                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
                   <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
                   <div className="flex flex-col">
                     <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.myHabit}:00</span>
                     <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-50">
+                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-100">
                   <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
                   <div className="flex flex-col">
                     <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
@@ -329,10 +341,9 @@ export default function StatsModal({
               </p>
 
               <div className="space-y-3 px-0.5">
-                {/* Dies/Das */}
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'tot' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies / Das</span>
+                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies oder das</span>
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">70% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
@@ -343,7 +354,6 @@ export default function StatsModal({
                   </p>
                 </div>
 
-                {/* Ranking */}
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'ranking' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">2. Ranglisten</span>
@@ -357,7 +367,6 @@ export default function StatsModal({
                   </p>
                 </div>
 
-                {/* Freitext */}
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'text' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Freitexte</span>
