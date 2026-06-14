@@ -6,7 +6,6 @@ export function getDailyKey(): string {
   const now = new Date();
   
   // Convert current time to a number representing hours since midnight in CET/CEST
-  // We use "Europe/Berlin" for Central European Time
   const formatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Berlin',
     hour: 'numeric',
@@ -22,6 +21,7 @@ export function getDailyKey(): string {
   }
   
   // Format as YYYY-MM-DD based on the adjusted date in CET
+  // Robust extraction by part type
   const dayFormatter = new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Europe/Berlin',
     year: 'numeric',
@@ -29,8 +29,12 @@ export function getDailyKey(): string {
     day: '2-digit'
   });
   
-  const [{ value: day }, , { value: month }, , { value: year }] = dayFormatter.formatToParts(adjustedDate);
-  return `${year}-${month}-${day}`;
+  const parts = dayFormatter.formatToParts(adjustedDate);
+  const y = parts.find(p => p.type === 'year')?.value;
+  const m = parts.find(p => p.type === 'month')?.value;
+  const d = parts.find(p => p.type === 'day')?.value;
+  
+  return `${y}-${m}-${d}`;
 }
 
 /**
