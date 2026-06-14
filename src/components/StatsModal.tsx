@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock, HelpCircle } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 
 const getTimeIcon = (hour: number) => {
@@ -29,6 +29,7 @@ export default function StatsModal({
 }: StatsModalProps) {
   const [heartprintType, setHeartprintType] = useState<'tot' | 'ranking' | 'text' | 'all' | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
+  const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
 
   // Animate Bisou Score from 0 to target when modal opens or stats change
   React.useEffect(() => {
@@ -67,6 +68,29 @@ export default function StatsModal({
       return () => cancelAnimationFrame(raf);
     } else if (!isOpen) {
       setDisplayScore(0);
+    }
+  }, [isOpen, stats?.bisouScore]);
+
+  // Calculate trend from previous score
+  React.useEffect(() => {
+    if (isOpen && stats?.bisouScore != null) {
+      try {
+        const prevRaw = localStorage.getItem('bisou_prev_score');
+        if (prevRaw) {
+          const prev = parseFloat(prevRaw);
+          const delta = parseFloat((stats.bisouScore - prev).toFixed(1));
+          if (delta > 0) setScoreTrend({ delta, direction: 'up' });
+          else if (delta < 0) setScoreTrend({ delta: Math.abs(delta), direction: 'down' });
+          else setScoreTrend({ delta: 0, direction: 'same' });
+        } else {
+          setScoreTrend(null);
+        }
+        localStorage.setItem('bisou_prev_score', String(stats.bisouScore));
+      } catch {
+        setScoreTrend(null);
+      }
+    } else if (!isOpen) {
+      setScoreTrend(null);
     }
   }, [isOpen, stats?.bisouScore]);
 
@@ -163,11 +187,27 @@ export default function StatsModal({
               </div>
               <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
                 <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
-                <div className="flex items-baseline">
-                  <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
-                    {displayScore.toFixed(1)}
-                  </span>
-                  <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
+                <div className="flex items-baseline justify-between">
+                  <div className="flex items-baseline">
+                    <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
+                      {displayScore.toFixed(1)}
+                    </span>
+                    <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
+                  </div>
+                  {scoreTrend && (
+                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
+                      scoreTrend.direction === 'up' 
+                        ? 'bg-emerald-50 text-emerald-500' 
+                        : scoreTrend.direction === 'down' 
+                        ? 'bg-red-50 text-red-400' 
+                        : 'bg-gray-50 text-gray-400'
+                    }`}>
+                      {scoreTrend.direction === 'up' && <TrendingUp className="w-2.5 h-2.5" strokeWidth={3} />}
+                      {scoreTrend.direction === 'down' && <TrendingDown className="w-2.5 h-2.5" strokeWidth={3} />}
+                      {scoreTrend.direction === 'same' && <Minus className="w-2.5 h-2.5" strokeWidth={3} />}
+                      <span>{scoreTrend.direction === 'same' ? '±0' : scoreTrend.delta.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -179,53 +219,63 @@ export default function StatsModal({
                 <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
               </div>
               
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-4 gap-1.5 text-center">
                 {/* TOT Match */}
                 <div 
                   onClick={() => setHeartprintType('tot')}
-                  className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px] cursor-pointer active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
                 >
-                  <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Dies/Das</span>
-                  <span className="text-base font-black text-[var(--secondary)]">{stats.totMatch}%</span>
+                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies/Das</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{stats.totMatch}%</span>
                 </div>
 
                 {/* Ranking Match */}
                 <div 
                   onClick={() => setHeartprintType('ranking')}
-                  className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px] cursor-pointer active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
                 >
-                  <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Ranking</span>
-                  <span className="text-base font-black text-[var(--secondary)]">{stats.rankingMatch}%</span>
+                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{stats.rankingMatch}%</span>
                 </div>
 
                 {/* Text Match */}
                 <div 
                   onClick={() => setHeartprintType('text')}
-                  className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px] cursor-pointer active:scale-95 transition-transform"
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
                 >
-                  <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Freitext</span>
-                  <span className="text-base font-black text-[var(--secondary)]">{stats.textMatch}%</span>
+                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{stats.textMatch}%</span>
+                </div>
+
+                {/* Coming Soon */}
+                <div className="flex flex-col items-center justify-center p-1.5 bg-gray-50/40 rounded-xl border border-dashed border-gray-200 min-h-[52px] gap-0.5">
+                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde<br/>eher</span>
+                  <span className="text-[6px] font-bold text-[var(--muted)] opacity-40 uppercase tracking-wider leading-tight text-center">Bald verfügbar</span>
                 </div>
               </div>
             </div>
 
             {/* Answer Habits */}
-            <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
-              <div className="flex items-center gap-1.5 mb-3">
+            <div className="bg-white border-2 border-purple-50 rounded-2xl p-3">
+              <div className="flex items-center gap-1.5 mb-2">
                 <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
                 <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
               </div>
               
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="flex flex-col items-center justify-center py-2.5 px-2 bg-purple-50/40 rounded-xl border border-purple-50 text-center">
-                  <span className="text-lg mb-0.5">{getTimeIcon(stats.myHabit)}</span>
-                  <span className="text-sm font-black text-[#1F1939]">{stats.myHabit}:00</span>
-                  <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] mt-1">{capitalizeName(userName.split(' ')[0])}</span>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-50">
+                  <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.myHabit}:00</span>
+                    <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center justify-center py-2.5 px-2 bg-orange-50/40 rounded-xl border border-orange-50 text-center">
-                  <span className="text-lg mb-0.5">{getTimeIcon(stats.partnerHabit)}</span>
-                  <span className="text-sm font-black text-[#1F1939]">{stats.partnerHabit}:00</span>
-                  <span className="text-[8px] font-black text-orange-500 uppercase tracking-[0.1em] mt-1">{capitalizeName(partnerName.split(' ')[0])}</span>
+                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-50">
+                  <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
+                    <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
+                  </div>
                 </div>
               </div>
             </div>
