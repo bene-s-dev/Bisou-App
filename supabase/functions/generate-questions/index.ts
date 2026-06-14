@@ -151,7 +151,7 @@ STIMMUNG & TONFALL (WICHTIG!):
             schema: zodToJsonSchema(dailyQuestionsSchema) 
           } 
         },
-        temperature: 1.0 // Hohe Temperatur für mehr Kreativität innerhalb der Vorgaben
+        temperature: 1.0 // Wie gewünscht auf 1.0
       }
     });
 
