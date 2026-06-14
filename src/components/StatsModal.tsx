@@ -27,7 +27,7 @@ export default function StatsModal({
   stats,
   loading
 }: StatsModalProps) {
-  const [showHeartprintModal, setShowHeartprintModal] = useState(false);
+  const [heartprintType, setHeartprintType] = useState<'tot' | 'ranking' | 'text' | 'all' | null>(null);
 
   if (!isOpen) return null;
 
@@ -120,7 +120,7 @@ export default function StatsModal({
                   <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
                 </div>
               </div>
-              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setShowHeartprintModal(true)}>
+              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100 flex flex-col justify-between cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
                 <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-2xl font-black text-[var(--primary)]">{stats.bisouScore.toFixed(1)}</span>
@@ -138,19 +138,28 @@ export default function StatsModal({
               
               <div className="grid grid-cols-3 gap-2 text-center">
                 {/* TOT Match */}
-                <div className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px]">
+                <div 
+                  onClick={() => setHeartprintType('tot')}
+                  className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px] cursor-pointer active:scale-95 transition-transform"
+                >
                   <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Dies/Das</span>
                   <span className="text-base font-black text-[var(--secondary)]">{stats.totMatch}%</span>
                 </div>
 
                 {/* Ranking Match */}
-                <div className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px]">
+                <div 
+                  onClick={() => setHeartprintType('ranking')}
+                  className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px] cursor-pointer active:scale-95 transition-transform"
+                >
                   <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Ranking</span>
                   <span className="text-base font-black text-[var(--secondary)]">{stats.rankingMatch}%</span>
                 </div>
 
                 {/* Text Match */}
-                <div className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px]">
+                <div 
+                  onClick={() => setHeartprintType('text')}
+                  className="flex flex-col items-center justify-center p-2 bg-purple-50/40 rounded-xl border border-purple-50 min-h-[56px] cursor-pointer active:scale-95 transition-transform"
+                >
                   <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider mb-1">Freitext</span>
                   <span className="text-base font-black text-[var(--secondary)]">{stats.textMatch}%</span>
                 </div>
@@ -183,7 +192,7 @@ export default function StatsModal({
                 Berechnet mit dem HeartPrint<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>-Algorithmus
               </p>
               <button 
-                onClick={() => setShowHeartprintModal(true)}
+                onClick={() => setHeartprintType('all')}
                 className="w-4 h-4 rounded-full bg-purple-100 text-[var(--secondary)] flex items-center justify-center hover:bg-purple-200 transition-colors focus:outline-none shrink-0"
               >
                 <Info className="w-2.5 h-2.5" />
@@ -197,9 +206,9 @@ export default function StatsModal({
         )}
       </div>
 
-      {showHeartprintModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 backdrop-blur-md bg-purple-950/20 will-change-[opacity,backdrop-filter] transition-all animate-fade-in">
-          <div className="absolute inset-0" onClick={() => setShowHeartprintModal(false)} />
+      {heartprintType && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-purple-950/20 will-change-[opacity] transition-all animate-fade-in">
+          <div className="absolute inset-0" onClick={() => setHeartprintType(null)} />
           <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative contain-layout z-10 animate-entrance shadow-2xl border border-purple-100/50">
             <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
               <div className="flex items-center gap-2">
@@ -209,21 +218,21 @@ export default function StatsModal({
                 <h4 className="text-sm leading-tight"><span className="font-black text-[#1F1939]">HeartPrint™</span> <span className="font-normal text-[9px] text-[var(--muted)]">by Bisou</span><span className="font-black text-[#1F1939]">-Algorithmus</span></h4>
               </div>
               <button 
-                onClick={() => setShowHeartprintModal(false)} 
+                onClick={() => setHeartprintType(null)} 
                 className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto scrollbar-soft pr-1 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
-              <p>
+            <div className="flex-1 overflow-y-auto scrollbar-soft px-1.5 pb-2 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
+              <p className="px-0.5">
                 Der <strong>Bisou-Score</strong> (0 bis 10) misst euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
               </p>
 
-              <div className="space-y-2.5">
+              <div className="space-y-3 px-0.5">
                 {/* Dies/Das */}
-                <div className="bg-purple-50/40 rounded-2xl p-3 border border-purple-100/50">
+                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'tot' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies / Das</span>
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">70% Gewichtung</span>
@@ -237,7 +246,7 @@ export default function StatsModal({
                 </div>
 
                 {/* Ranking */}
-                <div className="bg-purple-50/40 rounded-2xl p-3 border border-purple-100/50">
+                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'ranking' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">2. Ranglisten</span>
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">20% Gewichtung</span>
@@ -251,7 +260,7 @@ export default function StatsModal({
                 </div>
 
                 {/* Freitext */}
-                <div className="bg-purple-50/40 rounded-2xl p-3 border border-purple-100/50">
+                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'text' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Freitexte</span>
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">10% Gewichtung</span>

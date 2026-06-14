@@ -339,7 +339,7 @@ body.modal-open #root {
 
 /* Modal System Styles */
 .modal-backdrop {
-  @apply fixed inset-0 bg-[#2D264B]/40 backdrop-blur-md z-[2000] flex items-center justify-center p-4;
+  @apply fixed inset-0 bg-[#2D264B]/40 z-[2000] flex items-center justify-center p-4;
 }
 
 .modal-content {
