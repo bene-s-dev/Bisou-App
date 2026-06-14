@@ -206,7 +206,7 @@ export default function StatsModal({
                 <div className="w-8 h-8 bg-purple-50 rounded-xl flex items-center justify-center">
                   <Sparkles className="w-4.5 h-4.5 text-[var(--secondary)]" />
                 </div>
-                <h4 className="font-black text-[#1F1939] text-sm leading-tight">HeartPrint™ Algorithmus</h4>
+                <h4 className="font-black text-[#1F1939] text-sm leading-tight">HeartPrint™-Algorithmus</h4>
               </div>
               <button 
                 onClick={() => setShowHeartprintModal(false)} 
