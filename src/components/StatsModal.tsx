@@ -284,7 +284,7 @@ export default function StatsModal({
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">70% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Binärer Abgleich eurer Entweder-Oder-Antworten
+                    Binärer Abgleich eurer Entweder-oder-Antworten
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
                     Wählen beide dieselbe Option, zählt dies als 100% Match, sonst 0%.
