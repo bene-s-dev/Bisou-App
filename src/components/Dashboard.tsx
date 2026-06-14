@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import StatsModal from './StatsModal';
 import { supabase } from '../lib/supabase';
 import { GREETINGS, Question } from '../constants/questions';
 import { User as UserIcon, Lock, Heart as HeartIcon, Clock, Sparkles, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3, TrendingUp, Zap } from 'lucide-react';
@@ -16,6 +17,7 @@ interface DashboardProps {
   partnerId?: string | null;
   dashboardData: any;
   onStartQuestions: () => void;
+  onRefreshData?: () => Promise<void>;
 }
 
 const getTimeIcon = (hour: number) => {
@@ -33,175 +35,6 @@ const getTimeLabel = (hour: number) => {
   if (hour >= 18 && hour < 22) return 'Abends';
   return 'Nachts';
 };
-
-function StatsModal({ isOpen, onClose, partnerId, partnerName, userName }: { isOpen: boolean, onClose: () => void, partnerId: string, partnerName: string, userName: string }) {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<{
-    totalAnswers: number;
-    agreementRate: number;
-    myHabit: number;
-    partnerHabit: number;
-  } | null>(null);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data } = await supabase.auth.getSession();
-      const session = data?.session;
-      if (!session || !partnerId) return;
-
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
-
-      const { data: answers } = await supabase
-        .from('answers')
-        .select('*')
-        .gte('day_key', dateStr)
-        .in('user_id', [session.user.id, partnerId]);
-
-      if (!answers) return;
-
-      const myAnswers = answers.filter(a => a.user_id === session.user.id);
-      const partnerAnswers = answers.filter(a => a.user_id === partnerId);
-
-      // 1. Total Questions (Days where both answered)
-      const daysWithBoth = myAnswers.filter(ma => 
-        partnerAnswers.some(pa => pa.day_key === ma.day_key)
-      );
-
-      // 2. Agreement Rate (Only on Question 1 - TOT)
-      let agreements = 0;
-      daysWithBoth.forEach(ma => {
-        const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
-        if (pa) {
-          const myQ1 = ma.choice.split(' | ')[0];
-          const partnerQ1 = pa.choice.split(' | ')[0];
-          if (myQ1 === partnerQ1) agreements++;
-        }
-      });
-
-      // 3. Habits (Avg Hour)
-      const getAvgHour = (ans: any[]) => {
-        if (ans.length === 0) return 0;
-        const totalHours = ans.reduce((acc, a) => {
-          const hour = new Date(a.created_at).getHours();
-          return acc + hour;
-        }, 0);
-        return Math.round(totalHours / ans.length);
-      };
-
-      setStats({
-        totalAnswers: daysWithBoth.length,
-        agreementRate: daysWithBoth.length > 0 ? Math.round((agreements / daysWithBoth.length) * 100) : 0,
-        myHabit: getAvgHour(myAnswers),
-        partnerHabit: getAvgHour(partnerAnswers)
-      });
-    } catch (err) {
-      console.error("Stats error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [partnerId]);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Reset state on open to avoid showing old data before skeleton
-      setLoading(true);
-      setStats(null);
-      
-      const timer = setTimeout(() => {
-        fetchStats();
-      }, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen, fetchStats]);
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
-      <div className="absolute inset-0" onClick={onClose} />
-      <div className="modal-content p-8 will-change-transform contain-layout">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center">
-              <BarChart3 className="w-7 h-7 text-[var(--secondary)]" />
-            </div>
-            <div>
-              <h3 className="font-black text-[#1F1939] text-lg leading-tight">Eure Bisou-Statistik</h3>
-              <p className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-widest">Die letzten 30 Tage</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-5 h-5" /></button>
-        </div>
-
-        {loading ? (
-          <div className="space-y-4 animate-in fade-in duration-500">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="h-[92px] rounded-3xl skeleton" />
-              <div className="h-[92px] rounded-3xl skeleton" />
-            </div>
-            <div className="bg-white border-2 border-purple-50 rounded-3xl p-6">
-              <div className="w-32 h-3 rounded-full skeleton mb-6" />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="h-[120px] rounded-2xl skeleton" />
-                <div className="h-[120px] rounded-2xl skeleton" />
-              </div>
-            </div>
-          </div>
-        ) : stats ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-purple-50 rounded-3xl p-5 border border-purple-100">
-                <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-2">Gemeinsam Aktiv</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
-                  <span className="text-[10px] font-bold text-[#4A4468]">Tage</span>
-                </div>
-              </div>
-              <div className="bg-orange-50 rounded-3xl p-5 border border-orange-100">
-                <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-2">Übereinstimmung</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-orange-500">{stats.agreementRate}%</span>
-                  <Zap className="w-4 h-4 text-orange-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white border-2 border-purple-50 rounded-3xl p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-4 h-4 text-[var(--secondary)]" />
-                <h4 className="text-[10px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col items-center justify-center py-4 px-2 bg-purple-50 rounded-2xl border-2 border-purple-100 text-center">
-                  <span className="text-2xl mb-1">{getTimeIcon(stats.myHabit)}</span>
-                  <span className="text-lg font-black text-[#1F1939]">{stats.myHabit}:00</span>
-                  <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.1em] mt-2">{capitalizeName(userName.split(' ')[0])}</span>
-                  <span className="text-[9px] font-bold text-[var(--muted)] mt-0.5">{getTimeLabel(stats.myHabit)}</span>
-                </div>
-                <div className="flex flex-col items-center justify-center py-4 px-2 bg-orange-50 rounded-2xl border-2 border-orange-100 text-center">
-                  <span className="text-2xl mb-1">{getTimeIcon(stats.partnerHabit)}</span>
-                  <span className="text-lg font-black text-[#1F1939]">{stats.partnerHabit}:00</span>
-                  <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.1em] mt-2">{capitalizeName(partnerName.split(' ')[0])}</span>
-                  <span className="text-[9px] font-bold text-[var(--muted)] mt-0.5">{getTimeLabel(stats.partnerHabit)}</span>
-                </div>
-              </div>
-              <p className="text-[9px] font-bold text-[var(--muted)] mt-4 text-center italic opacity-60">Durchschnittliche Uhrzeit eurer Antworten</p>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-sm font-bold text-[#4A4468]">Keine Daten für Statistiken verfügbar.</p>
-          </div>
-        )}
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boolean, onClose: () => void, streakData: any, partnerName: string }) {
   const [viewDate, setViewDate] = useState(new Date());
@@ -284,7 +117,8 @@ export default function Dashboard({
   partnerAvatar, 
   partnerId, 
   dashboardData,
-  onStartQuestions 
+  onStartQuestions,
+  onRefreshData
 }: DashboardProps) {
   const { showAlert, showConfirm } = useDialog();
   const [showComparison, setShowComparison] = useState(false);
@@ -293,6 +127,217 @@ export default function Dashboard({
   const [showStreakModal, setShowStreakModal] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [isPartnerHovered, setIsPartnerHovered] = useState(false);
+
+  const [stats, setStats] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_bisou_stats');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [loadingStats, setLoadingStats] = useState(!stats);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const hasCached = !!localStorage.getItem('cached_bisou_stats');
+      if (!hasCached) {
+        setLoadingStats(true);
+      }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session || !partnerId) {
+        if (!hasCached) setLoadingStats(false);
+        return;
+      }
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+      const { data: answers } = await supabase
+        .from('answers')
+        .select('*')
+        .gte('day_key', dateStr)
+        .in('user_id', [session.user.id, partnerId]);
+
+      if (!answers) {
+        setLoadingStats(false);
+        return;
+      }
+
+      const myAnswers = answers.filter(a => a.user_id === session.user.id);
+      const partnerAnswers = answers.filter(a => a.user_id === partnerId);
+
+      // 1. Total Questions (Days where both answered)
+      const daysWithBoth = myAnswers.filter(ma => 
+        partnerAnswers.some(pa => pa.day_key === ma.day_key)
+      );
+
+      if (daysWithBoth.length === 0) {
+        const newStats = {
+          totalAnswers: 0,
+          myHabit: 0,
+          partnerHabit: 0,
+          totMatch: 0,
+          rankingMatch: 0,
+          textMatch: 0,
+          bisouScore: 0
+        };
+        setStats(newStats);
+        localStorage.setItem('cached_bisou_stats', JSON.stringify(newStats));
+        setLoadingStats(false);
+        return;
+      }
+
+      // 2. Parse answer string format: "q0_ans | q1_ans | q2_ans [sig]"
+      const parseChoice = (choiceStr: string) => {
+        const mainPart = String(choiceStr || '').split(" [")[0];
+        const parts = mainPart.split(" | ");
+        return {
+          tot: (parts[0] || '').trim(),
+          ranking: parts[1] ? parts[1].split(" > ").map(s => s.trim()) : [],
+          text: (parts[2] || '').trim()
+        };
+      };
+
+      // 3. Compute matches for TOT and Ranking, collect text pairs for semantic compare
+      let totSum = 0;
+      let rankingSum = 0;
+      const textPairs: { day_key: string; text1: string; text2: string }[] = [];
+
+      daysWithBoth.forEach(ma => {
+        const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
+        if (pa) {
+          const myP = parseChoice(ma.choice);
+          const partnerP = parseChoice(pa.choice);
+
+          // Dies-oder-Das-Frage: Binärer Logik-Abgleich
+          if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
+            totSum += 100;
+          }
+
+          // Ranking-Frage: Positions-Abstands-Analyse via quadratischer Positions-Differenz
+          const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
+          const n = commonItems.length;
+          if (n <= 1) {
+            rankingSum += 100;
+          } else {
+            let sumSqDiff = 0;
+            for (const item of commonItems) {
+              const myPos = myP.ranking.indexOf(item);
+              const partnerPos = partnerP.ranking.indexOf(item);
+              sumSqDiff += Math.pow(myPos - partnerPos, 2);
+            }
+            const maxSqDiff = (n * (n * n - 1)) / 3;
+            const sim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
+            rankingSum += Math.max(0, Math.min(100, sim));
+          }
+
+          // Setup Free Text pairs for compare
+          if (myP.text || partnerP.text) {
+            textPairs.push({
+              day_key: ma.day_key,
+              text1: myP.text,
+              text2: partnerP.text
+            });
+          }
+        }
+      });
+
+      const totalDays = daysWithBoth.length;
+      const totMatchAvg = Math.round(totSum / totalDays);
+      const rankingMatchAvg = Math.round(rankingSum / totalDays);
+
+      // 4. Free Text match (semantic comparison via Edge Function or fallback Jaccard overlap)
+      let textMatchAvg = 0;
+      const textSimilarities: Record<string, number> = {};
+
+      if (textPairs.length > 0) {
+        try {
+          const { data: edgeData, error: edgeErr } = await supabase.functions.invoke('compare-embeddings', {
+            body: { pairs: textPairs }
+          });
+          if (edgeErr) throw edgeErr;
+
+          if (edgeData?.results && Array.isArray(edgeData.results)) {
+            edgeData.results.forEach((res: any) => {
+              textSimilarities[res.day_key] = res.similarity;
+            });
+          } else {
+            throw new Error("Invalid response from compare-embeddings Edge Function");
+          }
+        } catch (e) {
+          console.warn("Failed semantic embedding compare, falling back to local Jaccard word-overlap:", e);
+          textPairs.forEach(pair => {
+            const clean1 = pair.text1.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            const clean2 = pair.text2.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            if (!clean1 || !clean2) {
+              textSimilarities[pair.day_key] = 0;
+            } else if (clean1 === clean2) {
+              textSimilarities[pair.day_key] = 100;
+            } else {
+              const words1 = clean1.split(/\s+/);
+              const words2 = clean2.split(/\s+/);
+              const set1 = new Set(words1);
+              const set2 = new Set(words2);
+              
+              let intersect = 0;
+              for (const w of set1) {
+                if (set2.has(w)) intersect++;
+              }
+              const union = new Set([...words1, ...words2]).size;
+              textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
+            }
+          });
+        }
+
+        let textSum = 0;
+        daysWithBoth.forEach(ma => {
+          textSum += textSimilarities[ma.day_key] || 0;
+        });
+        textMatchAvg = Math.round(textSum / totalDays);
+      }
+
+      // 5. Calculate Bisou Score (0-10, one decimal place)
+      const avgPercent = (totMatchAvg + rankingMatchAvg + textMatchAvg) / 3;
+      const bisouScore = Math.max(0, Math.min(10, Math.round((avgPercent / 10) * 10) / 10));
+
+      // 6. Habits (Avg Hour)
+      const getAvgHour = (ans: any[]) => {
+        if (ans.length === 0) return 0;
+        const totalHours = ans.reduce((acc, a) => {
+          const hour = new Date(a.created_at).getHours();
+          return acc + hour;
+        }, 0);
+        return Math.round(totalHours / ans.length);
+      };
+
+      const newStats = {
+        totalAnswers: totalDays,
+        myHabit: getAvgHour(myAnswers),
+        partnerHabit: getAvgHour(partnerAnswers),
+        totMatch: totMatchAvg,
+        rankingMatch: rankingMatchAvg,
+        textMatch: textMatchAvg,
+        bisouScore
+      };
+      setStats(newStats);
+      localStorage.setItem('cached_bisou_stats', JSON.stringify(newStats));
+    } catch (err) {
+      console.error("Stats error:", err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [partnerId]);
+
+  useEffect(() => {
+    if (partnerId) {
+      fetchStats();
+    } else {
+      setLoadingStats(false);
+    }
+  }, [partnerId, dashboardData, fetchStats]);
 
   const navigate = useNavigate();
   const dayKey = getDailyKey();
@@ -320,24 +365,29 @@ export default function Dashboard({
 
   const { meAnswered, partnerAnswered, myAnswers, partnerAnswers, dailyQs, myStreak, partnerStreak, myTime, partnerTime } = useMemo(() => {
     if (!dashboardData) return { meAnswered: false, partnerAnswered: false, myAnswers: [], partnerAnswers: [], dailyQs: [], myStreak: null, partnerStreak: null, myTime: null, partnerTime: null };
-    const { answers, questions, streaks } = dashboardData;
-    const me = answers.find((a: any) => a.user_id !== partnerId);
-    const other = partnerId ? answers.find((a: any) => a.user_id === partnerId) : null;
+    const { answers = [], questions = [], streaks = [] } = dashboardData;
+    
+    const safeAnswers = Array.isArray(answers) ? answers : [];
+    const safeStreaks = Array.isArray(streaks) ? streaks : [];
+    const safeQuestions = Array.isArray(questions) ? questions : [];
+
+    const me = safeAnswers.find((a: any) => a.user_id !== partnerId);
+    const other = partnerId ? safeAnswers.find((a: any) => a.user_id === partnerId) : null;
     
     // Explicitly identify streaks
-    const myS = streaks?.find((s: any) => s.user_id !== partnerId);
-    const pS = partnerId ? streaks?.find((s: any) => s.user_id === partnerId) : null;
+    const myS = safeStreaks.find((s: any) => s.user_id !== partnerId);
+    const pS = partnerId ? safeStreaks.find((s: any) => s.user_id === partnerId) : null;
 
     return {
       meAnswered: !!me,
       partnerAnswered: !!other,
-      myAnswers: me ? me.choice.split(" [")[0].split(" | ") : [],
-      partnerAnswers: other ? other.choice.split(" [")[0].split(" | ") : null,
-      dailyQs: questions as Question[],
+      myAnswers: me && me.choice ? me.choice.split(" [")[0].split(" | ") : [],
+      partnerAnswers: other && other.choice ? other.choice.split(" [")[0].split(" | ") : null,
+      dailyQs: safeQuestions as Question[],
       myStreak: myS,
       partnerStreak: pS,
-      myTime: me ? new Date(me.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null,
-      partnerTime: other ? new Date(other.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null
+      myTime: me && me.created_at ? new Date(me.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null,
+      partnerTime: other && other.created_at ? new Date(other.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null
     };
   }, [dashboardData, partnerId]);
 
@@ -350,6 +400,10 @@ export default function Dashboard({
           const user = data?.user;
           if (!user) return;
           await supabase.from('answers').delete().eq('day_key', dayKey).eq('user_id', user.id);
+          if (onRefreshData) {
+            await onRefreshData();
+          }
+          navigate('/questions');
         } catch (err) {
           showAlert("Fehler beim Löschen der Antworten.", "error");
         }
@@ -456,15 +510,15 @@ export default function Dashboard({
             <div className="flex -space-x-4">
               {/* Partner Avatar (on the left, with soft gradient mask on the right edge) */}
               <div 
-                className="relative z-20 w-20 h-20 sm:w-24 sm:h-24"
+                className="relative z-20 w-[88px] h-[88px] sm:w-[106px] sm:h-[106px]"
                 onMouseEnter={() => setIsPartnerHovered(true)}
                 onMouseLeave={() => setIsPartnerHovered(false)}
               >
                 {/* Unclipped shadow element behind the masked avatar */}
-                <div className="absolute inset-0 rounded-[2rem] sm:rounded-[2.4rem] shadow-md pointer-events-none -z-10" />
+                <div className="absolute inset-0 rounded-[2.2rem] sm:rounded-[2.6rem] shadow-md pointer-events-none -z-10" />
                 <div 
                   onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
-                  className={`w-full h-full rounded-[2rem] sm:rounded-[2.4rem] border-2 border-white flex items-center justify-center overflow-hidden transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
+                  className={`w-full h-full rounded-[2.2rem] sm:rounded-[2.6rem] border-2 border-white flex items-center justify-center overflow-hidden transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
                   style={{
                     maskImage: isPartnerHovered 
                       ? 'linear-gradient(to right, black 80%, rgba(0,0,0,0.85) 100%)'
@@ -474,52 +528,35 @@ export default function Dashboard({
                       : 'linear-gradient(to right, black 80%, rgba(0,0,0,0.4) 100%)',
                   }}
                 >
-                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--secondary)]" />)}
+                  {partnerAvatar ? (<img src={partnerAvatar} alt="P" className="w-full h-full object-cover" />) : (<UserIcon className="w-9 h-9 sm:w-11 sm:h-11 text-[var(--secondary)]" />)}
                 </div>
                 {/* Partner Flame Pill (Bottom Left, slightly overlapping) */}
                 <div 
                   onClick={() => hasPartner && setShowStreakModal('partner')}
-                  className={`absolute bottom-0 right-[85%] z-30 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-100 rounded-full transition-all shadow-sm ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-100' : 'opacity-40'}`}
+                  className={`absolute bottom-0 right-[82%] z-30 flex items-center gap-[2px] px-1 py-[1px] bg-orange-50 border border-orange-200 rounded-full transition-all shadow-sm ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-100' : 'opacity-40'}`}
                 >
-                  <span className="text-[11px] font-black text-orange-600">{hasPartner ? (partnerStreak?.current_streak || 0) : 0}</span>
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[10px] font-black text-orange-600 leading-none">{hasPartner ? (partnerStreak?.current_streak || 0) : 0}</span>
+                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
                 </div>
               </div>
 
               {/* User Avatar (on the right) */}
-              <div className="relative z-10">
+              <div className="relative z-10 w-[88px] h-[88px] sm:w-[106px] sm:h-[106px]">
                 <div 
                   onClick={() => userAvatar && setFullscreenImage(userAvatar)}
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-[2rem] sm:rounded-[2.4rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 cursor-pointer"
+                  className="w-full h-full rounded-[2.2rem] sm:rounded-[2.6rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 cursor-pointer"
                 >
-                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-8 h-8 sm:w-10 sm:h-10 text-[var(--secondary)]" />)}
+                  {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-9 h-9 sm:w-11 sm:h-11 text-[var(--secondary)]" />)}
                 </div>
                 {/* User Flame Pill (Bottom Right, slightly overlapping) */}
                 <div 
                   onClick={() => setShowStreakModal('user')}
-                  className="absolute bottom-0 left-[85%] z-30 flex items-center gap-1 px-2.5 py-1 bg-orange-50 border-2 border-orange-100 rounded-full active:scale-95 cursor-pointer hover:bg-orange-100 transition-all shadow-sm"
+                  className="absolute bottom-0 left-[82%] z-30 flex items-center gap-[2px] px-1 py-[1px] bg-orange-50 border border-orange-200 rounded-full active:scale-95 cursor-pointer hover:bg-orange-100 transition-all shadow-sm"
                 >
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
-                  <span className="text-[11px] font-black text-orange-600">{myStreak?.current_streak || 0}</span>
+                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className="text-[10px] font-black text-orange-600 leading-none">{myStreak?.current_streak || 0}</span>
                 </div>
               </div>
-            </div>
-
-            <div className="flex items-center justify-center w-full mt-3 px-4">
-              {hasPartner ? (
-                <div className="flex items-center justify-center gap-x-8 sm:gap-x-10 max-w-full">
-                  <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center max-w-[110px] sm:max-w-[130px] break-words leading-tight">
-                    {capitalizeName(partnerName)}
-                  </span>
-                  <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center max-w-[110px] sm:max-w-[130px] break-words leading-tight">
-                    {userName ? capitalizeName(userName) : 'Ich'}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-[10px] font-black text-[#4A4468] uppercase tracking-[0.1em] text-center max-w-[110px] sm:max-w-[130px] break-words leading-tight translate-x-8 sm:translate-x-10">
-                  {userName ? capitalizeName(userName) : 'Ich'}
-                </span>
-              )}
             </div>
           </div>
         </div>
@@ -597,6 +634,23 @@ export default function Dashboard({
                     <BarChart3 className="w-4 h-4" />
                   </button>
                 </div>
+                
+                <div className="flex items-center gap-1 -mt-2 -mb-1">
+                  <svg 
+                    className="w-2.5 h-2.5 text-[var(--secondary)] opacity-60" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/>
+                  </svg>
+                  <p className="text-[7.5px] font-bold text-[var(--muted)] text-center opacity-40">
+                    InfinteFlow<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -606,9 +660,10 @@ export default function Dashboard({
       <StatsModal 
         isOpen={showStatsModal} 
         onClose={() => setShowStatsModal(false)} 
-        partnerId={partnerId || ''} 
         partnerName={partnerName}
         userName={userName}
+        stats={stats}
+        loading={loadingStats}
       />
 
       <StreakModal 

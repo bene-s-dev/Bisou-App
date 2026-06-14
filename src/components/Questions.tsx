@@ -25,15 +25,14 @@ const EncryptionOverlay = () => {
   }, []);
 
   useEffect(() => {
-    // Sequence
-    const t1 = setTimeout(() => setPhase(2), 500);   // Start encrypting text
-    const t2 = setTimeout(() => setPhase(3), 2200);  // Letter moves into envelope
-    const t3 = setTimeout(() => setPhase(4), 3100);  // Envelope flap closes
-    const t4 = setTimeout(() => setPhase(5), 3800);  // Seal (Lock) appears
-    const t5 = setTimeout(() => setPhase(6), 4600);  // Move up and disappear
-    const t6 = setTimeout(() => setPhase(7), 5450);  // Fade out background overlay
+    // Sequence (sped up for a snappier, more satisfying experience)
+    const t1 = setTimeout(() => setPhase(2), 200);   // Start encrypting text
+    const t2 = setTimeout(() => setPhase(3), 1000);  // Letter moves into envelope
+    const t3 = setTimeout(() => setPhase(4), 1450);  // Envelope flap closes
+    const t4 = setTimeout(() => setPhase(5), 1800);  // Seal (Lock) appears
+    const t5 = setTimeout(() => setPhase(6), 2200);  // Move up, background fades out, disappear
     
-    return () => { [t1, t2, t3, t4, t5, t6].forEach(clearTimeout); };
+    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
   }, []);
 
   useEffect(() => {
@@ -48,21 +47,21 @@ const EncryptionOverlay = () => {
         }).join(""));
         iteration++;
         if (iteration > original.length * 2) clearInterval(interval);
-      }, 40);
+      }, 20);
       return () => clearInterval(interval);
     }
   }, [phase, targetScrambled]);
 
   return createPortal(
     <div 
-      className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-opacity duration-700 ease-in-out
-        ${phase === 7 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-opacity duration-300 ease-in-out
+        ${phase >= 6 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
     >
       <div 
         className="relative w-48 h-48 flex items-center justify-center"
         style={{
           transform: phase >= 6 ? 'translate3d(0, -120vh, 0) scale(0.9)' : 'translate3d(0, 0, 0) scale(1)',
-          transition: 'transform 850ms cubic-bezier(0.32, 0, 0.67, 0)',
+          transition: 'transform 450ms cubic-bezier(0.32, 0, 0.67, 0)',
           perspective: '600px',
           transformStyle: 'preserve-3d'
         }}
@@ -81,7 +80,7 @@ const EncryptionOverlay = () => {
 
         {/* Layer 1b: Envelope Flap (3D folding flap) */}
         <div 
-          className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-600 ease-in-out"
+          className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-300 ease-in-out"
           style={{
             transformOrigin: '96px 64px',
             transform: phase >= 4 ? 'rotateX(-180deg)' : 'rotateX(0deg)',
@@ -103,7 +102,7 @@ const EncryptionOverlay = () => {
 
         {/* Layer 2: The Letter (slides down behind EnvelopeFront pocket) */}
         <div 
-          className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-2xl shadow-lg border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-800 ease-in-out z-20 
+          className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-2xl shadow-lg border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-350 ease-in-out z-20 
             ${phase >= 3 ? 'translate-y-[48px] scale-90 opacity-0' : 'translate-y-[-60px] scale-100 opacity-100'}`}
         >
           <div className="w-full h-2 bg-[var(--secondary)] rounded-full opacity-30" />
@@ -135,7 +134,7 @@ const EncryptionOverlay = () => {
             transformOrigin: 'center center',
             transform: phase >= 5 ? 'scale(1)' : 'scale(0)',
             opacity: phase >= 5 ? 1 : 0,
-            transition: 'transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 450ms ease-out'
+            transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 250ms ease-out'
           }}
         >
           <div className="bg-[var(--secondary)] p-3 rounded-full shadow-2xl border-4 border-white">
@@ -205,7 +204,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   const sortableRef = useRef<HTMLDivElement>(null);
   const sortableInstance = useRef<Sortable | null>(null);
   const dayKey = getDailyKey();
-  const MAX_TEXT_LENGTH = 265;
+  const MAX_TEXT_LENGTH = 256;
 
   // --- PERSISTENCE ---
   // Load progress from localStorage on mount if not already completed
@@ -261,12 +260,23 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
       
       // Update results but only change step if moving TO completed state
-      if (my.length >= 3 && step < 3) {
-        setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
-        setStep(3);
-      } else if (my.length >= 3) {
-        // Just update results if we are already in step 3
-        setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
+      if (my.length >= 3) {
+        if (step < 3) {
+          setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
+          setStep(3);
+        } else {
+          setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
+        }
+      } else if (step === 3) {
+        // Database says no answers, but local step is 3: answers were deleted!
+        setMyResults([]);
+        setStep(0);
+        setPartnerResults(null);
+        setSelectedTot(null);
+        setTextVal('');
+        setRankingOptions([]);
+        setIsSubmitting(false);
+        setRevealResults(false);
       }
       
       setPartnerResults(prev => JSON.stringify(prev) === JSON.stringify(partner) ? prev : partner);
@@ -334,7 +344,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
   }, [dayKey, partnerId]);
 
   useEffect(() => { 
-    if (!dashboardData || !dashboardData.answers || dashboardData.answers.length === 0) {
+    if (!dashboardData) {
       loadData(); 
     }
   }, [loadData, dashboardData]);
@@ -452,8 +462,8 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       const sig = dailyQs.map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
       
-      // Delete old answers for this user
-      await supabase.from('answers').delete().eq('user_id', session.user.id).neq('day_key', dayKey);
+      // Overwrite today's answer for this user if it exists (preserving past days)
+      await supabase.from('answers').delete().eq('user_id', session.user.id).eq('day_key', dayKey);
       
       const { error } = await supabase.from('answers').insert([{ user_id: session.user.id, choice: choiceStr, day_key: dayKey }]);
       if (error && error.code !== '23505') throw error;
@@ -474,24 +484,19 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
       // TRIGGER ANIMATION
       setIsEncrypting(true);
       
-      // Switch step to 3 at 5450ms, exactly when the overlay starts to fade out
+      // Switch step to 3 and start revealing results at 2200ms, exactly when the envelope starts flying up
       setTimeout(() => {
         setMyResults(finalResults);
         setStep(3);
-      }, 5450);
-
-      // Start revealing the results at 5750ms (300ms after the overlay starts fading out)
-      // This allows the elements to slide up and fade in while the overlay becomes transparent
-      setTimeout(() => {
         setRevealResults(true);
-      }, 5750);
+      }, 2200);
 
-      // Wait for animation sequence + fade out to fully finish (approx 6.1s)
-      await new Promise(resolve => setTimeout(resolve, 6100));
+      // Wait for animation sequence + fade out to fully finish (approx 2.5s)
+      await new Promise(resolve => setTimeout(resolve, 2550));
 
       setIsEncrypting(false);
       // Delayed notification to parent to prevent sync render issues
-      setTimeout(() => onComplete(), 200);
+      setTimeout(() => onComplete(), 50);
     } catch (err: any) {
       console.error("Submit error:", err);
       showAlert("Speichern fehlgeschlagen.", "error");
@@ -606,14 +611,13 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
           setIsSubmitting(false);
           setRevealResults(false);
           
-          setTimeout(() => onComplete(), 200);
-          await loadData(true);
+          await onComplete();
+          setLoading(false);
         } catch (e) {
           setLoading(false);
         }
       },
       { title: "Fragen neu starten", confirmLabel: "Ja, Neustart", cancelLabel: "Abbrechen" }
-
     );
   };
 
@@ -665,7 +669,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
             </header>
             <div className="flex-1 overflow-hidden relative w-full h-full">
               <div 
-                className="flex h-full transition-transform duration-500 ease-in-out w-[300%]"
+                className="flex h-full transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1) w-[300%]"
                 style={{
                   transform: `translate3d(-${(step >= 3 ? 2 : step) * 33.3333}%, 0, 0)`
                 }}
@@ -756,7 +760,7 @@ export default function Questions({ userName, partnerName, partnerId, dashboardD
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
                   return (
-                    <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 150}ms` }}>
+                    <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
                       <div className="flex items-center mb-4 px-1">
                         <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
                       </div>

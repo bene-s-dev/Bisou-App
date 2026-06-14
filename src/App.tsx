@@ -6,16 +6,18 @@ import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
 // Import modular components
-import LandingPage from './landingpage/LandingPage';
 import PublicLayout from './components/PublicLayout';
-import Login from './components/Login';
-import Intro from './components/Intro';
-import Dashboard from './components/Dashboard';
-import Questions from './components/Questions';
-import Profile from './components/Profile';
-import ResetPassword from './components/ResetPassword';
 import LoadingSkeleton from './components/LoadingSkeleton';
 import ScalingContainer from './components/ScalingContainer';
+
+// Lazy load modular page components for Code Splitting (saves bandwidth)
+const LandingPage = React.lazy(() => import('./landingpage/LandingPage'));
+const Login = React.lazy(() => import('./components/Login'));
+const Intro = React.lazy(() => import('./components/Intro'));
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const Questions = React.lazy(() => import('./components/Questions'));
+const Profile = React.lazy(() => import('./components/Profile'));
+const ResetPassword = React.lazy(() => import('./components/ResetPassword'));
 import { getDailyKey, isStreakActive } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider, useDialog } from './components/DialogProvider';
@@ -249,9 +251,30 @@ function AppLayout({
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<any>(null);
-  const [partnerProfile, setPartnerProfile] = useState<any>(null);
-  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_profile');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [partnerProfile, setPartnerProfile] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_partner_profile');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [dashboardData, setDashboardData] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_dashboard_data');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [showLockedModal, setShowLockedModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>((window as any).deferredPrompt || null);
 
@@ -401,6 +424,7 @@ export default function App() {
 
       if (profileData) {
         setProfile(profileData);
+        localStorage.setItem('cached_profile', JSON.stringify(profileData));
         
         let pProfile = null;
         if (profileData.partner_id) {
@@ -412,6 +436,7 @@ export default function App() {
           pProfile = pData;
         }
         setPartnerProfile(pProfile);
+        localStorage.setItem('cached_partner_profile', JSON.stringify(pProfile));
 
         const userIds = [userId];
         if (profileData.partner_id) userIds.push(profileData.partner_id);
@@ -433,11 +458,13 @@ export default function App() {
           return s;
         }));
 
-        setDashboardData({
+        const dashData = {
           answers: answersRes.data || [],
           questions: currentQs,
           streaks: processedStreaks
-        });
+        };
+        setDashboardData(dashData);
+        localStorage.setItem('cached_dashboard_data', JSON.stringify(dashData));
         
         // Mark successful data sync
         localStorage.setItem('last_sync_timestamp', new Date().toISOString());
@@ -493,6 +520,10 @@ export default function App() {
         setDashboardData(null);
         setLoading(false);
         initialFetchStarted = false;
+        localStorage.removeItem('cached_profile');
+        localStorage.removeItem('cached_partner_profile');
+        localStorage.removeItem('cached_dashboard_data');
+        localStorage.removeItem('cached_bisou_stats');
         // Broadcast to other tabs
         authChannel.postMessage({ type: 'SIGNED_OUT' });
       }
@@ -507,6 +538,10 @@ export default function App() {
         setDashboardData(null);
         setLoading(false);
         initialFetchStarted = false;
+        localStorage.removeItem('cached_profile');
+        localStorage.removeItem('cached_partner_profile');
+        localStorage.removeItem('cached_dashboard_data');
+        localStorage.removeItem('cached_bisou_stats');
         if (window.location.pathname !== '/' && !window.location.pathname.startsWith('/signin')) {
            navigate('/signin', { replace: true });
         }
@@ -627,6 +662,10 @@ export default function App() {
       setPartnerProfile(null);
       setDashboardData(null);
       initialLoadDone.current = false;
+      localStorage.removeItem('cached_profile');
+      localStorage.removeItem('cached_partner_profile');
+      localStorage.removeItem('cached_dashboard_data');
+      localStorage.removeItem('cached_bisou_stats');
       
       // Broadcast logout to other tabs BEFORE calling signOut (to avoid race with storage events)
       authChannel.postMessage({ type: 'SIGNED_OUT' });
@@ -670,60 +709,67 @@ export default function App() {
 
   return (
     <DialogProvider>
-      <Routes>
-        {/* Public Routes with Persistent Layout */}
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-          <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="login" />} />
-          <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="register" />} />
-          <Route path="/reset-password" element={<ResetPassword onComplete={() => navigate('/signin')} />} />
-        </Route>
-        
-        {/* Protected Routes Wrapper */}
-        {session && profile ? (
-          <Route path="/*" element={
-            <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
-              <Routes>
-                <Route path="intro" element={<Intro onComplete={handleIntroComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
-                <Route path="intro-replay" element={<Intro onComplete={() => navigate('/profile')} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} isReplay={true} />} />
-                <Route path="dashboard" element={<Dashboard 
-                  userName={profile.display_name} 
-                  userAvatar={profile.avatar_url} 
-                  partnerName={partnerProfile?.display_name || 'Partner'} 
-                  partnerAvatar={partnerProfile?.avatar_url}
-                  partnerId={profile.partner_id}
-                  dashboardData={dashboardData}
-                  onStartQuestions={() => {
-                    if (!profile.partner_id) setShowLockedModal(true);
-                    else navigate('/questions');
-                  }} 
-                />} />
-                <Route path="questions" element={profile.partner_id ? <Questions 
-                  userName={profile.display_name} 
-                  partnerName={partnerProfile?.display_name || 'Partner'} 
-                  partnerId={profile.partner_id} 
-                  dashboardData={dashboardData}
-                  onComplete={refreshData} 
-                /> : <Navigate to="/dashboard" replace />} />
-                <Route path="profile" element={<Profile 
-                  profile={profile} 
-                  partnerProfile={partnerProfile} 
-                  userEmail={session?.user?.email}
-                  user={session?.user}
-                  onLogout={handleLogout} 
-                  deferredPrompt={deferredPrompt}
-                  onInstall={handleInstallClick}
-                />} />
-                {/* Default within protected area: if intro finished, go dashboard, else intro */}
-                <Route path="*" element={profile.intro_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/intro" replace />} />
-              </Routes>
-            </AppLayout>
-          } />
-        ) : (
-          /* Fallback for unauthenticated access to protected routes */
-          <Route path="*" element={!loading ? <Navigate to="/" replace /> : <LoadingSkeleton />} />
-        )}
-      </Routes>
+      <React.Suspense fallback={<LoadingSkeleton />}>
+        <Routes>
+          {/* Public Routes with Persistent Layout */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+            <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="login" />} />
+            <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="register" />} />
+            <Route path="/reset-password" element={<ResetPassword onComplete={() => navigate('/signin')} />} />
+          </Route>
+          
+          {/* Protected Routes Wrapper */}
+          {session && profile ? (
+            <Route path="/*" element={
+              <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
+                <Routes>
+                  <Route path="intro" element={<Intro onComplete={handleIntroComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
+                  <Route path="intro-replay" element={<Intro onComplete={() => navigate('/profile')} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} isReplay={true} />} />
+                  <Route path="dashboard" element={<Dashboard 
+                    userName={profile.display_name} 
+                    userAvatar={profile.avatar_url} 
+                    partnerName={partnerProfile?.display_name || 'Partner'} 
+                    partnerAvatar={partnerProfile?.avatar_url}
+                    partnerId={profile.partner_id}
+                    dashboardData={dashboardData}
+                    onStartQuestions={() => {
+                      if (!profile.partner_id) setShowLockedModal(true);
+                      else navigate('/questions');
+                    }} 
+                    onRefreshData={refreshData}
+                  />} />
+                  <Route path="questions" element={profile.partner_id ? <Questions 
+                    userName={profile.display_name} 
+                    partnerName={partnerProfile?.display_name || 'Partner'} 
+                    partnerId={profile.partner_id} 
+                    dashboardData={dashboardData}
+                    onComplete={refreshData} 
+                  /> : <Navigate to="/dashboard" replace />} />
+                  <Route path="profile" element={<Profile 
+                    profile={profile} 
+                    partnerProfile={partnerProfile} 
+                    userEmail={session?.user?.email}
+                    user={session?.user}
+                    onLogout={handleLogout} 
+                    deferredPrompt={deferredPrompt}
+                    onInstall={handleInstallClick}
+                    onProfileUpdate={(updatedProfile) => {
+                      setProfile(updatedProfile);
+                      localStorage.setItem('cached_profile', JSON.stringify(updatedProfile));
+                    }}
+                  />} />
+                  {/* Default within protected area: if intro finished, go dashboard, else intro */}
+                  <Route path="*" element={profile.intro_completed ? <Navigate to="/dashboard" replace /> : <Navigate to="/intro" replace />} />
+                </Routes>
+              </AppLayout>
+            } />
+          ) : (
+            /* Fallback for unauthenticated access to protected routes */
+            <Route path="*" element={!loading ? <Navigate to="/" replace /> : <LoadingSkeleton />} />
+          )}
+        </Routes>
+      </React.Suspense>
     </DialogProvider>
   );
 }

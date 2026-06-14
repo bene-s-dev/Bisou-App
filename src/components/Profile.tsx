@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, Mail, LogOut, Sun, Moon, Hand, Heart, RefreshCcw, Grid, Cloud } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, Mail, LogOut, Sun, Moon, Hand, Heart, RefreshCcw, Grid, Cloud, BarChart3 } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
+import StatsModal from './StatsModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
@@ -21,6 +22,7 @@ interface ProfileProps {
   onLogout: () => void;
   deferredPrompt?: any;
   onInstall?: () => void;
+  onProfileUpdate?: (updatedProfile: any) => void;
 }
 
 const urlBase64ToUint8Array = (base64String: string) => {
@@ -45,7 +47,8 @@ export default function Profile({
   user: initialUser,
   onLogout,
   deferredPrompt,
-  onInstall 
+  onInstall,
+  onProfileUpdate
 }: ProfileProps) {
   const { showAlert, showConfirm } = useDialog();
   const navigate = useNavigate();
@@ -58,6 +61,11 @@ export default function Profile({
   
   const [profile, setProfile] = useState<any>(initialProfile);
   const [user, setUser] = useState<User | null>(initialUser || null);
+
+  const updateProfile = (newProfile: any) => {
+    setProfile(newProfile);
+    onProfileUpdate?.(newProfile);
+  };
   
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
 
@@ -111,6 +119,16 @@ export default function Profile({
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showAboutAppModal, setShowAboutAppModal] = useState(false);
   const [showMoreAppsModal, setShowMoreAppsModal] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
+  const [stats, setStats] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_bisou_stats');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [loadingStats, setLoadingStats] = useState(!stats);
   const [partnerDetails, setPartnerDetails] = useState<{
     createdAt: string | null;
     streak: number;
@@ -409,6 +427,206 @@ export default function Profile({
       fetchPartnerDetails();
     }
   }, [activeTab, profile?.partner_id]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const hasCached = !!localStorage.getItem('cached_bisou_stats');
+      if (!hasCached) {
+        setLoadingStats(true);
+      }
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      const partnerId = profile?.partner_id;
+      if (!session || !partnerId) {
+        if (!hasCached) setLoadingStats(false);
+        return;
+      }
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+      const { data: answers } = await supabase
+        .from('answers')
+        .select('*')
+        .gte('day_key', dateStr)
+        .in('user_id', [session.user.id, partnerId]);
+
+      if (!answers) {
+        if (!hasCached) setLoadingStats(false);
+        return;
+      }
+
+      const myAnswers = answers.filter(a => a.user_id === session.user.id);
+      const partnerAnswers = answers.filter(a => a.user_id === partnerId);
+
+      // 1. Total Questions (Days where both answered)
+      const daysWithBoth = myAnswers.filter(ma => 
+        partnerAnswers.some(pa => pa.day_key === ma.day_key)
+      );
+
+      if (daysWithBoth.length === 0) {
+        const newStats = {
+          totalAnswers: 0,
+          myHabit: 0,
+          partnerHabit: 0,
+          totMatch: 0,
+          rankingMatch: 0,
+          textMatch: 0,
+          bisouScore: 0
+        };
+        setStats(newStats);
+        localStorage.setItem('cached_bisou_stats', JSON.stringify(newStats));
+        setLoadingStats(false);
+        return;
+      }
+
+      // 2. Parse answer string format: "q0_ans | q1_ans | q2_ans [sig]"
+      const parseChoice = (choiceStr: string) => {
+        const mainPart = String(choiceStr || '').split(" [")[0];
+        const parts = mainPart.split(" | ");
+        return {
+          tot: (parts[0] || '').trim(),
+          ranking: parts[1] ? parts[1].split(" > ").map(s => s.trim()) : [],
+          text: (parts[2] || '').trim()
+        };
+      };
+
+      // 3. Compute matches for TOT and Ranking, collect text pairs for semantic compare
+      let totSum = 0;
+      let rankingSum = 0;
+      const textPairs: { day_key: string; text1: string; text2: string }[] = [];
+
+      daysWithBoth.forEach(ma => {
+        const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
+        if (pa) {
+          const myP = parseChoice(ma.choice);
+          const partnerP = parseChoice(pa.choice);
+
+          // Dies-oder-Das-Frage: Binärer Logik-Abgleich
+          if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
+            totSum += 100;
+          }
+
+          // Ranking-Frage: Positions-Abstands-Analyse via quadratischer Positions-Differenz
+          const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
+          const n = commonItems.length;
+          if (n <= 1) {
+            rankingSum += 100;
+          } else {
+            let sumSqDiff = 0;
+            for (const item of commonItems) {
+              const myPos = myP.ranking.indexOf(item);
+              const partnerPos = partnerP.ranking.indexOf(item);
+              sumSqDiff += Math.pow(myPos - partnerPos, 2);
+            }
+            const maxSqDiff = (n * (n * n - 1)) / 3;
+            const sim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
+            rankingSum += Math.max(0, Math.min(100, sim));
+          }
+
+          // Setup Free Text pairs for compare
+          if (myP.text || partnerP.text) {
+            textPairs.push({
+              day_key: ma.day_key,
+              text1: myP.text,
+              text2: partnerP.text
+            });
+          }
+        }
+      });
+
+      const totalDays = daysWithBoth.length;
+      const totMatchAvg = Math.round(totSum / totalDays);
+      const rankingMatchAvg = Math.round(rankingSum / totalDays);
+
+      // 4. Free Text match (semantic comparison via Edge Function or fallback Jaccard overlap)
+      let textMatchAvg = 0;
+      const textSimilarities: Record<string, number> = {};
+
+      if (textPairs.length > 0) {
+        try {
+          const { data: edgeData, error: edgeErr } = await supabase.functions.invoke('compare-embeddings', {
+            body: { pairs: textPairs }
+          });
+          if (edgeErr) throw edgeErr;
+
+          if (edgeData?.results && Array.isArray(edgeData.results)) {
+            edgeData.results.forEach((res: any) => {
+              textSimilarities[res.day_key] = res.similarity;
+            });
+          } else {
+            throw new Error("Invalid response from compare-embeddings Edge Function");
+          }
+        } catch (e) {
+          console.warn("Failed semantic embedding compare, falling back to local Jaccard word-overlap:", e);
+          textPairs.forEach(pair => {
+            const clean1 = pair.text1.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            const clean2 = pair.text2.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            if (!clean1 || !clean2) {
+              textSimilarities[pair.day_key] = 0;
+            } else if (clean1 === clean2) {
+              textSimilarities[pair.day_key] = 100;
+            } else {
+              const words1 = clean1.split(/\s+/);
+              const words2 = clean2.split(/\s+/);
+              const set1 = new Set(words1);
+              const set2 = new Set(words2);
+              
+              let intersect = 0;
+              for (const w of set1) {
+                if (set2.has(w)) intersect++;
+              }
+              const union = new Set([...words1, ...words2]).size;
+              textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
+            }
+          });
+        }
+
+        let textSum = 0;
+        daysWithBoth.forEach(ma => {
+          textSum += textSimilarities[ma.day_key] || 0;
+        });
+        textMatchAvg = Math.round(textSum / totalDays);
+      }
+
+      // 5. Calculate Bisou Score (0-10, one decimal place)
+      const avgPercent = (totMatchAvg + rankingMatchAvg + textMatchAvg) / 3;
+      const bisouScore = Math.max(0, Math.min(10, Math.round((avgPercent / 10) * 10) / 10));
+
+      // 6. Habits (Avg Hour)
+      const getAvgHour = (ans: any[]) => {
+        if (ans.length === 0) return 0;
+        const totalHours = ans.reduce((acc, a) => {
+          const hour = new Date(a.created_at).getHours();
+          return acc + hour;
+        }, 0);
+        return Math.round(totalHours / ans.length);
+      };
+
+      const newStats = {
+        totalAnswers: totalDays,
+        myHabit: getAvgHour(myAnswers),
+        partnerHabit: getAvgHour(partnerAnswers),
+        totMatch: totMatchAvg,
+        rankingMatch: rankingMatchAvg,
+        textMatch: textMatchAvg,
+        bisouScore
+      };
+      setStats(newStats);
+      localStorage.setItem('cached_bisou_stats', JSON.stringify(newStats));
+    } catch (err) {
+      console.error("Stats error:", err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, [profile?.partner_id]);
+
+  useEffect(() => {
+    if (activeTab === 'partner' && profile?.partner_id) {
+      fetchStats();
+    }
+  }, [activeTab, profile?.partner_id, fetchStats]);
 
   const handleVersionClick = () => {
     // Ignore all taps during the 2-second cooldown after activation/deactivation
@@ -827,7 +1045,7 @@ export default function Profile({
     try {
       const { error } = await supabase.from('profiles').update({ display_name: capitalized }).eq('id', profile.id);
       if (error) throw error;
-      setProfile({ ...profile, display_name: capitalized });
+      updateProfile({ ...profile, display_name: capitalized });
       setNewName(capitalized);
       setIsEditingName(false);
       showAlert("Name aktualisiert!", "success");
@@ -850,7 +1068,7 @@ export default function Profile({
           const { error: updateError } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id);
           if (updateError) throw updateError;
 
-          setProfile({ ...profile, avatar_url: null });
+          updateProfile({ ...profile, avatar_url: null });
           showAlert("Bild gelöscht.", "info");
         } catch (err) {
           showAlert("Fehler beim Löschen.", "error");
@@ -883,7 +1101,7 @@ export default function Profile({
       const { error: updateError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', profile.id);
       if (updateError) throw updateError;
 
-      setProfile({ ...profile, avatar_url: publicUrl });
+      updateProfile({ ...profile, avatar_url: publicUrl });
       showAlert("Profilbild aktualisiert!", "success");
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -898,7 +1116,9 @@ export default function Profile({
     if (!profile?.partner_id || !profile?.partner_since) return 0;
     const start = new Date(profile.partner_since);
     const now = new Date();
-    return Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    const diffMs = now.getTime() - start.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return Math.max(1, diffDays + 1);
   };
 
   const renderContent = () => {
@@ -934,16 +1154,26 @@ export default function Profile({
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-black text-[#1F1939] truncate">{partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Dein Partner'}</h3>
                       <div className="flex items-center gap-1 mt-0.5">
-                        <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
-                        <span className="text-[11px] font-bold text-orange-600 tracking-tight">{partnerDetails.streak} Tage Serie</span>
+                        <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
+                        <span className="text-[12px] font-black text-orange-600 leading-none">{partnerDetails.streak}</span>
                       </div>
                     </div>
                   </div>
                   
                   <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
                     <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou verbunden seit:</span>
-                    <span className="text-[11px] font-black text-[var(--secondary)]">{getDaysConnected()} Tagen</span>
+                    <span className="text-[11px] font-black text-[var(--secondary)]">
+                      {getDaysConnected()} {getDaysConnected() === 1 ? 'Tag' : 'Tagen'}
+                    </span>
                   </div>
+
+                  <button 
+                    onClick={() => setShowStatsModal(true)}
+                    className="w-full py-2.5 px-4 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 bg-[var(--secondary)] hover:bg-[#8179E0] text-white rounded-2xl transition-all active:scale-95 shadow-sm"
+                  >
+                    <BarChart3 className="w-3.5 h-3.5 text-white" />
+                    <span className="text-white">Bisou-Score</span>
+                  </button>
                 </div>
 
                 <div className="p-1 text-center">
@@ -1840,6 +2070,15 @@ export default function Profile({
         onConfirm={async () => {
           setShowDeleteModal(false);
         }} 
+      />
+
+      <StatsModal 
+        isOpen={showStatsModal} 
+        onClose={() => setShowStatsModal(false)} 
+        partnerName={partnerProfile?.display_name || 'Partner'}
+        userName={profile?.display_name || 'Ich'}
+        stats={stats}
+        loading={loadingStats}
       />
 
       <input 
