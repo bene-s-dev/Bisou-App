@@ -272,7 +272,7 @@ export default function StatsModal({
                     Semantischer Sinn-Vergleich
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Verglichen wird der Sinn, nicht die Schreibweise. Antwortet einer "Pasta" und der andere "Nudeln", erkennt HeartPrint die Ähnlichkeit und vergibt hohe Prozentwerte (z. B. ~78% statt 0%).
+                    Verglichen wird der Sinn, nicht die Schreibweise. Antwortet einer "Glück" und der andere "Zufriedenheit", erkennt HeartPrint die Ähnlichkeit und vergibt hohe Prozentwerte (z. B. ~78% statt 0%).
                   </p>
                 </div>
               </div>
