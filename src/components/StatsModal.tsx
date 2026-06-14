@@ -273,7 +273,7 @@ export default function StatsModal({
 
             <div className="flex-1 overflow-y-auto scrollbar-soft px-1.5 pb-2 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
               <p className="px-0.5">
-                Der <strong>Bisou-Score</strong> zeigt euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
+                Der <strong>Bisou-Score</strong> zeigt euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
               </p>
 
               <div className="space-y-3 px-0.5">
