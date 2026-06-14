@@ -32,10 +32,9 @@ export default function StatsModal({
 
   // Animate Bisou Score from 0 to target when modal opens or stats change
   React.useEffect(() => {
-    if (isOpen) {
-      console.log("Animation started to 8.5");
-      const target = 8.5; 
-      const duration = 5300; // Reduced by one third (approx 5.3s)
+    if (isOpen && stats?.bisouScore) {
+      const target = stats.bisouScore; 
+      const duration = 5300; 
       const delay = 500; 
       let startTime: number | null = null;
 
@@ -51,7 +50,7 @@ export default function StatsModal({
 
         const progress = Math.min((elapsed - delay) / duration, 1);
         
-        // Harmonisierte Kurve für 8 Sekunden:
+        // Harmonisierte Kurve für ca 5.3 Sekunden:
         // Kontinuierlicher Ease-Out (Potenz 2.5). 
         // Startet flüssig, bremst stetig ab, ohne abrupt "stehen" zu bleiben.
         const easeOut = 1 - Math.pow(1 - progress, 2.5);
@@ -66,10 +65,10 @@ export default function StatsModal({
 
       const raf = requestAnimationFrame(animate);
       return () => cancelAnimationFrame(raf);
-    } else {
+    } else if (!isOpen) {
       setDisplayScore(0);
     }
-  }, [isOpen]);
+  }, [isOpen, stats?.bisouScore]);
 
   if (!isOpen) return null;
 
