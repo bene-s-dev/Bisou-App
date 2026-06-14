@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, Info } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 
 const getTimeIcon = (hour: number) => {
@@ -184,9 +184,9 @@ export default function StatsModal({
               </p>
               <button 
                 onClick={() => setShowHeartprintModal(true)}
-                className="w-4 h-4 rounded-full bg-purple-100 text-[var(--secondary)] flex items-center justify-center text-[9px] font-black hover:bg-purple-200 transition-colors focus:outline-none shrink-0"
+                className="w-4 h-4 rounded-full bg-purple-100 text-[var(--secondary)] flex items-center justify-center hover:bg-purple-200 transition-colors focus:outline-none shrink-0"
               >
-                i
+                <Info className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
