@@ -1,0 +1,250 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { supabase } from '../lib/supabase';
+import { BookOpen, Calendar, X, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+
+export default function JournalModal({ 
+  isOpen, 
+  onClose, 
+  partnerName, 
+  userId, 
+  partnerId 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  partnerName: string, 
+  userId: string, 
+  partnerId: string 
+}) {
+  const [history, setHistory] = useState<any[]>([]);
+  const [questionsHistory, setQuestionsHistory] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showCalendar, setShowCalendar] = useState(false);
+
+  const selectedDateKey = useMemo(() => {
+    const y = selectedDate.getFullYear();
+    const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const d = String(selectedDate.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchHistory();
+    }
+  }, [isOpen]);
+
+  const fetchHistory = async () => {
+    setLoading(true);
+    try {
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+      const dateStr = sixtyDaysAgo.toISOString().split('T')[0];
+
+      const [answersRes, questionsRes] = await Promise.all([
+        supabase.from('answers')
+          .select('*')
+          .gte('day_key', dateStr)
+          .in('user_id', [userId, partnerId])
+          .order('day_key', { ascending: false }),
+        supabase.from('daily_questions')
+          .select('*')
+          .gte('day_key', dateStr)
+      ]);
+
+      if (answersRes.data) setHistory(answersRes.data);
+      if (questionsRes.data) {
+        const qMap: Record<string, any> = {};
+        questionsRes.data.forEach(q => {
+          qMap[q.day_key] = q.questions;
+        });
+        setQuestionsHistory(qMap);
+      }
+    } catch (err) {
+      console.error("Journal error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeDays = useMemo(() => {
+    const days = new Set<string>();
+    history.forEach(a => days.add(a.day_key));
+    return days;
+  }, [history]);
+
+  const currentDayData = useMemo(() => {
+    const myAns = history.find(a => a.user_id === userId && a.day_key === selectedDateKey);
+    const partnerAns = history.find(a => a.user_id === partnerId && a.day_key === selectedDateKey);
+    const qs = questionsHistory[selectedDateKey];
+
+    if (!qs) return null;
+
+    const parse = (choiceStr: string) => {
+      if (!choiceStr) return [];
+      return choiceStr.split(" [")[0].split(" | ");
+    };
+
+    return {
+      questions: [
+        { 
+          q: qs.tot.q, 
+          my: parse(myAns?.choice)[0], 
+          partner: !!myAns ? parse(partnerAns?.choice)[0] : null,
+          isPartnerLocked: !!partnerAns && !myAns
+        },
+        { 
+          q: qs.ranking.q, 
+          my: parse(myAns?.choice)[1], 
+          partner: !!myAns ? parse(partnerAns?.choice)[1] : null,
+          isPartnerLocked: !!partnerAns && !myAns
+        },
+        { 
+          q: qs.text.q, 
+          my: parse(myAns?.choice)[2], 
+          partner: !!myAns ? parse(partnerAns?.choice)[2] : null,
+          isPartnerLocked: !!partnerAns && !myAns
+        }
+      ],
+      myAnswered: !!myAns,
+      partnerAnswered: !!partnerAns,
+      bothAnswered: !!myAns && !!partnerAns
+    };
+  }, [history, questionsHistory, selectedDateKey, userId, partnerId]);
+
+  const navigateDate = (days: number) => {
+    const next = new Date(selectedDate);
+    next.setDate(next.getDate() + days);
+    setSelectedDate(next);
+  };
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal-backdrop px-4 z-[4000]">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="modal-content p-6 max-h-[85vh] flex flex-col">
+        {/* ... rest of header ... */}
+        <div className="flex items-center justify-between mb-6 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-[var(--secondary)]" />
+            </div>
+            <div>
+              <h3 className="font-black text-[#1F1939] text-base leading-tight">Bisou-Journal</h3>
+              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">Eure gemeinsame Reise</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowCalendar(!showCalendar)}
+              className={`p-2 rounded-xl transition-all ${showCalendar ? 'bg-[var(--secondary)] text-white' : 'bg-purple-50 text-[var(--muted)]'}`}
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+            <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
+          </div>
+        </div>
+
+        {showCalendar ? (
+          <div className="flex-1 overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="grid grid-cols-7 gap-2 mb-4">
+              {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
+                <div key={d} className="text-[8px] font-black text-[#8E89AA] text-center">{d}</div>
+              ))}
+              {Array.from({ length: 35 }).map((_, i) => {
+                const d = new Date();
+                d.setDate(d.getDate() - (34 - i));
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const active = activeDays.has(key);
+                const isSelected = selectedDateKey === key;
+                return (
+                  <button 
+                    key={i}
+                    onClick={() => { setSelectedDate(new Date(d)); setShowCalendar(false); }}
+                    className={`aspect-square rounded-lg flex flex-col items-center justify-center relative border transition-all
+                      ${isSelected ? 'border-[var(--secondary)] bg-purple-50' : 'border-transparent bg-gray-50/50'}
+                    `}
+                  >
+                    <span className={`text-[10px] font-black ${isSelected ? 'text-[var(--secondary)]' : 'text-[#4A4468]'}`}>{d.getDate()}</span>
+                    {active && <div className="w-1 h-1 bg-[var(--secondary)] rounded-full mt-0.5" />}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[8px] text-center text-[var(--muted)] italic opacity-60">Die letzten 60 Tage sind im Journal verfügbar.</p>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-6 shrink-0">
+              <button onClick={() => navigateDate(-1)} className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all"><ChevronLeft className="w-4 h-4" /></button>
+              <div className="text-center">
+                <p className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider">
+                  {selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+              </div>
+              <button 
+                onClick={() => navigateDate(1)} 
+                disabled={selectedDateKey === new Date().toISOString().split('T')[0]}
+                className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto scrollbar-soft pr-1">
+              {loading ? (
+                <div className="space-y-4 animate-pulse">
+                  {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem]" />)}
+                </div>
+              ) : currentDayData ? (
+                <div className="space-y-6 pb-4">
+                  {currentDayData.questions.map((q, i) => (
+                    <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                      <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* User Answer */}
+                        <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
+                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
+                          <p className="text-[10px] font-bold text-[#4A4468] leading-tight">{q.my || 'Nicht geantwortet'}</p>
+                        </div>
+                        
+                        {/* Partner Answer (Locked if user didn't answer) */}
+                        <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
+                          <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
+                          {q.isPartnerLocked ? (
+                            <div className="flex items-center gap-1.5 text-purple-300">
+                              <Lock className="w-2.5 h-2.5" />
+                              <span className="text-[9px] font-bold italic">Gesperrt</span>
+                            </div>
+                          ) : (
+                            <p className="text-[10px] font-bold text-[#4A4468] leading-tight">{q.partner || 'Nicht geantwortet'}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {currentDayData.isPartnerLocked && (
+                    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2">
+                      <p className="text-[10px] font-bold text-[var(--secondary)] leading-snug">
+                        Du kannst die Antworten von {partnerName} für diesen Tag erst sehen, wenn du selbst geantwortet hast.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
+                  <MessageSquare className="w-8 h-8 mb-2" />
+                  <p className="text-xs font-bold">Keine Einträge für diesen Tag.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+}

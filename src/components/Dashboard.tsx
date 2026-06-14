@@ -20,22 +20,6 @@ interface DashboardProps {
   onRefreshData?: () => Promise<void>;
 }
 
-const getTimeIcon = (hour: number) => {
-  if (hour >= 5 && hour < 11) return '☕️';
-  if (hour >= 11 && hour < 14) return '☀️';
-  if (hour >= 14 && hour < 18) return '🌤️';
-  if (hour >= 18 && hour < 22) return '🌙';
-  return '🦉';
-};
-
-const getTimeLabel = (hour: number) => {
-  if (hour >= 5 && hour < 11) return 'Morgens';
-  if (hour >= 11 && hour < 14) return 'Mittags';
-  if (hour >= 14 && hour < 18) return 'Nachmittags';
-  if (hour >= 18 && hour < 22) return 'Abends';
-  return 'Nachts';
-};
-
 function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boolean, onClose: () => void, streakData: any, partnerName: string }) {
   const [viewDate, setViewDate] = useState(new Date());
   
@@ -349,6 +333,15 @@ export default function Dashboard({
 
   return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
+      {/* Dev Mode Badge */}
+      {import.meta.env.DEV && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+          <div className="bg-orange-500/15 backdrop-blur-md border border-orange-200/50 py-1 px-3 rounded-full flex items-center gap-1.5 shadow-sm">
+            <div className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
+            <span className="text-[7px] font-black text-orange-600 uppercase tracking-[0.2em] whitespace-nowrap">Dev Mode</span>
+          </div>
+        </div>
+      )}
       <div 
         className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden"
         style={{
@@ -503,7 +496,7 @@ export default function Dashboard({
                   <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/>
                 </svg>
                 <p className="text-[7.5px] font-bold text-[var(--muted)] text-center opacity-40">
-                  InfiniteFlow
+                  InfiniteFlow<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>
                 </p>
               </div>
             </div>
