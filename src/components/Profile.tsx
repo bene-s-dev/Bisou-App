@@ -1016,7 +1016,7 @@ export default function Profile({
 
                   <button 
                     onClick={() => setShowStatsModal(true)}
-                    className="w-full py-2.5 px-4 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 bg-[var(--secondary)] hover:bg-[#8179E0] text-white rounded-2xl transition-all active:scale-95 shadow-sm"
+                    className="w-fit mx-auto py-2.5 px-6 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 bg-[var(--secondary)] hover:bg-[#8179E0] text-white rounded-2xl transition-all active:scale-95 shadow-sm"
                   >
                     <BarChart3 className="w-3.5 h-3.5 text-white" />
                     <span className="text-white">Bisou-Score</span>
