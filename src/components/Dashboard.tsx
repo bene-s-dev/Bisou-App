@@ -503,7 +503,7 @@ export default function Dashboard({
                   <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 1 0 0-8c-2 0-4 1.33-6 4Z"/>
                 </svg>
                 <p className="text-[7.5px] font-bold text-[var(--muted)] text-center opacity-40">
-                  InfiniteFlow<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>
+                  InfiniteFlow
                 </p>
               </div>
             </div>
