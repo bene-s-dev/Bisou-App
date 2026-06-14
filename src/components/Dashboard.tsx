@@ -463,30 +463,29 @@ export default function Dashboard({
               </div>
             </div>
 
-            <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-3">
-              <button 
-                onClick={onStartQuestions} 
-                className="w-full btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
-              >
-                {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
-              </button>
+            <div className="pt-4 mt-4 border-t-2 border-purple-50 flex flex-col gap-4">
+              <div className="flex items-center gap-2.5">
+                <button 
+                  onClick={onStartQuestions} 
+                  className="flex-1 btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
+                >
+                  {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
+                </button>
+                <button 
+                  onClick={() => setShowStatsModal(true)} 
+                  className="p-3 bg-purple-50 rounded-[18px] text-[var(--secondary)] active:scale-95 transition-all border-2 border-purple-100 shadow-sm stats-icon-pulse shrink-0"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                </button>
+              </div>
 
               <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
-                    <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
-                    <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest ml-1">
-                      {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
-                    </span>
-                  </div>
-
-                  <button 
-                    onClick={() => setShowStatsModal(true)} 
-                    className="p-2 bg-purple-50 rounded-xl text-[var(--secondary)] active:scale-95 transition-all border border-purple-100 shadow-sm stats-icon-pulse"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                  </button>
+                <div className="flex items-center justify-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
+                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
+                  <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest ml-1">
+                    {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                  </span>
                 </div>
                 
                 <div className="flex items-center gap-1 -mt-2 -mb-1">
