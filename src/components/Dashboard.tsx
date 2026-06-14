@@ -299,9 +299,9 @@ export default function Dashboard({
         textMatchAvg = Math.round(textSum / totalDays);
       }
 
-      // 5. Calculate Bisou Score (0-10, one decimal place)
-      const avgPercent = (totMatchAvg + rankingMatchAvg + textMatchAvg) / 3;
-      const bisouScore = Math.max(0, Math.min(10, Math.round((avgPercent / 10) * 10) / 10));
+      // 5. Calculate Bisou Score (0-10, one decimal place) with weights: dies/das (70%), ranking (20%), freitext (10%)
+      const weightedPercent = (totMatchAvg * 0.7) + (rankingMatchAvg * 0.2) + (textMatchAvg * 0.1);
+      const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
 
       // 6. Habits (Avg Hour)
       const getAvgHour = (ans: any[]) => {
