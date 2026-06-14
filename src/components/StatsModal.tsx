@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock, Info } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, HelpCircle } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 
 const getTimeIcon = (hour: number) => {
@@ -189,13 +189,13 @@ export default function StatsModal({
 
             <div className="flex items-center justify-center gap-1.5 mt-3">
               <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
-                Berechnet mit dem HeartPrint<span className="text-[5px] font-bold relative -top-[2.5px] ml-[0.5px]">TM</span>-Algorithmus
+                Berechnet mit dem HeartPrint™-Algorithmus
               </p>
               <button 
                 onClick={() => setHeartprintType('all')}
-                className="w-4 h-4 rounded-full bg-purple-100 text-[var(--secondary)] flex items-center justify-center hover:bg-purple-200 transition-colors focus:outline-none shrink-0"
+                className="w-3.5 h-3.5 rounded-full text-[var(--secondary)] flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0"
               >
-                <Info className="w-2.5 h-2.5" />
+                <HelpCircle className="w-full h-full" strokeWidth={2.5} />
               </button>
             </div>
           </div>
@@ -211,13 +211,13 @@ export default function StatsModal({
           <div className="absolute inset-0" onClick={() => setHeartprintType(null)} />
           <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative contain-layout z-10 animate-entrance shadow-2xl border border-purple-100/50">
             <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-start gap-2.5">
                 <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
                   <Sparkles className="w-5 h-5 text-[var(--secondary)]" />
                 </div>
-                <div className="relative">
-                  <h4 className="text-[13px] font-black text-[#1F1939] leading-none">HeartPrint™-Algorithmus</h4>
-                  <span className="absolute left-0 top-[calc(100%+4px)] font-bold text-[9px] text-[var(--muted)] opacity-70 leading-none whitespace-nowrap">by Bisou</span>
+                <div className="flex flex-col pt-0.5">
+                  <h4 className="text-[13px] font-black text-[#1F1939] leading-tight">HeartPrint™-Algorithmus</h4>
+                  <p className="font-bold text-[9px] text-[var(--muted)] opacity-70 leading-none mt-0.5">by Bisou</p>
                 </div>
               </div>
               <button 
@@ -230,7 +230,7 @@ export default function StatsModal({
 
             <div className="flex-1 overflow-y-auto scrollbar-soft px-1.5 pb-2 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
               <p className="px-0.5">
-                Der <strong>Bisou-Score</strong> misst euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
+                Der <strong>Bisou-Score</strong> zeigt euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint™</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
               </p>
 
               <div className="space-y-3 px-0.5">
