@@ -1116,9 +1116,15 @@ export default function Profile({
     if (!profile?.partner_id || !profile?.partner_since) return 0;
     const start = new Date(profile.partner_since);
     const now = new Date();
-    const diffMs = now.getTime() - start.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    return Math.max(1, diffDays + 1);
+    
+    // Normalize both dates to midnight to compute calendar days difference
+    const startZero = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const nowZero = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    const diffMs = nowZero.getTime() - startZero.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    
+    return Math.max(1, diffDays + 1); // Connection day is Day 1
   };
 
   const renderContent = () => {

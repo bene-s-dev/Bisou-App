@@ -90,15 +90,16 @@ function AppLayout({
       setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
     };
     
-    // Support both local custom event and cross-tab storage event
-    window.addEventListener('dark-mode-toggle', handleToggle);
-    window.addEventListener('storage', (e) => {
+    const handleStorage = (e: StorageEvent) => {
       if (e.key === 'app_dark_mode') handleToggle();
-    });
+    };
+    
+    window.addEventListener('dark-mode-toggle', handleToggle);
+    window.addEventListener('storage', handleStorage);
     
     return () => {
       window.removeEventListener('dark-mode-toggle', handleToggle);
-      window.removeEventListener('storage', handleToggle);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 
@@ -146,10 +147,10 @@ function AppLayout({
                         {/* Theme Toggle Button */}
                         <button
                           onClick={() => {
-                            const current = localStorage.getItem('app_dark_mode') === 'true';
-                            localStorage.setItem('app_dark_mode', String(!current));
+                            const nextMode = !isDarkMode;
+                            localStorage.setItem('app_dark_mode', String(nextMode));
                             window.dispatchEvent(new Event('dark-mode-toggle'));
-                            showAlert(current ? "Heller Modus aktiviert ☀️" : "Dunkler Modus aktiviert 🌙", "success");
+                            showAlert(nextMode ? "Dunkler Modus aktiviert 🌙" : "Heller Modus aktiviert ☀️", "success");
                           }}
                           className="flex flex-col items-center gap-1 group"
                           title={isDarkMode ? "Heller Modus" : "Dunkler Modus"}
@@ -251,6 +252,25 @@ function AppLayout({
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
+    };
+    
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'app_dark_mode') handleToggle();
+    };
+    
+    window.addEventListener('dark-mode-toggle', handleToggle);
+    window.addEventListener('storage', handleStorage);
+    
+    return () => {
+      window.removeEventListener('dark-mode-toggle', handleToggle);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, []);
   const [profile, setProfile] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('cached_profile');
@@ -285,15 +305,19 @@ export default function App() {
   const location = useLocation();
   const dayKey = getDailyKey();
 
-  // Root-level dark mode cleanup for public routes
+  // Root-level dark mode manager
   useEffect(() => {
     const isPublicPath = ['/', '/signin', '/signup', '/reset-password'].includes(location.pathname);
-    if (isPublicPath) {
+    const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
+    
+    if (isDarkMode && !isPublicPath) {
+      document.documentElement.classList.add('dark');
+      themeMetas.forEach(meta => meta.setAttribute('content', '#0C0A15'));
+    } else {
       document.documentElement.classList.remove('dark');
-      const themeMetas = document.querySelectorAll('meta[name="theme-color"]');
       themeMetas.forEach(meta => meta.setAttribute('content', '#F8F7FF'));
     }
-  }, [location.pathname]);
+  }, [isDarkMode, location.pathname]);
 
   useEffect(() => {
     // If it was captured early, use it

@@ -845,6 +845,23 @@ body.modal-open #root {
   color: #8CA2FF !important;
 }
 
+.dark .pill-green {
+  background-color: #102E26 !important;
+  color: var(--accent-green) !important;
+  border: 1px solid rgba(0, 184, 148, 0.2) !important;
+}
+
+.dark .pill-orange {
+  background-color: #2D1E16 !important;
+  color: #f97316 !important;
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+}
+
+.dark .btn-static {
+  background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
+  color: #0C0A15 !important;
+}
+
 .dark .bg-gray-50 {
   background-color: #171329 !important;
   color: var(--text) !important;
