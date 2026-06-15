@@ -271,14 +271,14 @@ export default function JournalModal({
                 <div className="grid grid-cols-2 gap-2">
                   {/* Partner Answer */}
                   <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
-                    <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
+                    <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">{partnerName}</span>
                     {q.isPartnerLocked ? (
                       <div className="flex items-center gap-1.5 text-purple-300">
                         <Lock className="w-2.5 h-2.5" />
                         <span className="text-[9px] font-bold italic">Gesperrt</span>
                       </div>
                     ) : (
-                      <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                      <p className="text-[10px] font-bold text-[#4A4468] opacity-90 leading-tight">
                         {i === 1 ? (
                           q.partner ? (
                             safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
@@ -291,7 +291,7 @@ export default function JournalModal({
                   {/* User Answer */}
                   <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
                     <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
-                    <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                    <p className="text-[10px] font-bold text-[#4A4468] opacity-90 leading-tight">
                       {i === 1 ? (
                         q.my ? (
                           safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))

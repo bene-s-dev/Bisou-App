@@ -334,14 +334,14 @@ export default function StatsModal({
 
             <div className="flex-1 overflow-y-auto scrollbar-soft px-1.5 pb-2 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
               <p className="px-0.5">
-                Der <strong>Bisou-Score</strong> zeigt euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint</strong>-Algorithmus errechnet und setzt sich aus drei Werten zusammen:
+                Der <strong>Bisou-Score</strong> zeigt euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint</strong>-Algorithmus errechnet und setzt sich aus vier Werten zusammen:
               </p>
 
               <div className="space-y-3 px-0.5">
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'tot' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies oder das</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">50% Gewichtung</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">25% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Binärer Abgleich eurer Entweder-oder-Antworten
@@ -354,7 +354,7 @@ export default function StatsModal({
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'ranking' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">2. Ranglisten</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">16,7% Gewichtung</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">25% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Positions-Abstands-Analyse
@@ -367,7 +367,7 @@ export default function StatsModal({
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'wwe' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Wer würde eher</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">16,7% Gewichtung</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">25% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Einschätzungs-Abgleich
@@ -380,7 +380,7 @@ export default function StatsModal({
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'text' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">4. Freitexte</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">16,7% Gewichtung</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">25% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Semantischer Sinn-Vergleich

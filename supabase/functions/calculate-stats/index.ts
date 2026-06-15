@@ -360,8 +360,8 @@ serve(async (req) => {
       const wweMatchAvg = wweDaysCount > 0 ? Math.round(wweSum / wweDaysCount) : 0;
       const textMatchAvg = textDaysCount > 0 ? Math.round(textSum / textDaysCount) : 0;
 
-      // Weights: dies/das (50%), ranking (16.67%), wer-würde-eher (16.67%), freitext (16.67%)
-      const weightedPercent = (totMatchAvg * 0.5) + (rankingMatchAvg * (0.5 / 3)) + (wweMatchAvg * (0.5 / 3)) + (textMatchAvg * (0.5 / 3));
+      // Weights: dies/das (25%), ranking (25%), wer-würde-eher (25%), freitext (25%)
+      const weightedPercent = (totMatchAvg * 0.25) + (rankingMatchAvg * 0.25) + (wweMatchAvg * 0.25) + (textMatchAvg * 0.25);
       return Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
     };
 

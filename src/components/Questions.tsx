@@ -948,11 +948,11 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                                 <Heart className="w-2.5 h-2.5 text-purple-200" />
                               )}
                             </div>
-                            <span className="text-[8px] font-black text-[#8E89AA] uppercase tracking-wider">{partnerName}</span>
+                            <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
                           </div>
-                          <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${!p ? 'bg-gray-50 border-2 border-dashed border-gray-200 opacity-60' : 'bg-[#F1F0F7] border border-[#E5E3F0]'}`}>
+                          <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${!p ? 'bg-gray-50 border-2 border-dashed border-gray-200 opacity-60' : 'bg-purple-50 border border-purple-100'}`}>
                             {p ? (
-                              <p className={`text-[11px] font-bold text-[#2D264B] leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                              <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
                                 {i === 1 ? safeSplit(p, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(p)}
                               </p>
                             ) : <p className="text-[9px] font-black text-gray-300 italic mt-auto">Wartet...</p>}
@@ -972,7 +972,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                             </div>
                           </div>
                           <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-br-none bg-purple-50 border border-purple-100 shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''}`}>
-                            <p className={`text-[11px] font-bold text-[#2D264B] leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                            <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
                               {i === 1 ? safeSplit(m, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(m)}
                             </p>
                           </div>

@@ -309,11 +309,11 @@ export default function Dashboard({
                   <div className="grid grid-cols-2 gap-3.5">
                     <div className="res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm">
                       <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>
-                      <span className="font-bold text-xs text-[var(--text-main)] leading-relaxed">{myAnswers[i] || '—'}</span>
+                      <span className="font-bold text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{myAnswers[i] || '—'}</span>
                     </div>
                     <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${!partnerAnswered ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
-                      <b className="text-[9px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
-                      <span className={`font-bold text-xs text-[var(--text-main)] leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
+                      <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
+                      <span className={`font-bold text-xs text-[var(--text-main)] opacity-90 leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
                         {partnerAnswered ? partnerAnswers?.[i] : 'Wartet...'}
                       </span>
                     </div>
