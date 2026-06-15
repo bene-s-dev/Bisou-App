@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { History, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock } from 'lucide-react';
@@ -209,6 +209,7 @@ export default function JournalModal({
   }, [history, questionsHistory, selectedDateKey, userId, partnerId]);
 
   const navigateDate = (days: number) => {
+    if (slideDir) return;
     const next = new Date(selectedDate);
     next.setDate(next.getDate() + days);
     const nextKey = getLocalDateString(next);
@@ -218,31 +219,45 @@ export default function JournalModal({
     if (days > 0 && nextKey > todayKey) return;
     
     setSlideDir(days > 0 ? 'left' : 'right');
-    setTimeout(() => setSlideDir(null), 300);
-    setSelectedDate(next);
+    
+    setTimeout(() => {
+      setSelectedDate(next);
+      setSlideDir(null);
+    }, 150);
   };
 
-  const touchStartRef = useRef<{ x: number, y: number } | null>(null);
+  const navigateDateRef = useRef(navigateDate);
+  useEffect(() => {
+    navigateDateRef.current = navigateDate;
+  }, [navigateDate]);
+
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const isSwiping = useRef(false);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: TouchEvent) => {
     if (e.touches.length === 1) {
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       isSwiping.current = false;
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
+  const handleTouchMove = (e: TouchEvent) => {
     if (!touchStartRef.current) return;
-    const deltaX = Math.abs(touchStartRef.current.x - e.touches[0].clientX);
-    const deltaY = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
-    // If clearly horizontal gesture, mark as swiping and prevent scroll
-    if (deltaX > deltaY && deltaX > 10) {
+    const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+    const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+    
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (isSwiping.current || (absX > absY && absX > 10)) {
       isSwiping.current = true;
+      if (e.cancelable) {
+        e.preventDefault();
+      }
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (e: TouchEvent) => {
     if (!touchStartRef.current) return;
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
@@ -252,14 +267,39 @@ export default function JournalModal({
     
     if (Math.abs(deltaX) > 40 && deltaY < 80) {
       if (deltaX > 0) {
-        navigateDate(1);   // swipe left → next day
+        navigateDateRef.current(1);
       } else {
-        navigateDate(-1);  // swipe right → prev day
+        navigateDateRef.current(-1);
       }
     }
     touchStartRef.current = null;
     isSwiping.current = false;
   };
+
+  const handleTouchCancel = () => {
+    touchStartRef.current = null;
+    isSwiping.current = false;
+  };
+
+  const touchContainerRef = useRef<HTMLDivElement | null>(null);
+  const setTouchContainer = useCallback((node: HTMLDivElement | null) => {
+    if (touchContainerRef.current) {
+      const oldNode = touchContainerRef.current;
+      oldNode.removeEventListener('touchstart', handleTouchStart);
+      oldNode.removeEventListener('touchmove', handleTouchMove);
+      oldNode.removeEventListener('touchend', handleTouchEnd);
+      oldNode.removeEventListener('touchcancel', handleTouchCancel);
+    }
+
+    if (node) {
+      node.addEventListener('touchstart', handleTouchStart, { passive: true });
+      node.addEventListener('touchmove', handleTouchMove, { passive: false });
+      node.addEventListener('touchend', handleTouchEnd, { passive: true });
+      node.addEventListener('touchcancel', handleTouchCancel, { passive: true });
+    }
+
+    touchContainerRef.current = node;
+  }, []);
 
   if (!isOpen) return null;
 
@@ -396,10 +436,8 @@ export default function JournalModal({
           </div>
         ) : (
           <div 
+            ref={setTouchContainer}
             className="flex-1 flex flex-col min-h-0"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
           >
             <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-6 shrink-0">
               <button 
