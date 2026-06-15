@@ -71,6 +71,7 @@ export default function JournalModal({
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarViewDate, setCalendarViewDate] = useState(() => new Date(selectedDate));
+  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
 
   useEffect(() => {
     if (showCalendar) {
@@ -212,24 +213,32 @@ export default function JournalModal({
     next.setDate(next.getDate() + days);
     const nextKey = getLocalDateString(next);
     
-    // Don't navigate before START_DATE
-    if (days < 0 && nextKey < START_DATE_STR) {
-      return;
-    }
-    // Don't navigate after today
+    if (days < 0 && nextKey < START_DATE_STR) return;
     const todayKey = getLocalDateString(new Date());
-    if (days > 0 && nextKey > todayKey) {
-      return;
-    }
+    if (days > 0 && nextKey > todayKey) return;
     
+    setSlideDir(days > 0 ? 'left' : 'right');
+    setTimeout(() => setSlideDir(null), 300);
     setSelectedDate(next);
   };
 
   const touchStartRef = useRef<{ x: number, y: number } | null>(null);
+  const isSwiping = useRef(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      isSwiping.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const deltaX = Math.abs(touchStartRef.current.x - e.touches[0].clientX);
+    const deltaY = Math.abs(touchStartRef.current.y - e.touches[0].clientY);
+    // If clearly horizontal gesture, mark as swiping and prevent scroll
+    if (deltaX > deltaY && deltaX > 10) {
+      isSwiping.current = true;
     }
   };
 
@@ -241,15 +250,15 @@ export default function JournalModal({
     const deltaX = touchStartRef.current.x - touchEndX;
     const deltaY = Math.abs(touchStartRef.current.y - touchEndY);
     
-    // Swipe left (finger moves left) -> Next Day, Swipe right (finger moves right) -> Previous Day
-    if (Math.abs(deltaX) > 50 && deltaY < 60) {
+    if (Math.abs(deltaX) > 40 && deltaY < 80) {
       if (deltaX > 0) {
-        navigateDate(1);
+        navigateDate(1);   // swipe left → next day
       } else {
-        navigateDate(-1);
+        navigateDate(-1);  // swipe right → prev day
       }
     }
     touchStartRef.current = null;
+    isSwiping.current = false;
   };
 
   if (!isOpen) return null;
@@ -389,6 +398,7 @@ export default function JournalModal({
           <div 
             className="flex-1 flex flex-col min-h-0"
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
             <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-6 shrink-0">
@@ -413,7 +423,7 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto scrollbar-soft pr-1">
+            <div className={`flex-1 overflow-y-auto scrollbar-soft pr-1 transition-all duration-200 ${slideDir === 'left' ? 'translate-x-[-8px] opacity-70' : slideDir === 'right' ? 'translate-x-[8px] opacity-70' : 'translate-x-0 opacity-100'}`}>
               {loading ? (
                 <div className="space-y-4 animate-pulse">
                   {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem]" />)}

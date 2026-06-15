@@ -850,8 +850,8 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                         <div className="flex flex-col gap-1 flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 ml-2">
                             <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
-                              {dashboardData?.partnerProfile?.avatar_url ? (
-                                <img src={dashboardData.partnerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                              {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
+                                <img src={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <Heart className="w-2.5 h-2.5 text-purple-200" />
                               )}
