@@ -506,7 +506,8 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
       const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
       
-      await supabase.from('answers').delete().eq('user_id', session.user.id).eq('day_key', dayKey);
+      const { error: deleteError } = await supabase.from('answers').delete().eq('user_id', session.user.id).eq('day_key', dayKey);
+      if (deleteError) throw deleteError;
       const { error } = await supabase.from('answers').insert([{ user_id: session.user.id, choice: choiceStr, day_key: dayKey }]);
       if (error && error.code !== '23505') throw error;
       

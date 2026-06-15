@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { getDailyKey, getTimeUntilReset } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 import { capitalizeName } from '../lib/stringUtils';
+import { translateError } from '../lib/translations';
 
 interface DashboardProps {
   userName: string;
@@ -231,19 +232,27 @@ export default function Dashboard({
 
   const deleteMyOwn = async () => {
     showConfirm(
-      "Möchtest du deine heutigen Antworten wirklich löschen und neu starten?",
+      <span>
+        Möchtest du deine heutigen Antworten wirklich löschen und neu starten?{" "}
+        <span className="block mt-2">
+          <strong className="text-red-500 dark:text-red-400">Achtung:</strong> Das Zurücksetzen ist nur{" "}
+          <strong>einmal alle 7 Tage</strong> möglich!
+        </span>
+      </span>,
       async () => {
         try {
-          const { data } = await supabase.auth.getUser();
-          const user = data?.user;
-          if (!user) return;
-          await supabase.from('answers').delete().eq('day_key', dayKey).eq('user_id', user.id);
+          const { error } = await supabase.rpc('reset_today_answers', {
+            day_key_param: dayKey
+          });
+          if (error) throw new Error(error.message);
+          
           if (onRefreshData) {
             await onRefreshData();
           }
           navigate('/questions');
-        } catch (err) {
-          showAlert("Fehler beim Löschen der Antworten.", "error");
+        } catch (err: any) {
+          console.error("Fehler beim Zurücksetzen der Antworten:", err);
+          showAlert(translateError(err.message), "error");
         }
       },
       { title: "Antworten löschen", confirmLabel: "Ja, löschen", cancelLabel: "Abbrechen" }
