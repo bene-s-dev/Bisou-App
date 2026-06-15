@@ -298,7 +298,12 @@ export default function JournalModal({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="modal-backdrop !p-0 sm:!p-4 z-[4000]">
+    <div 
+      className="modal-backdrop !p-0 sm:!p-4 z-[4000]"
+      onTouchStart={(e) => e.stopPropagation()}
+      onTouchMove={(e) => e.stopPropagation()}
+      onTouchEnd={(e) => e.stopPropagation()}
+    >
       <div className="absolute inset-0" onClick={onClose} />
       <div 
         className="modal-content p-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"

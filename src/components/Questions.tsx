@@ -516,12 +516,14 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
   const touchStartRef = useRef<{x: number, y: number} | null>(null);
 
   const onSwipeStart = (e: React.TouchEvent) => {
+    if (step >= ACTIVE_QUESTIONS) return;
     if (e.touches.length === 1) {
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   };
 
   const onSwipeEnd = (e: React.TouchEvent) => {
+    if (step >= ACTIVE_QUESTIONS) return;
     if (!touchStartRef.current) return;
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
