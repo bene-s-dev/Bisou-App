@@ -254,6 +254,17 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
 
+  // One-time cache buster: clear stale question cache when app version changes
+  useEffect(() => {
+    const APP_VERSION = 'v3-wwe'; // bump this string on breaking question schema changes
+    const storedVersion = localStorage.getItem('app_cache_version');
+    if (storedVersion !== APP_VERSION) {
+      localStorage.removeItem('last_question_day_key');
+      localStorage.removeItem('last_question_fetch');
+      localStorage.setItem('app_cache_version', APP_VERSION);
+    }
+  }, []);
+
   useEffect(() => {
     const handleToggle = () => {
       setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
@@ -420,7 +431,7 @@ export default function App() {
       }
 
       const currentQs = (qData && qData.tot && qData.ranking && qData.text) 
-        ? [qData.tot, qData.ranking, qData.text] 
+        ? [qData.tot, qData.ranking, qData.text, ...(qData.wwe ? [qData.wwe] : [])] 
         : [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];
 
       // 3. Robust Profile Handling (Handle missing profile case)
@@ -775,6 +786,7 @@ export default function App() {
                   />} />
                   <Route path="questions" element={profile.partner_id ? <Questions 
                     profile={profile}
+                    partnerProfile={partnerProfile}
                     userName={profile.display_name} 
                     partnerName={partnerProfile?.display_name || 'Partner'} 
                     partnerId={profile.partner_id} 

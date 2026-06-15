@@ -11,6 +11,7 @@ import JournalModal from './JournalModal';
 
 interface QuestionsProps {
   profile?: any;
+  partnerProfile?: any;
   userName: string;
   partnerName: string;
   partnerId?: string | null;
@@ -179,7 +180,7 @@ const getResultsFromData = (data: any, uid: string | null | undefined) => {
   return safeSplit(mainPart, " | ");
 };
 
-export default function Questions({ profile, userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
+export default function Questions({ profile, partnerProfile, userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
   const { showAlert, showConfirm } = useDialog();
 
   // --- CONSTANTS ---
@@ -198,8 +199,10 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
   const [step, setStep] = useState<number>(initialStep); 
   const [dailyQs, setDailyQs] = useState<Question[]>(() => {
     const base = dashboardData?.questions || [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];
-    if (FALLBACK_QUESTIONS.wwe) {
-      return [...base, FALLBACK_QUESTIONS.wwe];
+    // Use real wwe from DB (index 3) if available, otherwise fall back
+    const wwe = dashboardData?.questions?.[3] || FALLBACK_QUESTIONS.wwe;
+    if (wwe) {
+      return base.length >= 4 ? base : [...base.slice(0,3), wwe];
     }
     return base;
   });
@@ -777,8 +780,8 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
                           className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Partner' ? 'border-orange-400 bg-orange-50 text-orange-600' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
                         >
                           <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Partner' ? 'border-orange-200 bg-white shadow-md' : 'border-orange-100 bg-orange-50'}`}>
-                            {dashboardData?.partnerProfile?.avatar_url ? (
-                              <img src={dashboardData.partnerProfile.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
+                            {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
+                              <img src={partnerProfile?.avatar_url || dashboardData.partnerProfile.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
                             ) : (
                               <Heart className="w-8 h-8 text-orange-300" />
                             )}
