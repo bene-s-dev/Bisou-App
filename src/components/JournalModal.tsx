@@ -226,80 +226,74 @@ export default function JournalModal({
     }, 150);
   };
 
-  const navigateDateRef = useRef(navigateDate);
-  useEffect(() => {
-    navigateDateRef.current = navigateDate;
-  }, [navigateDate]);
-
+  const touchContainerRef = useRef<HTMLDivElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const isSwiping = useRef(false);
 
-  const handleTouchStart = (e: TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  useEffect(() => {
+    const container = touchContainerRef.current;
+    if (!container) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        isSwiping.current = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const deltaX = e.touches[0].clientX - touchStartRef.current.x;
+      const deltaY = e.touches[0].clientY - touchStartRef.current.y;
+      
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (isSwiping.current || (absX > absY && absX > 10)) {
+        isSwiping.current = true;
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      
+      const deltaX = touchStartRef.current.x - touchEndX;
+      const deltaY = Math.abs(touchStartRef.current.y - touchEndY);
+      
+      // Verify primarily horizontal swipe: horizontal distance > 40px and at least 1.3x larger than vertical drift
+      if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > deltaY * 1.3) {
+        if (deltaX > 0) {
+          navigateDate(1);
+        } else {
+          navigateDate(-1);
+        }
+      }
+      touchStartRef.current = null;
       isSwiping.current = false;
-    }
-  };
+    };
 
-  const handleTouchMove = (e: TouchEvent) => {
-    if (!touchStartRef.current) return;
-    const deltaX = e.touches[0].clientX - touchStartRef.current.x;
-    const deltaY = e.touches[0].clientY - touchStartRef.current.y;
-    
-    const absX = Math.abs(deltaX);
-    const absY = Math.abs(deltaY);
+    const handleTouchCancel = () => {
+      touchStartRef.current = null;
+      isSwiping.current = false;
+    };
 
-    if (isSwiping.current || (absX > absY && absX > 10)) {
-      isSwiping.current = true;
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-    }
-  };
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    container.addEventListener('touchcancel', handleTouchCancel, { passive: true });
 
-  const handleTouchEnd = (e: TouchEvent) => {
-    if (!touchStartRef.current) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    
-    const deltaX = touchStartRef.current.x - touchEndX;
-    const deltaY = Math.abs(touchStartRef.current.y - touchEndY);
-    
-    if (Math.abs(deltaX) > 40 && deltaY < 80) {
-      if (deltaX > 0) {
-        navigateDateRef.current(1);
-      } else {
-        navigateDateRef.current(-1);
-      }
-    }
-    touchStartRef.current = null;
-    isSwiping.current = false;
-  };
-
-  const handleTouchCancel = () => {
-    touchStartRef.current = null;
-    isSwiping.current = false;
-  };
-
-  const touchContainerRef = useRef<HTMLDivElement | null>(null);
-  const setTouchContainer = useCallback((node: HTMLDivElement | null) => {
-    if (touchContainerRef.current) {
-      const oldNode = touchContainerRef.current;
-      oldNode.removeEventListener('touchstart', handleTouchStart);
-      oldNode.removeEventListener('touchmove', handleTouchMove);
-      oldNode.removeEventListener('touchend', handleTouchEnd);
-      oldNode.removeEventListener('touchcancel', handleTouchCancel);
-    }
-
-    if (node) {
-      node.addEventListener('touchstart', handleTouchStart, { passive: true });
-      node.addEventListener('touchmove', handleTouchMove, { passive: false });
-      node.addEventListener('touchend', handleTouchEnd, { passive: true });
-      node.addEventListener('touchcancel', handleTouchCancel, { passive: true });
-    }
-
-    touchContainerRef.current = node;
-  }, []);
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchCancel);
+    };
+  }, [showCalendar, selectedDate, slideDir]);
 
   if (!isOpen) return null;
 
@@ -436,8 +430,9 @@ export default function JournalModal({
           </div>
         ) : (
           <div 
-            ref={setTouchContainer}
+            ref={touchContainerRef}
             className="flex-1 flex flex-col min-h-0"
+            style={{ touchAction: 'pan-y' }}
           >
             <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-6 shrink-0">
               <button 

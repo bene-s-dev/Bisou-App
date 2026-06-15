@@ -298,8 +298,8 @@ serve(async (req) => {
     }
 
     // 5. Calculate Bisou Score (0-10, one decimal place) 
-    // Weights: dies/das (50%), ranking (15%), wer-würde-eher (25%), freitext (10%)
-    const weightedPercent = (totMatchAvg * 0.5) + (rankingMatchAvg * 0.15) + (wweMatchAvg * 0.25) + (textMatchAvg * 0.1);
+    // Weights: dies/das (50%), ranking (16.67%), wer-würde-eher (16.67%), freitext (16.67%)
+    const weightedPercent = (totMatchAvg * 0.5) + (rankingMatchAvg * (0.5 / 3)) + (wweMatchAvg * (0.5 / 3)) + (textMatchAvg * (0.5 / 3));
     const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
 
     // 6. Habits (Avg Hour) in target timezone
