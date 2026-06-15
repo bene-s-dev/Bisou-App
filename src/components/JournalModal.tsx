@@ -21,6 +21,11 @@ const getLocalDateString = (date: Date) => {
   return `${y}-${m}-${d}`;
 };
 
+const parseLocalDate = (dateStr: string) => {
+  const parts = dateStr.split('-');
+  return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+};
+
 const getMonthsInRange = (startDateStr: string, endDateStr: string) => {
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
@@ -71,8 +76,32 @@ export default function JournalModal({
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarViewDate, setCalendarViewDate] = useState(() => new Date(selectedDate));
-  const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
-  const [disableTransition, setDisableTransition] = useState(false);
+  const [displayState, setDisplayState] = useState<{
+    current: string;
+    previous: string | null;
+    direction: 'left' | 'right';
+  }>(() => ({
+    current: getLocalDateString(selectedDate),
+    previous: null,
+    direction: 'left'
+  }));
+
+  const currentKey = getLocalDateString(selectedDate);
+  if (currentKey !== displayState.current) {
+    const direction = currentKey > displayState.current ? 'left' : 'right';
+    setDisplayState({
+      current: currentKey,
+      previous: displayState.current,
+      direction
+    });
+  }
+
+  useEffect(() => {
+    if (displayState.previous !== null) {
+      const timer = setTimeout(() => setDisplayState(prev => ({ ...prev, previous: null })), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [displayState.previous]);
 
   useEffect(() => {
     if (showCalendar) {
@@ -156,8 +185,7 @@ export default function JournalModal({
     return days;
   }, [history]);
 
-  const getDayData = useCallback((date: Date) => {
-    const key = getLocalDateString(date);
+  const getDayData = useCallback((key: string) => {
     const myAns = history.find(a => a.user_id === userId && a.day_key === key);
     const partnerAns = history.find(a => a.user_id === partnerId && a.day_key === key);
     const qs = questionsHistory[key];
@@ -210,28 +238,8 @@ export default function JournalModal({
     };
   }, [history, questionsHistory, userId, partnerId]);
 
-  const prevDate = useMemo(() => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    return d;
-  }, [selectedDate]);
-
-  const nextDate = useMemo(() => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    return d;
-  }, [selectedDate]);
-
-  const carouselDays = useMemo(() => {
-    return [
-      { date: prevDate, data: getDayData(prevDate) },
-      { date: selectedDate, data: getDayData(selectedDate) },
-      { date: nextDate, data: getDayData(nextDate) }
-    ];
-  }, [prevDate, selectedDate, nextDate, getDayData]);
-
   const navigateDate = (days: number) => {
-    if (slideDir) return;
+    if (displayState.previous !== null) return;
     const next = new Date(selectedDate);
     next.setDate(next.getDate() + days);
     const nextKey = getLocalDateString(next);
@@ -240,16 +248,77 @@ export default function JournalModal({
     const todayKey = getLocalDateString(new Date());
     if (days > 0 && nextKey > todayKey) return;
     
-    setSlideDir(days > 0 ? 'left' : 'right');
-    
-    setTimeout(() => {
-      setDisableTransition(true);
-      setSelectedDate(next);
-      setSlideDir(null);
-      setTimeout(() => {
-        setDisableTransition(false);
-      }, 50);
-    }, 300);
+    setSelectedDate(next);
+  };
+
+  const renderDayContent = (key: string, isOutgoing = false) => {
+    const isForward = displayState.direction === 'left';
+    const animationClass = displayState.previous !== null
+      ? (isOutgoing
+          ? (isForward ? 'animate-slide-out-left' : 'animate-slide-out-right')
+          : (isForward ? 'animate-slide-in-right' : 'animate-slide-in-left'))
+      : '';
+
+    const data = getDayData(key);
+
+    return (
+      <div className={`w-full h-full overflow-y-auto scrollbar-soft pr-1 px-1 ${animationClass}`}>
+        {data ? (
+          <div className="space-y-6 pb-4">
+            {data.questions.map((q, i) => (
+              <div key={i}>
+                <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Partner Answer */}
+                  <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
+                    <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
+                    {q.isPartnerLocked ? (
+                      <div className="flex items-center gap-1.5 text-purple-300">
+                        <Lock className="w-2.5 h-2.5" />
+                        <span className="text-[9px] font-bold italic">Gesperrt</span>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                        {i === 1 ? (
+                          q.partner ? (
+                            safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
+                          ) : 'Nicht geantwortet'
+                        ) : (q.partner || 'Nicht geantwortet')}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* User Answer */}
+                  <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
+                    <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
+                    <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                      {i === 1 ? (
+                        q.my ? (
+                          safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
+                        ) : 'Nicht geantwortet'
+                      ) : (q.my || 'Nicht geantwortet')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {data.isPartnerLocked && (
+              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2">
+                <p className="text-[10px] font-bold text-[var(--secondary)] leading-snug">
+                  Du kannst die Antworten von {partnerName} für diesen Tag erst sehen, wenn du selbst geantwortet hast.
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center opacity-40 h-[80%]">
+            <MessageSquare className="w-8 h-8 mb-2" />
+            <p className="text-xs font-bold">Keine Einträge für diesen Tag.</p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   const [touchContainer, setTouchContainer] = useState<HTMLDivElement | null>(null);
@@ -319,7 +388,7 @@ export default function JournalModal({
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchCancel);
     };
-  }, [touchContainer, showCalendar, selectedDate, slideDir]);
+  }, [touchContainer, showCalendar, selectedDate, displayState.previous]);
 
   if (!isOpen) return null;
 
@@ -330,6 +399,42 @@ export default function JournalModal({
       onTouchMove={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
     >
+      <style>{`
+        .animate-slide-in-right {
+          animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .animate-slide-out-left {
+          animation: slideOutLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+        }
+        .animate-slide-in-left {
+          animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+        .animate-slide-out-right {
+          animation: slideOutRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          position: absolute;
+          width: 100%;
+          height: 100%;
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutLeft {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(-100%); opacity: 0; }
+        }
+        @keyframes slideInLeft {
+          from { transform: translateX(-100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
+      `}</style>
       <div className="absolute inset-0" onClick={onClose} />
       <div 
         className="modal-content !bg-[var(--bg)] p-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
@@ -443,7 +548,16 @@ export default function JournalModal({
                         <button 
                           key={dayNum}
                           disabled={isDisabled}
-                          onClick={() => { setSelectedDate(d); setShowCalendar(false); }}
+                          onClick={() => {
+                            const dateKey = getLocalDateString(d);
+                            setSelectedDate(d);
+                            setDisplayState({
+                              current: dateKey,
+                              previous: null,
+                              direction: 'left'
+                            });
+                            setShowCalendar(false);
+                          }}
                           className={`aspect-square rounded-lg flex flex-col items-center justify-center relative border transition-all
                             ${isSelected ? 'border-[var(--secondary)] bg-purple-50' : 'border-transparent bg-gray-50/50'}
                             ${isDisabled ? 'opacity-20 cursor-not-allowed pointer-events-none' : 'hover:bg-purple-50/50'}
@@ -473,11 +587,36 @@ export default function JournalModal({
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <div className="text-center">
-                <p className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider">
-                  {selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-              </div>
+              {(() => {
+                const isForward = displayState.direction === 'left';
+                const dateInClass = displayState.previous !== null
+                  ? (isForward ? 'animate-slide-in-right' : 'animate-slide-in-left')
+                  : '';
+                const dateOutClass = isForward ? 'animate-slide-out-left' : 'animate-slide-out-right';
+
+                return (
+                  <div className="flex-1 min-w-0 relative h-8 overflow-hidden">
+                    <div 
+                      key={'date-curr-' + displayState.current}
+                      className={`absolute inset-0 flex items-center justify-center ${dateInClass}`}
+                    >
+                      <p className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                        {selectedDate.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      </p>
+                    </div>
+                    {displayState.previous !== null && (
+                      <div 
+                        key={'date-prev-' + displayState.previous}
+                        className={`absolute inset-0 flex items-center justify-center pointer-events-none ${dateOutClass}`}
+                      >
+                        <p className="text-[10px] font-black text-[#1F1939] uppercase tracking-wider whitespace-nowrap">
+                          {parseLocalDate(displayState.previous).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <button 
                 onClick={() => navigateDate(1)} 
                 disabled={selectedDateKey >= getLocalDateString(new Date())}
@@ -488,79 +627,32 @@ export default function JournalModal({
             </div>
 
             <div className="flex-1 overflow-hidden relative w-full h-full">
-              {loading ? (
-                <div className="space-y-4 animate-pulse p-4">
-                  {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem]" />)}
-                </div>
-              ) : (
-                <div 
-                  className="flex h-full transition-transform ease-out"
-                  style={{
-                    width: '300%',
-                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`,
-                    transitionDuration: disableTransition ? '0ms' : '300ms'
-                  }}
-                >
-                  {carouselDays.map(({ date, data }, idx) => (
-                    <div key={idx} className="w-[33.333%] h-full flex-shrink-0 overflow-y-auto scrollbar-soft pr-1 px-1">
-                      {data ? (
-                        <div className="space-y-6 pb-4">
-                          {data.questions.map((q, i) => (
-                            <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                              <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
-                              <div className="grid grid-cols-2 gap-2">
-                                {/* Partner Answer (Locked if user didn't answer) */}
-                                <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
-                                  <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
-                                  {q.isPartnerLocked ? (
-                                    <div className="flex items-center gap-1.5 text-purple-300">
-                                      <Lock className="w-2.5 h-2.5" />
-                                      <span className="text-[9px] font-bold italic">Gesperrt</span>
-                                    </div>
-                                  ) : (
-                                    <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
-                                      {i === 1 ? (
-                                        q.partner ? (
-                                          safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
-                                        ) : 'Nicht geantwortet'
-                                      ) : (q.partner || 'Nicht geantwortet')}
-                                    </p>
-                                  )}
-                                </div>
+              {/* Skeleton Loader */}
+              <div 
+                className={`absolute inset-0 space-y-4 p-4 transition-opacity duration-300 pointer-events-none ${
+                  loading ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem] animate-pulse" />
+                ))}
+              </div>
 
-                                {/* User Answer */}
-                                <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
-                                  <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
-                                  <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
-                                    {i === 1 ? (
-                                      q.my ? (
-                                        safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
-                                      ) : 'Nicht geantwortet'
-                                    ) : (q.my || 'Nicht geantwortet')}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                          
-                          {data.isPartnerLocked && (
-                            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2">
-                              <p className="text-[10px] font-bold text-[var(--secondary)] leading-snug">
-                                Du kannst die Antworten von {partnerName} für diesen Tag erst sehen, wenn du selbst geantwortet hast.
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
-                          <MessageSquare className="w-8 h-8 mb-2" />
-                          <p className="text-xs font-bold">Keine Einträge für diesen Tag.</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+              {/* Day Contents */}
+              <div 
+                className={`w-full h-full flex flex-col ${
+                  loading ? 'opacity-0 pointer-events-none' : 'animate-fade-in'
+                }`}
+              >
+                <div key={'curr-' + displayState.current} className="w-full h-full flex flex-col">
+                  {renderDayContent(displayState.current, false)}
                 </div>
-              )}
+                {displayState.previous !== null && (
+                  <div key={'prev-' + displayState.previous} className="absolute inset-0 w-full h-full pointer-events-none flex flex-col z-10">
+                    {renderDayContent(displayState.previous, true)}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

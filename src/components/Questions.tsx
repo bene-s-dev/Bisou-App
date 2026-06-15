@@ -219,6 +219,32 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
   const [rankingOptions, setRankingOptions] = useState<string[]>([]);
   const [internalError, setInternalError] = useState<string | null>(null);
   
+  const [displayState, setDisplayState] = useState<{
+    current: number;
+    previous: number | null;
+    direction: 'left' | 'right';
+  }>(() => ({
+    current: step,
+    previous: null,
+    direction: 'left'
+  }));
+
+  if (step !== displayState.current) {
+    const direction = step > displayState.current ? 'left' : 'right';
+    setDisplayState({
+      current: step,
+      previous: displayState.current,
+      direction
+    });
+  }
+
+  useEffect(() => {
+    if (displayState.previous !== null) {
+      const timer = setTimeout(() => setDisplayState(prev => ({ ...prev, previous: null })), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [displayState.previous]);
+
   const sortableRef = useRef<HTMLDivElement>(null);
   const sortableInstance = useRef<Sortable | null>(null);
   const dayKey = getDailyKey();
@@ -516,7 +542,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
   const touchStartRef = useRef<{x: number, y: number} | null>(null);
 
   const onSwipeStart = (e: React.TouchEvent) => {
-    if (step >= ACTIVE_QUESTIONS) return;
+    if (step >= ACTIVE_QUESTIONS || displayState.previous !== null) return;
     if (e.touches.length === 1) {
       touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
@@ -542,6 +568,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
   };
 
   const handleDotClick = (targetStep: number) => {
+    if (displayState.previous !== null) return;
     if (targetStep === step || targetStep > myResults.length || targetStep >= ACTIVE_QUESTIONS) return;
 
     let val = '';
@@ -574,7 +601,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
 
   const handleNext = () => {
     try {
-      if (step >= ACTIVE_QUESTIONS) return;
+      if (step >= ACTIVE_QUESTIONS || displayState.previous !== null) return;
       let val = '';
       if (step === 0) val = selectedTot || '';
       else if (step === 1) val = rankingOptions.join(" > ");
@@ -686,6 +713,115 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
     const q2 = dailyQs[2] || FALLBACK_QUESTIONS.text;
     const q3 = dailyQs[3] || FALLBACK_QUESTIONS.wwe;
     
+    const renderQuestionSlide = (s: number, isOutgoing = false) => {
+      const isForward = displayState.direction === 'left';
+      const animationClass = displayState.previous !== null
+        ? (isOutgoing
+            ? (isForward ? 'animate-slide-out-left' : 'animate-slide-out-right')
+            : (isForward ? 'animate-slide-in-right' : 'animate-slide-in-left'))
+        : '';
+
+      switch (s) {
+        case 0:
+          return (
+            <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
+              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q0.q}</h2>
+              <div className="min-h-0 pb-4">
+                <div className="flex flex-col gap-3">
+                  {(q0.o || []).map((o, i) => (
+                    <button key={i} className={`p-6 rounded-[2rem] border-2 text-sm font-black min-h-[80px] flex items-center justify-center transition-all shadow-sm ${selectedTot === o ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468] hover:border-purple-300'}`} onClick={() => setSelectedTot(o)}>{o}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        case 1:
+          return (
+            <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
+              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q1.q}</h2>
+              <div className="min-h-0 pb-4">
+                <div className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.15em] text-center mb-4 flex items-center justify-center gap-1.5 opacity-80 animate-pulse">
+                  <span>👆</span> Gedrückt halten zum Verschieben
+                </div>
+                <div ref={sortableRef} className="flex flex-col gap-3 rank-list">
+                  {rankingOptions.map((o, i) => (
+                    <div key={o} className="cursor-grab select-none rank-item">
+                      <div className="bg-white border-2 border-[var(--card-border)] p-5 rounded-[2rem] flex items-center gap-4 shadow-sm transition-[border-color,background-color] duration-200 card-inner">
+                        <span className="w-8 h-8 rounded-full bg-purple-50 text-[var(--secondary)] flex items-center justify-center text-[12px] font-black rank-badge" data-rank={i + 1}></span>
+                        <span className="font-black text-[14px] text-[#2D264B] leading-snug line-clamp-2">{o}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        case 2:
+          return (
+            <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
+              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q2.q}</h2>
+              <div className="min-h-0 pb-4">
+                <div className="flex flex-col gap-2 relative">
+                  <textarea 
+                    className="w-full h-[180px] p-6 pb-12 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
+                    placeholder="Deine Gedanken hier..." 
+                    value={textVal} 
+                    onChange={(e) => setTextVal(e.target.value)} 
+                    maxLength={MAX_TEXT_LENGTH}
+                  />
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
+                    <div className={`flex items-baseline gap-1 px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
+                      <span className="text-[9px] font-black tracking-[0.2em] uppercase">
+                        {textVal.length} / {MAX_TEXT_LENGTH}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        case 3:
+          if (!q3) return null;
+          return (
+            <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
+              <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q3.q}</h2>
+              <div className="min-h-0 pb-4">
+                <div className="grid grid-cols-2 gap-4 h-[240px]">
+                  <button 
+                    onClick={() => setSelectedWwe('Partner')}
+                    className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Partner' ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
+                  >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Partner' ? 'border-purple-200 bg-white shadow-md' : 'border-purple-100 bg-purple-50'}`}>
+                      {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
+                        <img src={partnerProfile?.avatar_url || dashboardData.partnerProfile.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-8 h-8 text-purple-300" />
+                      )}
+                    </div>
+                    <span className="font-black text-sm uppercase tracking-widest">{partnerName.split(' ')[0]}</span>
+                  </button>
+                  <button 
+                    onClick={() => setSelectedWwe('Ich')}
+                    className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Ich' ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
+                  >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Ich' ? 'border-purple-200 bg-white shadow-md' : 'border-purple-100 bg-purple-50'}`}>
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Ich" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-8 h-8 text-purple-300" />
+                      )}
+                    </div>
+                    <span className="font-black text-sm uppercase tracking-widest">Ich</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        default:
+          return null;
+      }
+    };
+    
     const progressIndices = Array.from({ length: ACTIVE_QUESTIONS }, (_, i) => i);
 
     return (
@@ -694,6 +830,42 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
         onTouchStart={onSwipeStart} 
         onTouchEnd={onSwipeEnd}
       >
+        <style>{`
+          .animate-slide-in-right {
+            animation: slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          }
+          .animate-slide-out-left {
+            animation: slideOutLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+          }
+          .animate-slide-in-left {
+            animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+          }
+          .animate-slide-out-right {
+            animation: slideOutRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+          }
+          @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes slideOutLeft {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
+          }
+          @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+          }
+        `}</style>
         {isEncrypting && <EncryptionOverlay />}
         {step < ACTIVE_QUESTIONS ? (
           <div 
@@ -703,111 +875,28 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
               paddingBottom: 'calc(9.5rem + var(--sab, 0px))'
             }}
           >
-            <header className="mb-4">
+            <header className="mb-4 px-6">
               <div className="quiz-prog-dots">
                 {progressIndices.map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
               </div>
             </header>
             <div className="flex-1 overflow-hidden relative w-full h-full">
-              <div 
-                className="flex h-full transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)"
-                style={{
-                  width: `${(ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4) * 100}%`,
-                  transform: `translate3d(-${(step >= ACTIVE_QUESTIONS ? ACTIVE_QUESTIONS - 1 : step) * (100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4))}%, 0, 0)`
-                }}
-              >
-                {/* Slide 0 */}
-                <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
-                  <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q0.q}</h2>
-                  <div className="min-h-0 pb-4">
-                    <div className="flex flex-col gap-3">
-                      {(q0.o || []).map((o, i) => (
-                        <button key={i} className={`p-6 rounded-[2rem] border-2 text-sm font-black min-h-[80px] flex items-center justify-center transition-all shadow-sm ${selectedTot === o ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468] hover:border-purple-300'}`} onClick={() => setSelectedTot(o)}>{o}</button>
-                      ))}
-                    </div>
-                  </div>
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-8 h-8 border-4 border-purple-100 border-t-[var(--secondary)] rounded-full animate-spin"></div>
                 </div>
-
-                {/* Slide 1 */}
-                <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
-                  <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q1.q}</h2>
-                  <div className="min-h-0 pb-4">
-                    <div className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.15em] text-center mb-4 flex items-center justify-center gap-1.5 opacity-80">
-                      <span>👆</span> Gedrückt halten zum Verschieben
-                    </div>
-                    <div ref={sortableRef} className="flex flex-col gap-3 rank-list">
-                      {rankingOptions.map((o, i) => (
-                        <div key={o} className="cursor-grab select-none rank-item">
-                          <div className="bg-white border-2 border-[var(--card-border)] p-5 rounded-[2rem] flex items-center gap-4 shadow-sm transition-[border-color,background-color] duration-200 card-inner">
-                            <span className="w-8 h-8 rounded-full bg-purple-50 text-[var(--secondary)] flex items-center justify-center text-[12px] font-black rank-badge" data-rank={i + 1}></span>
-                            <span className="font-black text-[14px] text-[#2D264B] leading-snug line-clamp-2">{o}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+              ) : (
+                <>
+                  <div key={'curr-' + displayState.current} className="w-full h-full flex flex-col">
+                    {renderQuestionSlide(displayState.current, false)}
                   </div>
-                </div>
-
-                {/* Slide 2 */}
-                <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
-                  <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q2.q}</h2>
-                  <div className="min-h-0 pb-4">
-                    <div className="flex flex-col gap-2 relative">
-                      <textarea 
-                        className="w-full h-[180px] p-6 pb-12 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
-                        placeholder="Deine Gedanken hier..." 
-                        value={textVal} 
-                        onChange={(e) => setTextVal(e.target.value)} 
-                        maxLength={MAX_TEXT_LENGTH}
-                      />
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
-                        <div className={`flex items-baseline gap-1 px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
-                          <span className="text-[9px] font-black tracking-[0.2em] uppercase">
-                            {textVal.length} / {MAX_TEXT_LENGTH}
-                          </span>
-                        </div>
-                      </div>
+                  {displayState.previous !== null && (
+                    <div key={'prev-' + displayState.previous} className="absolute inset-0 w-full h-full pointer-events-none flex flex-col z-10">
+                      {renderQuestionSlide(displayState.previous, true)}
                     </div>
-                  </div>
-                </div>
-
-                {/* Slide 3 (Wer würde eher) - Prepared but only shown if ACTIVE_QUESTIONS >= 4 */}
-                {q3 && (
-                  <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
-                    <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q3.q}</h2>
-                    <div className="min-h-0 pb-4">
-                      <div className="grid grid-cols-2 gap-4 h-[240px]">
-                        <button 
-                          onClick={() => setSelectedWwe('Partner')}
-                          className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Partner' ? 'border-orange-400 bg-orange-50 text-orange-600' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
-                        >
-                          <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Partner' ? 'border-orange-200 bg-white shadow-md' : 'border-orange-100 bg-orange-50'}`}>
-                            {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
-                              <img src={partnerProfile?.avatar_url || dashboardData.partnerProfile.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
-                            ) : (
-                              <Heart className="w-8 h-8 text-orange-300" />
-                            )}
-                          </div>
-                          <span className="font-black text-sm uppercase tracking-widest">{partnerName.split(' ')[0]}</span>
-                        </button>
-                        <button 
-                          onClick={() => setSelectedWwe('Ich')}
-                          className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Ich' ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
-                        >
-                          <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Ich' ? 'border-purple-200 bg-white shadow-md' : 'border-purple-100 bg-purple-50'}`}>
-                            {profile?.avatar_url ? (
-                              <img src={profile.avatar_url} alt="Ich" className="w-full h-full object-cover" />
-                            ) : (
-                              <User className="w-2.5 h-2.5 text-purple-300" />
-                            )}
-                          </div>
-                          <span className="font-black text-sm uppercase tracking-widest">Ich</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         ) : (
