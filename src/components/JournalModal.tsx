@@ -267,7 +267,7 @@ export default function JournalModal({
     <div className="modal-backdrop !p-0 sm:!p-4 z-[4000]">
       <div className="absolute inset-0" onClick={onClose} />
       <div 
-        className="modal-content p-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative"
+        className="modal-content p-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
         style={{
           paddingTop: 'calc(1.5rem + var(--sat, 0px))',
           paddingBottom: 'calc(1.5rem + var(--sab, 0px))',
@@ -423,7 +423,7 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className={`flex-1 overflow-y-auto scrollbar-soft pr-1 overflow-x-hidden transition-opacity duration-150 ${slideDir ? 'opacity-0' : 'opacity-100'}`}>
+            <div className={`flex-1 overflow-y-auto scrollbar-soft pr-1 transition-opacity duration-150 ${slideDir ? 'opacity-0' : 'opacity-100'}`}>
               {loading ? (
                 <div className="space-y-4 animate-pulse">
                   {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem]" />)}
