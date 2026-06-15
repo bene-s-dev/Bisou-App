@@ -494,11 +494,10 @@ export default function JournalModal({
                 </div>
               ) : (
                 <div 
-                  className="flex h-full"
+                  className={`flex h-full ${disableTransition ? 'transition-none' : 'transition-transform duration-300 ease-out'}`}
                   style={{
                     width: '300%',
-                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`,
-                    transition: disableTransition ? 'none' : 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)'
+                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`
                   }}
                 >
                   {carouselDays.map(({ date, data }, idx) => (
@@ -519,7 +518,11 @@ export default function JournalModal({
                                     </div>
                                   ) : (
                                     <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
-                                      {i === 1 ? safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.partner || 'Nicht geantwortet')}
+                                      {i === 1 ? (
+                                        q.partner ? (
+                                          safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
+                                        ) : 'Nicht geantwortet'
+                                      ) : (q.partner || 'Nicht geantwortet')}
                                     </p>
                                   )}
                                 </div>
@@ -528,7 +531,11 @@ export default function JournalModal({
                                 <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
                                   <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
                                   <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
-                                    {i === 1 ? safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.my || 'Nicht geantwortet')}
+                                    {i === 1 ? (
+                                      q.my ? (
+                                        safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
+                                      ) : 'Nicht geantwortet'
+                                    ) : (q.my || 'Nicht geantwortet')}
                                   </p>
                                 </div>
                               </div>
