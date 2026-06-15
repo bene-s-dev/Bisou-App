@@ -626,7 +626,7 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className="flex-1 overflow-hidden relative w-full h-full">
+            <div className="flex-1 relative w-full h-full">
               {/* Skeleton Loader */}
               <div 
                 className={`absolute inset-0 space-y-4 p-4 transition-opacity duration-300 pointer-events-none ${
