@@ -5,7 +5,6 @@ import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
 import StatsModal from './StatsModal';
-import JournalModal from './JournalModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
@@ -103,7 +102,6 @@ export default function Profile({
   const [newName, setNewName] = useState(initialProfile?.display_name || '');
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showJournalModal, setShowJournalModal] = useState(false);
   
   const [partnerCodeInput, setPartnerCodeInput] = useState('CB-');
   const [isLinking, setIsLinking] = useState(false);
@@ -1703,14 +1701,6 @@ export default function Profile({
                   <RefreshCcw className="w-3.5 h-3.5 shrink-0" />
                   <span>App Hard-Reset</span>
                 </button>
-
-                <button
-                  onClick={() => setShowJournalModal(true)}
-                  className="w-full py-3.5 rounded-2xl bg-purple-50 text-[var(--secondary)] font-black text-[10px] uppercase tracking-[0.15em] flex items-center justify-center gap-2 hover:bg-purple-100 transition-all active:scale-95 border border-purple-100 shadow-sm cursor-pointer"
-                >
-                  <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                  <span>Bisou-Journal</span>
-                </button>
                 
                 <button
                   onClick={handleRunDiagnostics}
@@ -1960,14 +1950,6 @@ export default function Profile({
         userName={profile?.display_name || 'Ich'}
         stats={stats}
         loading={loadingStats}
-      />
-
-      <JournalModal
-        isOpen={showJournalModal}
-        onClose={() => setShowJournalModal(false)}
-        partnerName={partnerProfile?.display_name || 'Partner'}
-        userId={profile?.id as string}
-        partnerId={profile?.partner_id as string}
       />
 
       <input 

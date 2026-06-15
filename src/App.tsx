@@ -128,7 +128,7 @@ function AppLayout({
         className={`flex-1 flex flex-col relative z-10 mx-auto w-full px-6 pwa-main-container ${isPublicPath ? 'max-w-5xl' : 'max-w-[460px]'} ${profile.intro_completed ? 'pb-0' : 'pb-8'} ${['/dashboard', '/profile', '/questions', '/intro', '/intro-replay'].includes(location.pathname) ? 'overflow-hidden' : 'overflow-y-auto scrollbar-soft'}`}
       >
         <ScalingContainer targetWidth={400} align="top">
-          <div className="flex-1 flex flex-col relative w-full h-full px-4">
+          <div className={`flex-1 flex flex-col relative w-full h-full ${location.pathname === '/questions' ? '' : 'px-4'}`}>
             {showHeader && (
               <>
                 <header className="absolute left-0 right-0 top-0 z-20 px-2 pointer-events-none pwa-app-header">
@@ -393,15 +393,21 @@ export default function App() {
             body: { day_key: dayKey }
           });
           
-          // Use a timeout to prevent hanging the entire app if the Edge Function is slow
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Edge Function Timeout")), 6000)
+          // Wait up to 30 seconds — Gemini generation can take time
+          const timeoutPromise = new Promise<null>((resolve) => 
+            setTimeout(() => resolve(null), 30000)
           );
 
           const result: any = await Promise.race([genPromise, timeoutPromise]);
-          if (result && !result.error) qData = result.data?.questions;
+          if (result && !result.error) {
+            qData = result.data?.questions;
+          } else if (!result) {
+            // Timed out — fire in background so next reload gets real questions
+            console.warn("Question generation timed out — running in background");
+            supabase.functions.invoke('generate-questions', { body: { day_key: dayKey } }).catch(() => {});
+          }
         } catch (err) {
-          console.error("Failed to generate questions or timeout:", err);
+          console.error("Failed to generate questions:", err);
         }
       }
 

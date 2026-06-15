@@ -125,26 +125,30 @@ serve(async (req) => {
           totMatch: 0,
           rankingMatch: 0,
           textMatch: 0,
+          wweMatch: 0,
           bisouScore: 0
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // 2. Parse answer string format: "q0_ans | q1_ans | q2_ans [sig]"
+    // 2. Parse answer string format: "q0_ans | q1_ans | q2_ans | q3_ans [sig]"
     const parseChoice = (choiceStr: string) => {
       const mainPart = String(choiceStr || '').split(" [")[0];
       const parts = mainPart.split(" | ");
       return {
         tot: (parts[0] || '').trim(),
         ranking: parts[1] ? parts[1].split(" > ").map(s => s.trim()) : [],
-        text: (parts[2] || '').trim()
+        text: (parts[2] || '').trim(),
+        wwe: (parts[3] || '').trim()
       };
     };
 
     let totSum = 0;
     let rankingSum = 0;
     let rankingDaysCount = 0;
+    let wweSum = 0;
+    let wweDaysCount = 0;
     const textPairs: { day_key: string; text1: string; text2: string }[] = [];
 
     daysWithBoth.forEach(ma => {
@@ -184,6 +188,17 @@ serve(async (req) => {
             text2: partnerP.text
           });
         }
+
+        // Wer-würde-eher-Frage: Binärer Logik-Abgleich
+        if (myP.wwe && partnerP.wwe) {
+          wweDaysCount++;
+          // A match happens if both choose the same person.
+          // Since one says "Ich" and the other says "Partner" for the same person, 
+          // a match is when the strings are NOT equal.
+          if (myP.wwe !== partnerP.wwe) {
+            wweSum += 100;
+          }
+        }
       }
     });
 
@@ -191,6 +206,9 @@ serve(async (req) => {
     const totMatchAvg = Math.round(totSum / totalDays);
     const rankingMatchAvg = rankingDaysCount > 0 
       ? Math.round(rankingSum / rankingDaysCount) 
+      : 0;
+    const wweMatchAvg = wweDaysCount > 0
+      ? Math.round(wweSum / wweDaysCount)
       : 0;
 
     // 4. Free Text match (semantic comparison via Gemini API or fallback)
@@ -279,8 +297,9 @@ serve(async (req) => {
       textMatchAvg = Math.round(textSum / totalDays);
     }
 
-    // 5. Calculate Bisou Score (0-10, one decimal place) with weights: dies/das (70%), ranking (20%), freitext (10%)
-    const weightedPercent = (totMatchAvg * 0.7) + (rankingMatchAvg * 0.2) + (textMatchAvg * 0.1);
+    // 5. Calculate Bisou Score (0-10, one decimal place) 
+    // Weights: dies/das (50%), ranking (15%), wer-würde-eher (25%), freitext (10%)
+    const weightedPercent = (totMatchAvg * 0.5) + (rankingMatchAvg * 0.15) + (wweMatchAvg * 0.25) + (textMatchAvg * 0.1);
     const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
 
     // 6. Habits (Avg Hour) in target timezone
@@ -311,6 +330,7 @@ serve(async (req) => {
       totMatch: totMatchAvg,
       rankingMatch: rankingMatchAvg,
       textMatch: textMatchAvg,
+      wweMatch: wweMatchAvg,
       bisouScore
     };
 

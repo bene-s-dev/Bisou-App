@@ -3,10 +3,11 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, MailOpen, Lock } from 'lucide-react';
+import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, MailOpen, Lock, User, History } from 'lucide-react';
 import { getDailyKey } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 import { translateError } from '../lib/translations';
+import JournalModal from './JournalModal';
 
 interface QuestionsProps {
   profile?: any;
@@ -95,8 +96,8 @@ const EncryptionOverlay = () => {
               d="M 8 64 Q 96 8 184 64"
               fill="#FFFFFF"
               stroke="currentColor"
-              strokeWidth="3.5"
-              strokeLinejoin="round"
+              strokeWidth="3.5" 
+              strokeLinejoin="round" 
               strokeLinecap="round"
             />
           </svg>
@@ -181,37 +182,47 @@ const getResultsFromData = (data: any, uid: string | null | undefined) => {
 export default function Questions({ profile, userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
   const { showAlert, showConfirm } = useDialog();
 
+  // --- CONSTANTS ---
+  const ACTIVE_QUESTIONS = 4; // Set to 4 to enable the 'Wer würde eher' question
+  const MAX_TEXT_LENGTH = 256;
+
   // --- INITIAL STATE DERIVATION ---
   const [initialMyResults, initialPartnerResults, initialStep] = useMemo(() => {
     const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
     const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
-    const step = my.length >= 3 ? 3 : 0;
+    const step = my.length >= ACTIVE_QUESTIONS ? ACTIVE_QUESTIONS : 0;
     return [my, partner, step];
-  }, [dashboardData, partnerId]);
+  }, [dashboardData, partnerId, ACTIVE_QUESTIONS]);
 
   // --- STATE ---
   const [step, setStep] = useState<number>(initialStep); 
-  const [dailyQs, setDailyQs] = useState<Question[]>(dashboardData?.questions || [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text]);
+  const [dailyQs, setDailyQs] = useState<Question[]>(() => {
+    const base = dashboardData?.questions || [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];
+    if (FALLBACK_QUESTIONS.wwe) {
+      return [...base, FALLBACK_QUESTIONS.wwe];
+    }
+    return base;
+  });
   const [myResults, setMyResults] = useState<string[]>(initialMyResults);
   const [partnerResults, setPartnerResults] = useState<string[] | null>(initialPartnerResults);
   const [loading, setLoading] = useState(!dashboardData);
   const [selectedTot, setSelectedTot] = useState<string | null>(null);
+  const [selectedWwe, setSelectedWwe] = useState<string | null>(null);
+  const [showJournalModal, setShowJournalModal] = useState(false);
   const [textVal, setTextVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEncrypting, setIsEncrypting] = useState(false);
-  const [revealResults, setRevealResults] = useState(initialStep >= 3);
+  const [revealResults, setRevealResults] = useState(initialStep >= ACTIVE_QUESTIONS);
   const [rankingOptions, setRankingOptions] = useState<string[]>([]);
   const [internalError, setInternalError] = useState<string | null>(null);
   
   const sortableRef = useRef<HTMLDivElement>(null);
   const sortableInstance = useRef<Sortable | null>(null);
   const dayKey = getDailyKey();
-  const MAX_TEXT_LENGTH = 256;
 
   // --- PERSISTENCE ---
-  // Load progress from localStorage on mount if not already completed
   useEffect(() => {
-    if (step < 3) {
+    if (step < ACTIVE_QUESTIONS) {
       const saved = localStorage.getItem(`quiz_progress_${dayKey}`);
       if (saved) {
         try {
@@ -219,12 +230,12 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
           if (savedResults && Array.isArray(savedResults)) {
             setMyResults(savedResults);
             setStep(savedStep);
-            // Restore current step's inputs
             const currentVal = savedResults[savedStep];
             if (currentVal) {
               if (savedStep === 0) setSelectedTot(currentVal);
               else if (savedStep === 1) setRankingOptions(currentVal.split(" > "));
               else if (savedStep === 2) setTextVal(currentVal);
+              else if (savedStep === 3) setSelectedWwe(currentVal);
             }
           }
         } catch (e) {
@@ -232,17 +243,16 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         }
       }
     }
-  }, [dayKey]); // Only run on mount or when day changes
+  }, [dayKey, ACTIVE_QUESTIONS]);
 
-  // Save progress to localStorage whenever it changes
   useEffect(() => {
-    if (step < 3 && (myResults.length > 0 || selectedTot || textVal)) {
-      // Create a snapshot of current progress including unsaved current step
+    if (step < ACTIVE_QUESTIONS && (myResults.length > 0 || selectedTot || textVal || selectedWwe)) {
       const currentResults = [...myResults];
       let currentVal = '';
       if (step === 0) currentVal = selectedTot || '';
       else if (step === 1) currentVal = rankingOptions.join(" > ");
       else if (step === 2) currentVal = textVal.trim();
+      else if (step === 3) currentVal = selectedWwe || '';
       
       if (currentVal) currentResults[step] = currentVal;
       
@@ -250,31 +260,29 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         step, 
         myResults: currentResults 
       }));
-    } else if (step === 3) {
+    } else if (step === ACTIVE_QUESTIONS) {
       localStorage.removeItem(`quiz_progress_${dayKey}`);
     }
-  }, [step, myResults, selectedTot, textVal, rankingOptions, dayKey]);
+  }, [step, myResults, selectedTot, textVal, rankingOptions, selectedWwe, dayKey, ACTIVE_QUESTIONS]);
 
-  // Sync with live dashboardData if it changes (e.g. partner answers while viewing)
   useEffect(() => {
     if (dashboardData) {
       const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
       const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
       
-      // Update results but only change step if moving TO completed state
-      if (my.length >= 3) {
-        if (step < 3) {
+      if (my.length >= ACTIVE_QUESTIONS) {
+        if (step < ACTIVE_QUESTIONS) {
           setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
-          setStep(3);
+          setStep(ACTIVE_QUESTIONS);
         } else {
           setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
         }
-      } else if (step === 3) {
-        // Database says no answers, but local step is 3: answers were deleted!
+      } else if (step === ACTIVE_QUESTIONS) {
         setMyResults([]);
         setStep(0);
         setPartnerResults(null);
         setSelectedTot(null);
+        setSelectedWwe(null);
         setTextVal('');
         setRankingOptions([]);
         setIsSubmitting(false);
@@ -283,11 +291,17 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
       
       setPartnerResults(prev => JSON.stringify(prev) === JSON.stringify(partner) ? prev : partner);
       if (dashboardData.questions) {
-        setDailyQs(prev => JSON.stringify(prev) === JSON.stringify(dashboardData.questions) ? prev : dashboardData.questions);
+        setDailyQs(prev => {
+          const newQs = [...dashboardData.questions];
+          if (FALLBACK_QUESTIONS.wwe && newQs.length < 4) {
+            newQs.push(FALLBACK_QUESTIONS.wwe);
+          }
+          return JSON.stringify(prev) === JSON.stringify(newQs) ? prev : newQs;
+        });
       }
       setLoading(false);
     }
-  }, [dashboardData, partnerId, step]);
+  }, [dashboardData, partnerId, step, ACTIVE_QUESTIONS]);
 
   // --- DATA LOADING ---
   const loadData = useCallback(async (forceRefresh = false) => {
@@ -297,13 +311,13 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
       const session = data?.session;
       if (!session) return;
 
-      // 1. Fetch Questions
       const { data: qData } = await supabase.from('daily_questions').select('questions').eq('day_key', dayKey).maybeSingle();
       if (qData?.questions) {
         const q = qData.questions;
         if (q.tot && q.ranking && q.text) {
-          setDailyQs([q.tot, q.ranking, q.text]);
-          // Only update fetch timestamp if it's a new day/set of questions
+          const newQs = [q.tot, q.ranking, q.text];
+          if (FALLBACK_QUESTIONS.wwe) newQs.push(FALLBACK_QUESTIONS.wwe);
+          setDailyQs(newQs);
           const lastDayKey = localStorage.getItem('last_question_day_key');
           if (lastDayKey !== dayKey) {
             localStorage.setItem('last_question_fetch', new Date().toISOString());
@@ -312,7 +326,6 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         }
       }
 
-      // 2. Fetch Answers (initial load, then sync takes over)
       const userIds = [session.user.id];
       if (partnerId) userIds.push(partnerId);
       const { data: answers } = await supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey);
@@ -324,9 +337,9 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         if (myAnsObj) {
           const mainPart = String(myAnsObj.choice || '').split(" [")[0];
           const parts = safeSplit(mainPart, " | ");
-          if (parts.length >= 3) {
+          if (parts.length >= ACTIVE_QUESTIONS) {
             setMyResults(parts);
-            setStep(3);
+            setStep(ACTIVE_QUESTIONS);
           }
         } else if (!forceRefresh) {
           setStep(0);
@@ -343,7 +356,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
     } finally {
       setLoading(false);
     }
-  }, [dayKey, partnerId]);
+  }, [dayKey, partnerId, ACTIVE_QUESTIONS]);
 
   useEffect(() => { 
     if (!dashboardData) {
@@ -461,43 +474,33 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
       const session = data?.session;
       if (!session) throw new Error("No session");
       
-      const sig = dailyQs.map(q => `[${q.q}]`).join("");
+      const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
       
-      // Overwrite today's answer for this user if it exists (preserving past days)
       await supabase.from('answers').delete().eq('user_id', session.user.id).eq('day_key', dayKey);
-      
       const { error } = await supabase.from('answers').insert([{ user_id: session.user.id, choice: choiceStr, day_key: dayKey }]);
       if (error && error.code !== '23505') throw error;
       
-      // Send push notification to partner (fire-and-forget, non-blocking)
       if (partnerId) {
         supabase.functions.invoke('send-push-notification', {
           body: { user_id: session.user.id, partner_id: partnerId, type: 'answer_submitted' }
         }).catch(err => console.warn('Push notification failed (non-critical):', err));
       }
 
-      // Update local streak for immediate feedback if dashboardData isn't instant
       if (dashboardData?.streaks) {
         const myS = dashboardData.streaks.find((s: any) => s.user_id === session.user.id);
         if (myS) myS.current_streak = (myS.current_streak || 0) + 1;
       }
 
-      // TRIGGER ANIMATION
       setIsEncrypting(true);
-      
-      // Switch step to 3 and start revealing results at 2200ms, exactly when the envelope starts flying up
       setTimeout(() => {
         setMyResults(finalResults);
-        setStep(3);
+        setStep(ACTIVE_QUESTIONS);
         setRevealResults(true);
       }, 2200);
 
-      // Wait for animation sequence + fade out to fully finish (approx 2.5s)
       await new Promise(resolve => setTimeout(resolve, 2550));
-
       setIsEncrypting(false);
-      // Delayed notification to parent to prevent sync render issues
       setTimeout(() => onComplete(), 50);
     } catch (err: any) {
       console.error("Submit error:", err);
@@ -525,7 +528,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
     
     if (Math.abs(deltaX) > 50 && deltaY < 60) {
       if (deltaX > 0) {
-        if (step + 1 <= myResults.length) handleDotClick(step + 1);
+        if (step + 1 <= myResults.length && step + 1 < ACTIVE_QUESTIONS) handleDotClick(step + 1);
       } else {
         if (step > 0) handleDotClick(step - 1);
       }
@@ -534,12 +537,13 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
   };
 
   const handleDotClick = (targetStep: number) => {
-    if (targetStep === step || targetStep > myResults.length || targetStep > 3) return;
+    if (targetStep === step || targetStep > myResults.length || targetStep >= ACTIVE_QUESTIONS) return;
 
     let val = '';
     if (step === 0) val = selectedTot || '';
     else if (step === 1) val = rankingOptions.length > 0 ? rankingOptions.join(" > ") : '';
     else if (step === 2) val = textVal.trim();
+    else if (step === 3) val = selectedWwe || '';
 
     const nextResults = [...myResults];
     if (val) nextResults[step] = val;
@@ -547,33 +551,36 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
 
     setStep(targetStep);
 
-    if (targetStep < 3) {
+    if (targetStep < ACTIVE_QUESTIONS) {
       if (nextResults[targetStep]) {
         const saved = nextResults[targetStep];
         if (targetStep === 0) setSelectedTot(saved);
         else if (targetStep === 1) setRankingOptions(saved.split(" > "));
         else if (targetStep === 2) setTextVal(saved);
+        else if (targetStep === 3) setSelectedWwe(saved);
       } else {
         if (targetStep === 0) setSelectedTot(null);
         else if (targetStep === 1) setRankingOptions([...(dailyQs[1]?.o || [])]);
         else if (targetStep === 2) setTextVal('');
+        else if (targetStep === 3) setSelectedWwe(null);
       }
     }
   };
 
   const handleNext = () => {
     try {
-      if (step >= 3) return;
+      if (step >= ACTIVE_QUESTIONS) return;
       let val = '';
       if (step === 0) val = selectedTot || '';
       else if (step === 1) val = rankingOptions.join(" > ");
       else if (step === 2) val = textVal.trim();
+      else if (step === 3) val = selectedWwe || '';
       if (!val) return;
       
       const nextResults = [...myResults];
       nextResults[step] = val;
 
-      if (step < 2) {
+      if (step < ACTIVE_QUESTIONS - 1) {
         setMyResults(nextResults);
         setStep(step + 1);
         
@@ -581,9 +588,11 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
           const saved = nextResults[step + 1];
           if (step + 1 === 1) setRankingOptions(saved.split(" > "));
           else if (step + 1 === 2) setTextVal(saved);
+          else if (step + 1 === 3) setSelectedWwe(saved);
         } else {
           if (step + 1 === 1) setRankingOptions([...(dailyQs[1]?.o || [])]);
           else if (step + 1 === 2) setTextVal('');
+          else if (step + 1 === 3) setSelectedWwe(null);
         }
       } else {
         setMyResults(nextResults);
@@ -631,20 +640,11 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
       async () => {
         try {
           setLoading(true);
-          
-          console.log("RPC 'reset_today_answers' wird aufgerufen mit dayKey:", dayKey);
           const { data, error: rpcError } = await supabase.rpc('reset_today_answers', {
             day_key_param: dayKey
           });
-          console.log("RPC Ergebnis:", data, "RPC Fehler:", rpcError);
-
-          if (rpcError) {
-            throw new Error(rpcError.message);
-          }
-          
-          // Clear cached local progress
+          if (rpcError) throw new Error(rpcError.message);
           localStorage.removeItem(`quiz_progress_${dayKey}`);
-          
           await onComplete();
           setLoading(false);
         } catch (e: any) {
@@ -657,7 +657,6 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
     );
   };
 
-  // --- RENDER RECOVERY ---
   if (internalError) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -668,7 +667,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
     );
   }
 
-  if (loading && step !== 3) {
+  if (loading && step !== ACTIVE_QUESTIONS) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-purple-100 border-t-[var(--secondary)] rounded-full animate-spin"></div>
@@ -676,12 +675,14 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
     );
   }
 
-  // --- MAIN RENDER ---
   try {
     const q0 = dailyQs[0] || FALLBACK_QUESTIONS.tot;
     const q1 = dailyQs[1] || FALLBACK_QUESTIONS.ranking;
     const q2 = dailyQs[2] || FALLBACK_QUESTIONS.text;
+    const q3 = dailyQs[3] || FALLBACK_QUESTIONS.wwe;
     
+    const progressIndices = Array.from({ length: ACTIVE_QUESTIONS }, (_, i) => i);
+
     return (
       <div 
         className="animate-entrance flex flex-col flex-1 h-full overflow-hidden pt-0 will-change-transform"
@@ -689,8 +690,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         onTouchEnd={onSwipeEnd}
       >
         {isEncrypting && <EncryptionOverlay />}
-        {step < 3 ? (
-          // --- QUIZ VIEW ---
+        {step < ACTIVE_QUESTIONS ? (
           <div 
             className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container pwa-quiz-view-container"
             style={{ 
@@ -700,18 +700,19 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
           >
             <header className="mb-4">
               <div className="quiz-prog-dots">
-                {[0, 1, 2].map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
+                {progressIndices.map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
               </div>
             </header>
             <div className="flex-1 overflow-hidden relative w-full h-full">
               <div 
-                className="flex h-full transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1) w-[300%]"
+                className="flex h-full transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)"
                 style={{
-                  transform: `translate3d(-${(step >= 3 ? 2 : step) * 33.3333}%, 0, 0)`
+                  width: `${(ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4) * 100}%`,
+                  transform: `translate3d(-${(step >= ACTIVE_QUESTIONS ? ACTIVE_QUESTIONS - 1 : step) * (100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4))}%, 0, 0)`
                 }}
               >
                 {/* Slide 0 */}
-                <div className="w-1/3 flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4">
+                <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
                   <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q0.q}</h2>
                   <div className="min-h-0 pb-4">
                     <div className="flex flex-col gap-3">
@@ -723,7 +724,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
                 </div>
 
                 {/* Slide 1 */}
-                <div className="w-1/3 flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4">
+                <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
                   <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q1.q}</h2>
                   <div className="min-h-0 pb-4">
                     <div className="text-[10px] font-black text-[var(--muted)] uppercase tracking-[0.15em] text-center mb-4 flex items-center justify-center gap-1.5 opacity-80">
@@ -743,7 +744,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
                 </div>
 
                 {/* Slide 2 */}
-                <div className="w-1/3 flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4">
+                <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
                   <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q2.q}</h2>
                   <div className="min-h-0 pb-4">
                     <div className="flex flex-col gap-2 relative">
@@ -759,19 +760,52 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
                           <span className="text-[9px] font-black tracking-[0.2em] uppercase">
                             {textVal.length} / {MAX_TEXT_LENGTH}
                           </span>
-                          <span className="text-[6.5px] font-bold lowercase normal-case tracking-normal opacity-70">
-                            (oddly specific number)
-                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Slide 3 (Wer würde eher) - Prepared but only shown if ACTIVE_QUESTIONS >= 4 */}
+                {q3 && (
+                  <div className="flex-shrink-0 h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-1 py-4" style={{ width: `${100 / (ACTIVE_QUESTIONS > 3 ? ACTIVE_QUESTIONS : 4)}%` }}>
+                    <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q3.q}</h2>
+                    <div className="min-h-0 pb-4">
+                      <div className="grid grid-cols-2 gap-4 h-[240px]">
+                        <button 
+                          onClick={() => setSelectedWwe('Partner')}
+                          className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Partner' ? 'border-orange-400 bg-orange-50 text-orange-600' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
+                        >
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Partner' ? 'border-orange-200 bg-white shadow-md' : 'border-orange-100 bg-orange-50'}`}>
+                            {dashboardData?.partnerProfile?.avatar_url ? (
+                              <img src={dashboardData.partnerProfile.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
+                            ) : (
+                              <Heart className="w-8 h-8 text-orange-300" />
+                            )}
+                          </div>
+                          <span className="font-black text-sm uppercase tracking-widest">{partnerName.split(' ')[0]}</span>
+                        </button>
+                        <button 
+                          onClick={() => setSelectedWwe('Ich')}
+                          className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Ich' ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
+                        >
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Ich' ? 'border-purple-200 bg-white shadow-md' : 'border-purple-100 bg-purple-50'}`}>
+                            {profile?.avatar_url ? (
+                              <img src={profile.avatar_url} alt="Ich" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-2.5 h-2.5 text-purple-300" />
+                            )}
+                          </div>
+                          <span className="font-black text-sm uppercase tracking-widest">Ich</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         ) : (
-          // --- RESULTS VIEW ---
           <div className={`flex flex-col flex-1 h-full overflow-hidden relative ${revealResults ? 'animate-fade-in' : 'opacity-0'}`}>
             <div 
               className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none results-top-fade"
@@ -783,37 +817,70 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
                 margin: '0 -16px'
               }}
             />
-            <div className="flex-1 relative min-h-0">
-              <div className="h-full overflow-y-auto scroll-smooth show-scrollbar">
+            <div className="flex-1 relative min-h-0 overflow-x-hidden">
+              <div className="h-full overflow-y-auto overflow-x-hidden scroll-smooth show-scrollbar">
                 <div 
-                  className="space-y-10 pb-72 pt-24 pr-1"
+                  className="space-y-10 pb-72 pt-24 px-2"
                   style={{ 
                     paddingTop: 'calc(6rem + var(--sat, 0px))',
                     paddingBottom: 'calc(18rem + var(--sab, 0px))'
                   }}
                 >
-                {dailyQs.map((question, i) => {
+                {dailyQs.slice(0, ACTIVE_QUESTIONS).map((question, i) => {
                   const m = myResults[i] || "—";
                   const p = partnerResults?.[i];
+
+                  const formatWwe = (val: string) => {
+                    if (i !== 3 || val === "—") return val;
+                    if (val === 'Ich') return 'Ich';
+                    if (val === 'Partner') return 'Du';
+                    return val;
+                  };
+
                   return (
                     <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
                       <div className="flex items-center mb-4 px-1">
                         <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="res-bubble p-5 min-h-[120px] flex flex-col rounded-[2.25rem] border-2 border-[var(--card-border)] bg-white shadow-sm">
-                          <span className="text-[9px] font-black text-[var(--secondary)] mb-3 uppercase tracking-[0.2em]">ICH</span>
-                          <p className="text-xs font-bold text-[#2D264B] leading-relaxed break-words">
-                            {i === 1 ? safeSplit(m, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : m}
-                          </p>
+                      <div className="flex items-stretch gap-2 w-full px-2">
+                        {/* Partner Bubble */}
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 ml-2">
+                            <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
+                              {dashboardData?.partnerProfile?.avatar_url ? (
+                                <img src={dashboardData.partnerProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <Heart className="w-2.5 h-2.5 text-purple-200" />
+                              )}
+                            </div>
+                            <span className="text-[8px] font-black text-[#8E89AA] uppercase tracking-wider">{partnerName}</span>
+                          </div>
+                          <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${!p ? 'bg-gray-50 border-2 border-dashed border-gray-200 opacity-60' : 'bg-[#F1F0F7] border border-[#E5E3F0]'}`}>
+                            {p ? (
+                              <p className={`text-[11px] font-bold text-[#2D264B] leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                                {i === 1 ? safeSplit(p, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(p)}
+                              </p>
+                            ) : <p className="text-[9px] font-black text-gray-300 italic mt-auto">Wartet...</p>}
+                          </div>
                         </div>
-                        <div className={`res-bubble p-5 min-h-[120px] flex flex-col rounded-[2.25rem] border-2 border-[var(--card-border)] bg-white shadow-sm ${!p ? 'bg-purple-50/20 border-dashed border-purple-100 opacity-60' : ''}`}>
-                          <span className="text-[9px] font-black text-[#8E89AA] mb-3 uppercase tracking-[0.2em]">{partnerName.toUpperCase()}</span>
-                          {p ? (
-                            <p className="text-xs font-bold text-[#2D264B] leading-relaxed break-words">
-                              {i === 1 ? safeSplit(p, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : p}
+
+                        {/* Ich Bubble */}
+                        <div className="flex flex-col gap-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mr-2 self-end">
+                            <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
+                            <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
+                              {profile?.avatar_url ? (
+                                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <User className="w-2.5 h-2.5 text-purple-300" />
+                              )}
+                            </div>
+                          </div>
+                          <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-br-none bg-purple-50 border border-purple-100 shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''}`}>
+                            <p className={`text-[11px] font-bold text-[#2D264B] leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                              {i === 1 ? safeSplit(m, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(m)}
                             </p>
-                          ) : <p className="text-[10px] font-black text-purple-200 italic mt-auto">Wartet...</p>}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -821,8 +888,6 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
                 })}
                 </div>
               </div>
-              
-              {/* Overlays on top */}
               <div 
                 className="absolute bottom-0 left-0 right-0 h-56 z-20 pointer-events-none bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent"
                 style={{ 
@@ -834,20 +899,25 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         </div>
       )}
 
-      {step < 3 && createPortal(
+      {step < ACTIVE_QUESTIONS && createPortal(
         <div 
           className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90] pwa-quiz-next-btn-container" 
         >
           <button 
             onClick={handleNext} 
-            disabled={isSubmitting || !((step === 0 && selectedTot) || (step === 1 && rankingOptions.length > 0) || (step === 2 && textVal.trim().length > 0))} 
+            disabled={isSubmitting || !(
+              (step === 0 && selectedTot) || 
+              (step === 1 && rankingOptions.length > 0) || 
+              (step === 2 && textVal.trim().length > 0) ||
+              (step === 3 && selectedWwe)
+            )} 
             className="btn-static py-4 text-sm uppercase tracking-[0.15em] shadow-[var(--shadow-soft)] disabled:opacity-40 font-black group"
           >
             {isSubmitting ? (
               'Wird geteilt...'
             ) : (
               <>
-                {step === 2 ? (
+                {step === ACTIVE_QUESTIONS - 1 ? (
                   <>
                     Antworten senden
                     <Send className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -865,7 +935,7 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
         document.body
       )}
 
-      {step >= 3 && createPortal(
+      {step >= ACTIVE_QUESTIONS && createPortal(
         <>
           <div 
             className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
@@ -875,14 +945,41 @@ export default function Questions({ profile, userName, partnerName, partnerId, d
             }}
           />
           <div 
-            className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md px-4 z-[100] pointer-events-none pwa-questions-reset-header" 
+            className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md z-[100] pointer-events-none pwa-questions-reset-header px-4" 
+            style={{ paddingTop: 'calc(1.2rem + var(--sat, 0px))' }}
           >
-            <div className="flex justify-end">
-              <button onClick={resetQuiz} className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1 py-1 px-2.5 bg-red-50/50 rounded-full border border-red-100 shadow-sm">
-                Eigene Antworten zurücksetzen <RefreshCcw className="w-2.5 h-2.5" />
+            <div className="relative flex items-center justify-between h-10 w-full">
+              {/* Left Placeholder for visual balance */}
+              <div className="w-10 h-10" />
+              
+              {/* ABSOLUTELY CENTERED History Button */}
+              <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+                <button 
+                  onClick={() => setShowJournalModal(true)}
+                  className="pointer-events-auto p-1.5 bg-purple-50/90 backdrop-blur-sm rounded-full text-[var(--secondary)] hover:bg-purple-100 transition-all active:scale-95 shadow-sm border border-purple-100 flex items-center justify-center"
+                >
+                  <History className="w-5 h-5" />
+                </button>
+              </div>
+              
+              {/* Right Reset Button */}
+              <button 
+                onClick={resetQuiz} 
+                className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
+              >
+                Eigene zurücksetzen <RefreshCcw className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
+
+          <JournalModal
+            isOpen={showJournalModal}
+            onClose={() => setShowJournalModal(false)}
+            partnerName={partnerName}
+            userName={userName}
+            userId={profile?.id}
+            partnerId={partnerId as string}
+          />
         </>,
         document.body
       )}

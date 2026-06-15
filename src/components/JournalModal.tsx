@@ -1,9 +1,18 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
-import { BookOpen, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock } from 'lucide-react';
+import { History, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock } from 'lucide-react';
 
 const START_DATE_STR = '2026-06-14';
+
+const safeSplit = (val: any, delimiter: string) => {
+  if (!val) return [];
+  try {
+    return String(val).split(delimiter);
+  } catch (e) {
+    return [];
+  }
+};
 
 const getLocalDateString = (date: Date) => {
   const y = date.getFullYear();
@@ -37,12 +46,14 @@ export default function JournalModal({
   isOpen, 
   onClose, 
   partnerName, 
+  userName,
   userId, 
   partnerId 
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
   partnerName: string, 
+  userName: string,
   userId: string, 
   partnerId: string 
 }) {
@@ -155,6 +166,13 @@ export default function JournalModal({
       return choiceStr.split(" [")[0].split(" | ");
     };
 
+    const formatWwe = (val: string) => {
+      if (!val || val === 'Nicht geantwortet') return val;
+      if (val === 'Ich') return 'Ich';
+      if (val === 'Partner') return 'Du';
+      return val;
+    };
+
     return {
       questions: [
         { 
@@ -173,6 +191,12 @@ export default function JournalModal({
           q: qs.text.q, 
           my: parse(myAns?.choice)[2], 
           partner: !!myAns ? parse(partnerAns?.choice)[2] : null,
+          isPartnerLocked: !!partnerAns && !myAns
+        },
+        { 
+          q: qs.wwe?.q || 'Wer würde eher...', 
+          my: formatWwe(parse(myAns?.choice)[3]), 
+          partner: !!myAns ? formatWwe(parse(partnerAns?.choice)[3]) : null,
           isPartnerLocked: !!partnerAns && !myAns
         }
       ],
@@ -245,7 +269,7 @@ export default function JournalModal({
         <div className="flex items-center justify-between mb-6 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-[var(--secondary)]" />
+              <History className="w-6 h-6 text-[var(--secondary)]" />
             </div>
             <div>
               <h3 className="font-black text-[#1F1939] text-base leading-tight">Bisou-Journal</h3>
@@ -255,9 +279,9 @@ export default function JournalModal({
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowCalendar(!showCalendar)}
-              className={`p-2 rounded-xl transition-all ${showCalendar ? 'bg-[var(--secondary)] text-white' : 'bg-purple-50 text-[var(--secondary)] hover:bg-purple-100'}`}
+              className={`p-1.5 rounded-xl transition-all border ${showCalendar ? 'bg-[var(--secondary)] text-white border-[var(--secondary)]' : 'bg-purple-50 text-[var(--secondary)] hover:bg-purple-100 border-purple-200'}`}
             >
-              <Calendar className="w-4 h-4" />
+              <Calendar className="w-5 h-5" />
             </button>
             <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors">
               <X className="w-4 h-4" />
@@ -400,12 +424,6 @@ export default function JournalModal({
                     <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
                       <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
                       <div className="grid grid-cols-2 gap-2">
-                        {/* User Answer */}
-                        <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
-                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
-                          <p className="text-[10px] font-bold text-[#4A4468] leading-tight">{q.my || 'Nicht geantwortet'}</p>
-                        </div>
-                        
                         {/* Partner Answer (Locked if user didn't answer) */}
                         <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
                           <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
@@ -415,8 +433,18 @@ export default function JournalModal({
                               <span className="text-[9px] font-bold italic">Gesperrt</span>
                             </div>
                           ) : (
-                            <p className="text-[10px] font-bold text-[#4A4468] leading-tight">{q.partner || 'Nicht geantwortet'}</p>
+                            <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                              {i === 1 ? safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.partner || 'Nicht geantwortet')}
+                            </p>
                           )}
+                        </div>
+
+                        {/* User Answer */}
+                        <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
+                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
+                          <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                            {i === 1 ? safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.my || 'Nicht geantwortet')}
+                          </p>
                         </div>
                       </div>
                     </div>

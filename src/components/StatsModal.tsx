@@ -27,12 +27,12 @@ export default function StatsModal({
   stats,
   loading
 }: StatsModalProps) {
-  const [heartprintType, setHeartprintType] = useState<'tot' | 'ranking' | 'text' | 'all' | null>(null);
+  const [heartprintType, setHeartprintType] = useState<'tot' | 'ranking' | 'text' | 'wwe' | 'all' | null>(null);
   const [displayScore, setDisplayScore] = useState(0);
   const [displayTotMatch, setDisplayTotMatch] = useState(0);
   const [displayRankingMatch, setDisplayRankingMatch] = useState(0);
   const [displayTextMatch, setDisplayTextMatch] = useState(0);
-  const [displaySoonMatch, setDisplaySoonMatch] = useState(0);
+  const [displayWweMatch, setDisplayWweMatch] = useState(0);
   const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
 
   // Animate Bisou Score and match percentages from 0 to target when modal opens or stats change
@@ -43,7 +43,7 @@ export default function StatsModal({
         tot: stats.totMatch || 0,
         ranking: stats.rankingMatch || 0,
         text: stats.textMatch || 0,
-        soon: 0
+        wwe: stats.wweMatch || 0
       }; 
       const duration = 5300; 
       const delay = 500; 
@@ -58,7 +58,7 @@ export default function StatsModal({
           setDisplayTotMatch(0);
           setDisplayRankingMatch(0);
           setDisplayTextMatch(0);
-          setDisplaySoonMatch(0);
+          setDisplayWweMatch(0);
           requestAnimationFrame(animate);
           return;
         }
@@ -70,7 +70,7 @@ export default function StatsModal({
         setDisplayTotMatch(Math.round(targets.tot * easeOut));
         setDisplayRankingMatch(Math.round(targets.ranking * easeOut));
         setDisplayTextMatch(Math.round(targets.text * easeOut));
-        setDisplaySoonMatch(0);
+        setDisplayWweMatch(Math.round(targets.wwe * easeOut));
 
         if (progress < 1) {
           requestAnimationFrame(animate);
@@ -84,7 +84,7 @@ export default function StatsModal({
       setDisplayTotMatch(0);
       setDisplayRankingMatch(0);
       setDisplayTextMatch(0);
-      setDisplaySoonMatch(0);
+      setDisplayWweMatch(0);
     }
   }, [isOpen, stats]);
 
@@ -256,15 +256,13 @@ export default function StatsModal({
                   <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
                 </div>
 
-                {/* Coming Soon */}
-                <div className="relative flex flex-col items-center justify-center p-1.5 bg-gray-100/50 rounded-xl border border-dashed border-gray-200 min-h-[52px] overflow-hidden">
-                  <div className="absolute inset-0 z-10 flex items-center justify-center backdrop-blur-[0.5px] bg-white/10 pointer-events-none">
-                    <span className="bg-white/90 text-[var(--muted)] text-[6px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-gray-100 shadow-sm">
-                      Bald verfügbar
-                    </span>
-                  </div>
+                {/* WWE Match */}
+                <div 
+                  onClick={() => setHeartprintType('wwe')}
+                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                >
                   <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
-                  <span className="text-sm font-black text-[var(--muted)] opacity-30">{displaySoonMatch}%</span>
+                  <span className="text-sm font-black text-[var(--secondary)]">{displayWweMatch}%</span>
                 </div>
               </div>
             </div>
@@ -344,7 +342,7 @@ export default function StatsModal({
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'tot' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies oder das</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">70% Gewichtung</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">50% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Binärer Abgleich eurer Entweder-oder-Antworten
@@ -357,26 +355,39 @@ export default function StatsModal({
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'ranking' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
                     <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">2. Ranglisten</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">20% Gewichtung</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">15% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Positions-Abstands-Analyse
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Kleine Abweichungen (z. B. Platz 2 statt Platz 3) ziehen den Score kaum nach unten. Eine Quadratwurzel-Kurve federt leichte Meinungsunterschiede sanft ab. Erst bei komplett entgegengesetzter Sortierung nähert sich der Wert 0%.
+                    Kleine Abweichungen ziehen den Score kaum nach unten. Eine Quadratwurzel-Kurve federt leichte Meinungsunterschiede ab.
+                  </p>
+                </div>
+
+                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'wwe' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Wer würde eher</span>
+                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">25% Gewichtung</span>
+                  </div>
+                  <p className="text-[10px] opacity-90 leading-normal mb-1">
+                    Einschätzungs-Abgleich
+                  </p>
+                  <p className="text-[9px] opacity-70 leading-normal">
+                    Hier prüfen wir eure Selbsteinschätzung gegen die Fremdeinschätzung des Partners. Wenn beide auf dieselbe Person tippen, ist es ein 100% Match.
                   </p>
                 </div>
 
                 <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'text' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Freitexte</span>
+                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">4. Freitexte</span>
                     <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">10% Gewichtung</span>
                   </div>
                   <p className="text-[10px] opacity-90 leading-normal mb-1">
                     Semantischer Sinn-Vergleich
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Verglichen wird der Sinn, nicht die Schreibweise. Antwortet einer "Glück" und der andere "Zufriedenheit", erkennt HeartPrint die Ähnlichkeit und vergibt hohe Prozentwerte (z. B. ~78% statt 0%).
+                    Verglichen wird der Sinn, nicht die Schreibweise. Eine KI analysiert die inhaltliche Ähnlichkeit eurer Antworten.
                   </p>
                 </div>
               </div>

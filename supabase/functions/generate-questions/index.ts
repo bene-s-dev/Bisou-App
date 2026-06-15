@@ -22,6 +22,11 @@ const dailyQuestionsSchema = z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
     h: z.string().describe("Ein kurzer, passender Hilfstext"),
     o: z.array(z.string()).length(0).describe("Muss ein leeres Array sein")
+  }),
+  wwe: z.object({
+    q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
+    h: z.string().describe("Ein kurzer, passender Hilfstext"),
+    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen: ['Ich', 'Partner']")
   })
 });
 
@@ -86,42 +91,42 @@ serve(async (req) => {
     const dayOfYear = Math.floor(diff / 1000 / 60 / 60 / 24);
 
     const themeSets = [
-      ['Romantik', 'Finanzen', 'Alltagsmacken'], // Tag 1
-      ['Streitkultur', 'Popkultur', 'Zukunftsplanung'], // Tag 2
-      ['Kindheitserinnerungen', 'Haushaltspflichten', 'Geheimnisse'], // Tag 3
-      ['Intimität', 'Fernreisen', 'Philosophische Fragen'], // Tag 4
-      ['Familie', 'Karrierewege', 'Moralvorstellungen'], // Tag 5
-      ['Selbsterkenntnis', 'Kochen', 'Persönliche Ängste'], // Tag 6
-      ['Vertrauen', 'Was-wäre-wenn-Szenarien', 'Sehnsüchte'], // Tag 7
-      ['Flirtverhalten', 'Große Investitionen', 'Macken des Partners'], // Tag 8
-      ['Versöhnung', 'Musikgeschmack', 'Wohnen'], // Tag 9
-      ['Jugendjahre', 'Freizeitgestaltung', 'Tabuthemen'], // Tag 10
-      ['Körperliche Zärtlichkeit', 'Mikro-Abenteuer', 'Gesellschaftstrends'], // Tag 11
-      ['Freundeskreis', 'Work-Life-Balance', 'Lebenssinn'], // Tag 12
-      ['Mentale Gesundheit', 'Kulinarik', 'Innere Unsicherheiten'], // Tag 13
-      ['Emotionale Meilensteine', 'Humor', 'Zukunftswünsche'], // Tag 14
-      ['Erste Verliebtheitsphase', 'Konsumverhalten', 'Morgenroutinen'], // Tag 15
-      ['Konfliktvermeidung', 'Filmgeschmack', 'Rollenverteilung'], // Tag 16
-      ['Schulerinnerungen', 'Haustiere', 'Peinliche Momente'], // Tag 17
-      ['Körperliche Nähe', 'Wochenendgestaltung', 'Kultur'], // Tag 18
-      ['Schwiegerfamilie', 'Stressbewältigung', 'Gerechtigkeitsempfinden'], // Tag 19
-      ['Charakterzüge', 'Lieblingsgerichte', 'Zukunft der Welt'], // Tag 20
-      ['Bindungsdynamiken', 'Kreative Hobbys', 'Existenzielle Fragen'], // Tag 21
-      ['Liebesbeweise', 'Umgang mit Erbschaften', 'Abendrituale'], // Tag 22
-      ['Missverständnisse', 'Serienvorlieben', 'Raumaufteilung'], // Tag 23
-      ['Erziehungsvorstellungen', 'Sport', 'Nostalgie'], // Tag 24
-      ['Romantische Gesten', 'Ausflugsziele', 'Große Lebensentscheidungen'], // Tag 25
-      ['Alte Freundschaften', 'Jobzufriedenheit', 'Glaubensfragen'], // Tag 26
-      ['Achtsamkeit', 'Lieblingssnacks', 'Kindheitsängste'], // Tag 27
-      ['Eifersucht', 'Gaming', 'Das perfekte Zuhause'], // Tag 28
-      ['Liebeserklärungen', 'Versicherungen', 'Social-Media-Konsum'], // Tag 29
-      ['Kompromissbereitschaft', 'Konzerte', 'Lebenslanges Lernen'] // Tag 30
+      ['Romantik', 'Finanzen', 'Alltagsmacken', 'Abenteuer'], // Tag 1
+      ['Streitkultur', 'Popkultur', 'Zukunftsplanung', 'Haushalt'], // Tag 2
+      ['Kindheitserinnerungen', 'Haushaltspflichten', 'Geheimnisse', 'Soziale Kontakte'], // Tag 3
+      ['Intimität', 'Fernreisen', 'Philosophische Fragen', 'Gesundheit'], // Tag 4
+      ['Familie', 'Karrierewege', 'Moralvorstellungen', 'Technologie'], // Tag 5
+      ['Selbsterkenntnis', 'Kochen', 'Persönliche Ängste', 'Natur'], // Tag 6
+      ['Vertrauen', 'Was-wäre-wenn-Szenarien', 'Sehnsüchte', 'Geld'], // Tag 7
+      ['Flirtverhalten', 'Große Investitionen', 'Macken des Partners', 'Sport'], // Tag 8
+      ['Versöhnung', 'Musikgeschmack', 'Wohnen', 'Bildung'], // Tag 9
+      ['Jugendjahre', 'Freizeitgestaltung', 'Tabuthemen', 'Essen'], // Tag 10
+      ['Körperliche Zärtlichkeit', 'Mikro-Abenteuer', 'Gesellschaftstrends', 'Arbeit'], // Tag 11
+      ['Freundeskreis', 'Work-Life-Balance', 'Lebenssinn', 'Kindheit'], // Tag 12
+      ['Mentale Gesundheit', 'Kulinarik', 'Innere Unsicherheiten', 'Zukunft'], // Tag 13
+      ['Emotionale Meilensteine', 'Humor', 'Zukunftswünsche', 'Kommunikation'], // Tag 14
+      ['Erste Verliebtheitsphase', 'Konsumverhalten', 'Morgenroutinen', 'Abendrituale'], // Tag 15
+      ['Konfliktvermeidung', 'Filmgeschmack', 'Rollenverteilung', 'Reisen'], // Tag 16
+      ['Schulerinnerungen', 'Haustiere', 'Peinliche Momente', 'Mode'], // Tag 17
+      ['Körperliche Nähe', 'Wochenendgestaltung', 'Kultur', 'Technik'], // Tag 18
+      ['Schwiegerfamilie', 'Stressbewältigung', 'Gerechtigkeitsempfinden', 'Politik'], // Tag 19
+      ['Charakterzüge', 'Lieblingsgerichte', 'Zukunft der Welt', 'Werte'], // Tag 20
+      ['Bindungsdynamiken', 'Kreative Hobbys', 'Existenzielle Fragen', 'Nostalgie'], // Tag 21
+      ['Liebesbeweise', 'Umgang mit Erbschaften', 'Abendrituale', 'Spontaneität'], // Tag 22
+      ['Missverständnisse', 'Serienvorlieben', 'Raumaufteilung', 'Ordnung'], // Tag 23
+      ['Erziehungsvorstellungen', 'Sport', 'Nostalgie', 'Verantwortung'], // Tag 24
+      ['Romantische Gesten', 'Ausflugsziele', 'Große Lebensentscheidungen', 'Mut'], // Tag 25
+      ['Alte Freundschaften', 'Jobzufriedenheit', 'Glaubensfragen', 'Träume'], // Tag 26
+      ['Achtsamkeit', 'Lieblingssnacks', 'Kindheitsängste', 'Stärken'], // Tag 27
+      ['Eifersucht', 'Gaming', 'Das perfekte Zuhause', 'Ruhe'], // Tag 28
+      ['Liebeserklärungen', 'Versicherungen', 'Social-Media-Konsum', 'Fokus'], // Tag 29
+      ['Kompromissbereitschaft', 'Konzerte', 'Lebenslanges Lernen', 'Leidenschaft'] // Tag 30
     ];
 
     const todaysThemes = themeSets[dayOfYear % themeSets.length];
-    const [themaTot, themaRanking, themaText] = todaysThemes;
+    const [themaTot, themaRanking, themaText, themaWwe] = todaysThemes;
 
-    const prompt = `Du bist ein einfühlsamer, bodenständiger Fragenautor für eine Pärchen-App. Generiere exakt 3 Fragen.
+    const prompt = `Du bist ein einfühlsamer, bodenständiger Fragenautor für eine Pärchen-App. Generiere exakt 4 Fragen.
 
 WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich, semantisch identisch oder strukturell wiederholend sind, überlege, welche Fragen nicht langweilig und wiederholend sind, wenn man folgende Fragen aus den vergangenen Tagen kennt:
 ${ausgeschlosseneFragenText}
@@ -130,6 +135,7 @@ Befolge für den heutigen Tag exakt diese Themen-Vorgaben und Zeichenlimits:
 1. "tot" (Entweder-Oder): Thema muss "${themaTot}" sein. Frage: ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.
 2. "ranking" (4 Dinge ordnen): Thema muss "${themaRanking}" sein. Frage: ca. 40-130 Zeichen. Die 4 Antwortoptionen sollen jeweils ca. 10-60 Zeichen lang sein.
 3. "text" (Offene Frage): Thema muss "${themaText}" sein. Frage: ca. 40-130 Zeichen.
+4. "wwe" (Wer würde eher): Thema muss "${themaWwe}" sein. Frage: ca. 40-130 Zeichen. Die Antwortoptionen müssen IMMER ["Ich", "Partner"] sein.
 
 STIMMUNG & TONFALL (WICHTIG!):
 - Schreibe alltagsnahe, nahbare und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
@@ -145,13 +151,9 @@ STIMMUNG & TONFALL (WICHTIG!):
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.HIGH,
         },
-        responseFormat: { 
-          text: { 
-            mimeType: "application/json", 
-            schema: zodToJsonSchema(dailyQuestionsSchema) 
-          } 
-        },
-        temperature: 1.0 // Wie gewünscht auf 1.0
+        responseMimeType: "application/json",
+        responseSchema: zodToJsonSchema(dailyQuestionsSchema),
+        temperature: 1.0
       }
     });
 
@@ -160,7 +162,22 @@ STIMMUNG & TONFALL (WICHTIG!):
     }
 
     // JSON parsen und durch Zod absichern
-    const rawJson = JSON.parse(response.text);
+    let rawJson = JSON.parse(response.text);
+    
+    // Gemini returns array of [{type, question, options}] — transform to expected {tot:{q,h,o}, ...}
+    if (Array.isArray(rawJson)) {
+      const transformed: any = {};
+      for (const item of rawJson) {
+        const key = item.type; // 'tot', 'ranking', 'text', 'wwe'
+        transformed[key] = {
+          q: item.question || item.q || '',
+          h: item.hint || item.h || '',
+          o: item.options || item.o || []
+        };
+      }
+      rawJson = transformed;
+    }
+    
     const content = dailyQuestionsSchema.parse(rawJson);
 
     // ==========================================
