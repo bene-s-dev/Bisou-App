@@ -386,7 +386,7 @@ export default function StatsModal({
                     Semantischer Sinn-Vergleich
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Verglichen wird der Sinn, nicht die Schreibweise. Eine KI analysiert die inhaltliche Ähnlichkeit eurer Antworten.
+                    Verglichen wird der Sinn, nicht die Schreibweise. HeartPrint analysiert die inhaltliche Ähnlichkeit eurer Antworten. So wird auch berücksichtigt, wenn z. B. einer "Auto fahren" und der andere "Roadtrip" schreibt.
                   </p>
                 </div>
               </div>
