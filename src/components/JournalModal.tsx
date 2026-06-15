@@ -494,10 +494,11 @@ export default function JournalModal({
                 </div>
               ) : (
                 <div 
-                  className={`flex h-full ${disableTransition ? 'transition-none' : 'transition-transform duration-300 ease-out'}`}
+                  className="flex h-full transition-transform ease-out"
                   style={{
                     width: '300%',
-                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`
+                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`,
+                    transitionDuration: disableTransition ? '0ms' : '300ms'
                   }}
                 >
                   {carouselDays.map(({ date, data }, idx) => (
