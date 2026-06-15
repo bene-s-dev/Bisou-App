@@ -423,7 +423,7 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className={`flex-1 overflow-y-auto scrollbar-soft pr-1 transition-all duration-200 ${slideDir === 'left' ? 'translate-x-[-8px] opacity-70' : slideDir === 'right' ? 'translate-x-[8px] opacity-70' : 'translate-x-0 opacity-100'}`}>
+            <div className={`flex-1 overflow-y-auto scrollbar-soft pr-1 overflow-x-hidden transition-opacity duration-150 ${slideDir ? 'opacity-0' : 'opacity-100'}`}>
               {loading ? (
                 <div className="space-y-4 animate-pulse">
                   {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem]" />)}
