@@ -373,7 +373,7 @@ export default function StatsModal({
                     Einschätzungs-Abgleich
                   </p>
                   <p className="text-[9px] opacity-70 leading-normal">
-                    Hier prüfen wir eure Selbsteinschätzung gegen die Fremdeinschätzung des Partners. Wenn beide auf dieselbe Person tippen, ist es ein 100% Match.
+                    Wenn beide auf dieselbe Person tippen, ist es ein 100% Match, ansonsten 0%.
                   </p>
                 </div>
 
