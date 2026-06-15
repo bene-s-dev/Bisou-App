@@ -247,12 +247,12 @@ export default function JournalModal({
     }, 300);
   };
 
-  const touchContainerRef = useRef<HTMLDivElement | null>(null);
+  const [touchContainer, setTouchContainer] = useState<HTMLDivElement | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const isSwiping = useRef(false);
 
   useEffect(() => {
-    const container = touchContainerRef.current;
+    const container = touchContainer;
     if (!container) return;
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -314,7 +314,7 @@ export default function JournalModal({
       container.removeEventListener('touchend', handleTouchEnd);
       container.removeEventListener('touchcancel', handleTouchCancel);
     };
-  }, [showCalendar, selectedDate, slideDir]);
+  }, [touchContainer, showCalendar, selectedDate, slideDir]);
 
   if (!isOpen) return null;
 
@@ -456,7 +456,7 @@ export default function JournalModal({
           </div>
         ) : (
           <div 
-            ref={touchContainerRef}
+            ref={setTouchContainer}
             className="flex-1 flex flex-col min-h-0"
             style={{ touchAction: 'pan-y' }}
           >
@@ -489,10 +489,11 @@ export default function JournalModal({
                 </div>
               ) : (
                 <div 
-                  className={`flex h-full ${slideDir ? 'transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)' : 'transition-none'}`}
+                  className="flex h-full"
                   style={{
                     width: '300%',
-                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`
+                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`,
+                    transition: slideDir ? 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
                   }}
                 >
                   {carouselDays.map(({ date, data }, idx) => (
