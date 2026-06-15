@@ -934,7 +934,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
 
                   return (
                     <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
-                      <div className="flex items-center mb-4 px-1">
+                      <div className="flex items-center mb-4 px-2">
                         <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
                       </div>
                       <div className="flex items-stretch gap-2 w-full px-2">
