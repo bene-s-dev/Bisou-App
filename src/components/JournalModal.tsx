@@ -155,10 +155,11 @@ export default function JournalModal({
     return days;
   }, [history]);
 
-  const currentDayData = useMemo(() => {
-    const myAns = history.find(a => a.user_id === userId && a.day_key === selectedDateKey);
-    const partnerAns = history.find(a => a.user_id === partnerId && a.day_key === selectedDateKey);
-    const qs = questionsHistory[selectedDateKey];
+  const getDayData = useCallback((date: Date) => {
+    const key = getLocalDateString(date);
+    const myAns = history.find(a => a.user_id === userId && a.day_key === key);
+    const partnerAns = history.find(a => a.user_id === partnerId && a.day_key === key);
+    const qs = questionsHistory[key];
 
     if (!qs) return null;
 
@@ -206,7 +207,27 @@ export default function JournalModal({
       bothAnswered: !!myAns && !!partnerAns,
       isPartnerLocked: !!partnerAns && !myAns
     };
-  }, [history, questionsHistory, selectedDateKey, userId, partnerId]);
+  }, [history, questionsHistory, userId, partnerId]);
+
+  const prevDate = useMemo(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    return d;
+  }, [selectedDate]);
+
+  const nextDate = useMemo(() => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    return d;
+  }, [selectedDate]);
+
+  const carouselDays = useMemo(() => {
+    return [
+      { date: prevDate, data: getDayData(prevDate) },
+      { date: selectedDate, data: getDayData(selectedDate) },
+      { date: nextDate, data: getDayData(nextDate) }
+    ];
+  }, [prevDate, selectedDate, nextDate, getDayData]);
 
   const navigateDate = (days: number) => {
     if (slideDir) return;
@@ -223,7 +244,7 @@ export default function JournalModal({
     setTimeout(() => {
       setSelectedDate(next);
       setSlideDir(null);
-    }, 150);
+    }, 300);
   };
 
   const touchContainerRef = useRef<HTMLDivElement | null>(null);
@@ -461,61 +482,69 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className={`flex-1 overflow-y-auto scrollbar-soft pr-1 transition-all duration-150 ${
-              slideDir === 'left' 
-                ? 'translate-x-[-12px] opacity-0' 
-                : slideDir === 'right' 
-                ? 'translate-x-[12px] opacity-0' 
-                : 'translate-x-0 opacity-100'
-            }`}>
+            <div className="flex-1 overflow-hidden relative w-full h-full">
               {loading ? (
-                <div className="space-y-4 animate-pulse">
+                <div className="space-y-4 animate-pulse p-4">
                   {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem]" />)}
                 </div>
-              ) : currentDayData ? (
-                <div className="space-y-6 pb-4">
-                  {currentDayData.questions.map((q, i) => (
-                    <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                      <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* Partner Answer (Locked if user didn't answer) */}
-                        <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
-                          <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
-                          {q.isPartnerLocked ? (
-                            <div className="flex items-center gap-1.5 text-purple-300">
-                              <Lock className="w-2.5 h-2.5" />
-                              <span className="text-[9px] font-bold italic">Gesperrt</span>
+              ) : (
+                <div 
+                  className={`flex h-full ${slideDir ? 'transition-transform duration-300 cubic-bezier(0.16, 1, 0.3, 1)' : 'transition-none'}`}
+                  style={{
+                    width: '300%',
+                    transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`
+                  }}
+                >
+                  {carouselDays.map(({ date, data }, idx) => (
+                    <div key={idx} className="w-[33.333%] h-full flex-shrink-0 overflow-y-auto scrollbar-soft pr-1 px-1">
+                      {data ? (
+                        <div className="space-y-6 pb-4">
+                          {data.questions.map((q, i) => (
+                            <div key={i} className="animate-in fade-in slide-in-from-bottom-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                              <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {/* Partner Answer (Locked if user didn't answer) */}
+                                <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
+                                  <span className="text-[7px] font-black text-[#8E89AA] uppercase block mb-1">{partnerName}</span>
+                                  {q.isPartnerLocked ? (
+                                    <div className="flex items-center gap-1.5 text-purple-300">
+                                      <Lock className="w-2.5 h-2.5" />
+                                      <span className="text-[9px] font-bold italic">Gesperrt</span>
+                                    </div>
+                                  ) : (
+                                    <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                                      {i === 1 ? safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.partner || 'Nicht geantwortet')}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* User Answer */}
+                                <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
+                                  <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
+                                  <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
+                                    {i === 1 ? safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.my || 'Nicht geantwortet')}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                          ) : (
-                            <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
-                              {i === 1 ? safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.partner || 'Nicht geantwortet')}
-                            </p>
+                          ))}
+                          
+                          {data.isPartnerLocked && (
+                            <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2">
+                              <p className="text-[10px] font-bold text-[var(--secondary)] leading-snug">
+                                Du kannst die Antworten von {partnerName} für diesen Tag erst sehen, wenn du selbst geantwortet hast.
+                              </p>
+                            </div>
                           )}
                         </div>
-
-                        {/* User Answer */}
-                        <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
-                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
-                          <p className="text-[10px] font-bold text-[#4A4468] leading-tight">
-                            {i === 1 ? safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : (q.my || 'Nicht geantwortet')}
-                          </p>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
+                          <MessageSquare className="w-8 h-8 mb-2" />
+                          <p className="text-xs font-bold">Keine Einträge für diesen Tag.</p>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ))}
-                  
-                  {currentDayData.isPartnerLocked && (
-                    <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2">
-                      <p className="text-[10px] font-bold text-[var(--secondary)] leading-snug">
-                        Du kannst die Antworten von {partnerName} für diesen Tag erst sehen, wenn du selbst geantwortet hast.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center opacity-40">
-                  <MessageSquare className="w-8 h-8 mb-2" />
-                  <p className="text-xs font-bold">Keine Einträge für diesen Tag.</p>
                 </div>
               )}
             </div>
