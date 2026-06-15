@@ -298,9 +298,89 @@ serve(async (req) => {
     }
 
     // 5. Calculate Bisou Score (0-10, one decimal place) 
-    // Weights: dies/das (50%), ranking (16.67%), wer-würde-eher (16.67%), freitext (16.67%)
-    const weightedPercent = (totMatchAvg * 0.5) + (rankingMatchAvg * (0.5 / 3)) + (wweMatchAvg * (0.5 / 3)) + (textMatchAvg * (0.5 / 3));
-    const bisouScore = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
+    const calculateScoreForDays = (daysList: any[]) => {
+      if (daysList.length === 0) return 0;
+      
+      let totSum = 0;
+      let rankingSum = 0;
+      let rankingDaysCount = 0;
+      let wweSum = 0;
+      let wweDaysCount = 0;
+      let textSum = 0;
+      let textDaysCount = 0;
+
+      daysList.forEach(ma => {
+        const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
+        if (pa) {
+          const myP = parseChoice(ma.choice);
+          const partnerP = parseChoice(pa.choice);
+
+          // Dies-oder-Das-Frage
+          if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
+            totSum += 100;
+          }
+
+          // Ranking-Frage
+          const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
+          const n = commonItems.length;
+          if (n > 1) {
+            let sumSqDiff = 0;
+            for (const item of commonItems) {
+              const myPos = myP.ranking.indexOf(item);
+              const partnerPos = partnerP.ranking.indexOf(item);
+              sumSqDiff += Math.pow(myPos - partnerPos, 2);
+            }
+            const maxSqDiff = (n * (n * n - 1)) / 3;
+            const rawSim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
+            const sim = Math.sqrt(Math.max(0, rawSim) / 100) * 100;
+            rankingSum += sim;
+            rankingDaysCount++;
+          }
+
+          // Wer-würde-eher-Frage
+          if (myP.wwe && partnerP.wwe) {
+            wweDaysCount++;
+            if (myP.wwe !== partnerP.wwe) {
+              wweSum += 100;
+            }
+          }
+
+          // Freitext-Frage
+          const sim = textSimilarities[ma.day_key];
+          if (sim !== undefined) {
+            textSum += sim;
+            textDaysCount++;
+          }
+        }
+      });
+
+      const totalDays = daysList.length;
+      const totMatchAvg = Math.round(totSum / totalDays);
+      const rankingMatchAvg = rankingDaysCount > 0 ? Math.round(rankingSum / rankingDaysCount) : 0;
+      const wweMatchAvg = wweDaysCount > 0 ? Math.round(wweSum / wweDaysCount) : 0;
+      const textMatchAvg = textDaysCount > 0 ? Math.round(textSum / textDaysCount) : 0;
+
+      // Weights: dies/das (50%), ranking (16.67%), wer-würde-eher (16.67%), freitext (16.67%)
+      const weightedPercent = (totMatchAvg * 0.5) + (rankingMatchAvg * (0.5 / 3)) + (wweMatchAvg * (0.5 / 3)) + (textMatchAvg * (0.5 / 3));
+      return Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
+    };
+
+    // Calculate today's Bisou Score (using all days)
+    const bisouScore = calculateScoreForDays(daysWithBoth);
+
+    // Sort days with both answered in ascending order of date
+    const sortedDays = [...daysWithBoth].sort((a, b) => a.day_key.localeCompare(b.day_key));
+    
+    // The previous score should be calculated by excluding the most recent day's answers.
+    // This handles both cases:
+    // - If both answered today: compares today's score with yesterday's score.
+    // - If both have NOT answered today: compares yesterday's score (last active) with the day before yesterday's score.
+    let prevBisouScore: number | null = null;
+    if (sortedDays.length > 1) {
+      const mostRecentDayKey = sortedDays[sortedDays.length - 1].day_key;
+      const prevDays = sortedDays.filter(d => d.day_key !== mostRecentDayKey);
+      prevBisouScore = calculateScoreForDays(prevDays);
+    }
 
     // 6. Habits (Avg Hour) in target timezone
     const getAvgHour = (ans: any[]) => {
@@ -331,7 +411,8 @@ serve(async (req) => {
       rankingMatch: rankingMatchAvg,
       textMatch: textMatchAvg,
       wweMatch: wweMatchAvg,
-      bisouScore
+      bisouScore,
+      prevBisouScore
     };
 
     return new Response(

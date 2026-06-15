@@ -10,13 +10,6 @@ const getTimeIcon = (hour: number) => {
   return '🌙';
 };
 
-const getLocalDateKey = (date: Date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
-
 interface StatsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,63 +88,28 @@ export default function StatsModal({
     }
   }, [isOpen, stats]);
 
-  // Calculate trend from previous score
+  // Calculate trend from previous score (now server-side calculated!)
   React.useEffect(() => {
     if (isOpen && stats?.bisouScore != null) {
       try {
-        const today = new Date();
-        const todayKey = getLocalDateKey(today);
+        const prevScore = stats.prevBisouScore;
         
-        // Find the most recent score before today
-        let prevScore: number | null = null;
-        
-        // Loop back up to 7 days to find the most recent stored score
-        for (let i = 1; i <= 7; i++) {
-          const d = new Date(today);
-          d.setDate(d.getDate() - i);
-          const key = getLocalDateKey(d);
-          const val = localStorage.getItem(`bisou_score_${key}`);
-          if (val) {
-            prevScore = parseFloat(val);
-            break;
-          }
-        }
-        
-        // Fallback: if no previous score exists, check if there's a legacy 'bisou_prev_score'
-        if (prevScore === null) {
-          const legacyVal = localStorage.getItem('bisou_prev_score');
-          if (legacyVal) {
-            // Only use legacy value if it's different from the current score,
-            // to avoid displaying ±0 immediately on first load of a new day.
-            const parsedLegacy = parseFloat(legacyVal);
-            if (parsedLegacy !== stats.bisouScore) {
-              prevScore = parsedLegacy;
-            }
-          }
-        }
-
-        // If we still have no previous score (e.g. first time opening the app), simulate
-        if (prevScore === null) {
-          const simulatedPrev = stats.bisouScore - 0.6;
-          prevScore = simulatedPrev;
+        if (prevScore === null || prevScore === undefined) {
+          setScoreTrend(null);
+          return;
         }
 
         const delta = parseFloat((stats.bisouScore - prevScore).toFixed(1));
         if (delta > 0) setScoreTrend({ delta, direction: 'up' });
         else if (delta < 0) setScoreTrend({ delta: Math.abs(delta), direction: 'down' });
         else setScoreTrend({ delta: 0, direction: 'same' });
-        
-        // Save today's score
-        localStorage.setItem(`bisou_score_${todayKey}`, String(stats.bisouScore));
-        // Also save to legacy key for backwards compatibility
-        localStorage.setItem('bisou_prev_score', String(stats.bisouScore));
       } catch {
         setScoreTrend(null);
       }
     } else if (!isOpen) {
       setScoreTrend(null);
     }
-  }, [isOpen, stats?.bisouScore]);
+  }, [isOpen, stats?.bisouScore, stats?.prevBisouScore]);
 
   if (!isOpen) return null;
 
