@@ -72,6 +72,7 @@ export default function JournalModal({
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarViewDate, setCalendarViewDate] = useState(() => new Date(selectedDate));
   const [slideDir, setSlideDir] = useState<'left' | 'right' | null>(null);
+  const [disableTransition, setDisableTransition] = useState(false);
 
   useEffect(() => {
     if (showCalendar) {
@@ -242,8 +243,12 @@ export default function JournalModal({
     setSlideDir(days > 0 ? 'left' : 'right');
     
     setTimeout(() => {
+      setDisableTransition(true);
       setSelectedDate(next);
       setSlideDir(null);
+      setTimeout(() => {
+        setDisableTransition(false);
+      }, 50);
     }, 300);
   };
 
@@ -493,7 +498,7 @@ export default function JournalModal({
                   style={{
                     width: '300%',
                     transform: `translate3d(${slideDir === 'left' ? '-66.666%' : slideDir === 'right' ? '0%' : '-33.333%'}, 0, 0)`,
-                    transition: slideDir ? 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
+                    transition: disableTransition ? 'none' : 'transform 300ms cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
                 >
                   {carouselDays.map(({ date, data }, idx) => (
