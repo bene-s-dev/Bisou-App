@@ -16,6 +16,7 @@ interface QuestionsProps {
   partnerName: string;
   partnerId?: string | null;
   dashboardData?: any;
+  dayKey: string;
   onComplete: () => void;
 }
 
@@ -180,7 +181,7 @@ const getResultsFromData = (data: any, uid: string | null | undefined) => {
   return safeSplit(mainPart, " | ");
 };
 
-export default function Questions({ profile, partnerProfile, userName, partnerName, partnerId, dashboardData, onComplete }: QuestionsProps) {
+export default function Questions({ profile, partnerProfile, userName, partnerName, partnerId, dashboardData, dayKey, onComplete }: QuestionsProps) {
   const { showAlert, showConfirm } = useDialog();
 
   // --- CONSTANTS ---
@@ -247,7 +248,6 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
 
   const sortableRef = useRef<HTMLDivElement>(null);
   const sortableInstance = useRef<Sortable | null>(null);
-  const dayKey = getDailyKey();
 
   // --- PERSISTENCE ---
   useEffect(() => {
@@ -1043,26 +1043,21 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
             className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md z-[100] pointer-events-none pwa-questions-reset-header px-4" 
             style={{ paddingTop: 'calc(1.2rem + var(--sat, 0px))' }}
           >
-            <div className="relative flex items-center justify-between h-10 w-full">
-              {/* Left Placeholder for visual balance */}
-              <div className="w-10 h-10" />
-              
-              {/* ABSOLUTELY CENTERED History Button */}
-              <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 flex items-center justify-center">
-                <button 
-                  onClick={() => setShowJournalModal(true)}
-                  className="pointer-events-auto p-1.5 bg-purple-50/90 backdrop-blur-sm rounded-full text-[var(--secondary)] hover:bg-purple-100 transition-all active:scale-95 shadow-sm border border-purple-100 flex items-center justify-center"
-                >
-                  <History className="w-5 h-5" />
-                </button>
-              </div>
+            <div className="relative flex items-center justify-end gap-2 h-10 w-full">
+              {/* Journal Button */}
+              <button 
+                onClick={() => setShowJournalModal(true)}
+                className="pointer-events-auto text-[8.5px] font-black text-white uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-full shadow-sm"
+              >
+                Journal <History className="w-2.5 h-2.5" />
+              </button>
               
               {/* Right Reset Button */}
               <button 
                 onClick={resetQuiz} 
                 className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
               >
-                Eigene zurücksetzen <RefreshCcw className="w-2.5 h-2.5" />
+                Neu starten <RefreshCcw className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>

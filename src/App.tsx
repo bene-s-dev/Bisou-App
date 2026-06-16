@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Home, MessageCircle, User as UserIcon, Lock, LogOut, Sun, Moon } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation, Navigate, NavLink } from 'react-router-dom';
@@ -314,7 +314,12 @@ export default function App() {
   const lastFetchTimestamp = React.useRef<number>(Date.now());
   const navigate = useNavigate();
   const location = useLocation();
-  const dayKey = getDailyKey();
+  const [dayKey, setDayKey] = useState(getDailyKey);
+  const dayKeyRef = useRef(dayKey);
+
+  useEffect(() => {
+    dayKeyRef.current = dayKey;
+  }, [dayKey]);
 
   // Root-level dark mode manager
   useEffect(() => {
@@ -368,6 +373,102 @@ export default function App() {
       }
     }
   };
+
+  const recoverLocalAnswers = useCallback(async (userId: string) => {
+    try {
+      const dayKeys: string[] = [];
+      const today = new Date();
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Europe/Berlin',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const parts = formatter.formatToParts(d);
+        const y = parts.find(p => p.type === 'year')?.value;
+        const m = parts.find(p => p.type === 'month')?.value;
+        const dayVal = parts.find(p => p.type === 'day')?.value;
+        dayKeys.push(`${y}-${m}-${dayVal}`);
+      }
+
+      const candidates = dayKeys.filter(key => {
+        try {
+          const progress = localStorage.getItem(`quiz_progress_${key}`);
+          if (!progress) return false;
+          const parsed = JSON.parse(progress);
+          return parsed && (parsed.selectedTot || parsed.textVal || (parsed.myResults && parsed.myResults.length > 0));
+        } catch {
+          return false;
+        }
+      });
+
+      if (candidates.length === 0) return;
+
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+      const { data: existing } = await supabase
+        .from('answers')
+        .select('day_key')
+        .eq('user_id', userId)
+        .gte('day_key', sevenDaysAgoStr);
+
+      const existingKeys = new Set((existing || []).map(a => a.day_key));
+      const missingKeys = candidates.filter(key => !existingKeys.has(key));
+
+      for (const key of missingKeys) {
+        console.log(`Auto-recovering answer for date: ${key}`);
+        const saved = localStorage.getItem(`quiz_progress_${key}`);
+        if (!saved) continue;
+        const progress = JSON.parse(saved);
+
+        const { data: qData } = await supabase
+          .from('daily_questions')
+          .select('questions')
+          .eq('day_key', key)
+          .maybeSingle();
+
+        if (qData && qData.questions) {
+          const q = qData.questions;
+          const dailyQs: any[] = [];
+          if (q.tot) dailyQs.push(q.tot);
+          if (q.ranking) dailyQs.push(q.ranking);
+          if (q.text) dailyQs.push(q.text);
+          if (q.wwe) dailyQs.push(q.wwe);
+
+          const activeCount = dailyQs.length;
+          const finalResults: string[] = [];
+          if (activeCount >= 1) finalResults.push(progress.selectedTot || progress.myResults?.[0] || "");
+          if (activeCount >= 2) finalResults.push(progress.myResults?.[1] || "");
+          if (activeCount >= 3) finalResults.push(progress.textVal || progress.myResults?.[2] || "");
+          if (activeCount >= 4) finalResults.push(progress.selectedWwe || progress.myResults?.[3] || "");
+
+          if (finalResults.filter(Boolean).length > 0) {
+            const sig = dailyQs.map(item => `[${item.q}]`).join("");
+            const choiceStr = finalResults.join(" | ") + " " + sig;
+
+            const { error: insertError } = await supabase.from('answers').insert([{
+              user_id: userId,
+              choice: choiceStr,
+              day_key: key
+            }]);
+
+            if (!insertError) {
+              console.log(`Successfully recovered answer for ${key}`);
+            } else {
+              console.error(`Failed to insert recovered answer for ${key}:`, insertError);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Auto-recovery error:", err);
+    }
+  }, []);
 
   const fetchProfile = useCallback(async (userId: string, bypassLock = false) => {
     // Prevent truly concurrent in-flight fetches only
@@ -470,6 +571,7 @@ export default function App() {
       if (profileData) {
         setProfile(profileData);
         localStorage.setItem('cached_profile', JSON.stringify(profileData));
+        await recoverLocalAnswers(userId);
         
         let pProfile = null;
         if (profileData.partner_id) {
@@ -525,18 +627,20 @@ export default function App() {
     }
   }, [dayKey]);
 
+  // Fetch profile and data whenever dayKey or session changes
+  useEffect(() => {
+    if (session?.user.id) {
+      fetchProfile(session.user.id);
+    }
+  }, [dayKey, session?.user.id, fetchProfile]);
+
   useEffect(() => {
     let mounted = true;
-    let initialFetchStarted = false;
 
     const handleSession = async (s: Session | null) => {
       if (!mounted) return;
       if (s) {
         setSession(s);
-        if (!initialFetchStarted) {
-          initialFetchStarted = true;
-          fetchProfile(s.user.id);
-        }
       } else {
         setLoading(false);
       }
@@ -594,12 +698,19 @@ export default function App() {
     };
     authChannel.addEventListener('message', handleAuthMessage);
 
-    // Refresh data when tab becomes visible or focused (PWA/multi-tabs wake up)
     const handleSyncOnWake = () => {
       if (mounted && session?.user.id) {
-        // Cooldown of 3 seconds to avoid redundant triggers from simultaneous focus/visibility events
-        if (Date.now() - lastFetchTimestamp.current > 3000) {
-          fetchProfile(session.user.id, true);
+        const freshDayKey = getDailyKey();
+        let dayChanged = false;
+        if (freshDayKey !== dayKeyRef.current) {
+          setDayKey(freshDayKey);
+          dayChanged = true;
+        }
+
+        if (dayChanged || Date.now() - lastFetchTimestamp.current > 3000) {
+          if (!dayChanged) {
+            fetchProfile(session.user.id, true);
+          }
         }
       }
     };
@@ -750,7 +861,7 @@ export default function App() {
     if (session) await fetchProfile(session.user.id, true);
   };
 
-  if (loading && !profile) return <LoadingSkeleton />;
+  if (loading && (!profile || !session)) return <LoadingSkeleton />;
 
   return (
     <DialogProvider>
@@ -778,6 +889,7 @@ export default function App() {
                     partnerAvatar={partnerProfile?.avatar_url}
                     partnerId={profile.partner_id}
                     dashboardData={dashboardData}
+                    dayKey={dayKey}
                     onStartQuestions={() => {
                       if (!profile.partner_id) setShowLockedModal(true);
                       else navigate('/questions');
@@ -791,6 +903,7 @@ export default function App() {
                     partnerName={partnerProfile?.display_name || 'Partner'} 
                     partnerId={profile.partner_id} 
                     dashboardData={dashboardData}
+                    dayKey={dayKey}
                     onComplete={refreshData} 
                   /> : <Navigate to="/dashboard" replace />} />
                   <Route path="profile" element={<Profile 

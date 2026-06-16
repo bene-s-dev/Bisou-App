@@ -17,6 +17,7 @@ interface DashboardProps {
   partnerAvatar?: string | null;
   partnerId?: string | null;
   dashboardData: any;
+  dayKey: string;
   onStartQuestions: () => void;
   onRefreshData?: () => Promise<void>;
 }
@@ -102,6 +103,7 @@ export default function Dashboard({
   partnerAvatar, 
   partnerId, 
   dashboardData,
+  dayKey,
   onStartQuestions,
   onRefreshData
 }: DashboardProps) {
@@ -179,7 +181,6 @@ export default function Dashboard({
   }, [partnerId, dashboardData, fetchStats]);
 
   const navigate = useNavigate();
-  const dayKey = getDailyKey();
   const hasPartner = !!partnerId;
 
   useEffect(() => {

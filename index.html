@@ -62,10 +62,15 @@
       if ('serviceWorker' in navigator && !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1')) {
         window.addEventListener('load', function() {
           navigator.serviceWorker.register('/sw.js').then(function(reg) {
-            // Check for updates periodically every 5 minutes
-            setInterval(function() {
-              reg.update();
-            }, 1000 * 60 * 5);
+            // Check for updates on load
+            reg.update();
+
+            // Check for updates when the user returns to the app (Battery efficient)
+            document.addEventListener('visibilitychange', function() {
+              if (document.visibilityState === 'visible') {
+                reg.update();
+              }
+            });
           }).catch(function(err) {
             console.log('SW registration failed:', err);
           });

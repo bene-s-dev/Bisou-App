@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { GoogleGenAI } from "npm:@google/genai"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -145,6 +144,7 @@ serve(async (req) => {
     };
 
     let totSum = 0;
+    let totDaysCount = 0;
     let rankingSum = 0;
     let rankingDaysCount = 0;
     let wweSum = 0;
@@ -158,8 +158,11 @@ serve(async (req) => {
         const partnerP = parseChoice(pa.choice);
 
         // Dies-oder-Das-Frage: Binärer Logik-Abgleich
-        if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
-          totSum += 100;
+        if (myP.tot && partnerP.tot) {
+          totDaysCount++;
+          if (myP.tot === partnerP.tot) {
+            totSum += 100;
+          }
         }
 
         // Ranking-Frage: Positions-Abstands-Analyse
@@ -203,7 +206,7 @@ serve(async (req) => {
     });
 
     const totalDays = daysWithBoth.length;
-    const totMatchAvg = Math.round(totSum / totalDays);
+    const totMatchAvg = totDaysCount > 0 ? Math.round(totSum / totDaysCount) : 0;
     const rankingMatchAvg = rankingDaysCount > 0 
       ? Math.round(rankingSum / rankingDaysCount) 
       : 0;
@@ -216,7 +219,6 @@ serve(async (req) => {
     const textSimilarities: Record<string, number> = {};
 
     if (textPairs.length > 0) {
-      const k = Deno.env.get('GEMINI_API_KEY') || ''
       const uniqueTexts = new Set<string>()
       for (const pair of textPairs) {
         const t1 = String(pair.text1 || '').trim()
@@ -229,25 +231,31 @@ serve(async (req) => {
 
       const textToVectorMap = new Map<string, number[]>()
 
-      if (uniqueTexts.size > 0 && k) {
-        const ai = new GoogleGenAI({ apiKey: k });
-        const textList = Array.from(uniqueTexts)
-        await Promise.all(
-          textList.map(async (text) => {
-            try {
-              const response = await ai.models.embedContent({
-                model: 'gemini-embedding-001',
-                contents: text,
-              })
-              const vector = response.embedding?.values || response.embeddings?.[0]?.values
-              if (vector && Array.isArray(vector)) {
-                textToVectorMap.set(text, vector)
+      if (uniqueTexts.size > 0) {
+        try {
+          // @ts-ignore: Supabase is globally available in Edge Functions
+          const session = new Supabase.ai.Session('gte-small');
+          const textList = Array.from(uniqueTexts)
+          
+          await Promise.all(
+            textList.map(async (text) => {
+              try {
+                const embedding = await session.run(text, {
+                  mean_pool: true,
+                  normalize: true,
+                });
+                if (embedding) {
+                  const vector = Array.from(embedding as number[] | Float32Array);
+                  textToVectorMap.set(text, vector);
+                }
+              } catch (e: any) {
+                console.error(`Error generating embedding for "${text}":`, e.message)
               }
-            } catch (e: any) {
-              console.error(`Error generating embedding for "${text}":`, e.message)
-            }
-          })
-        )
+            })
+          )
+        } catch (e: any) {
+          console.error("Failed to initialize Supabase.ai.Session:", e.message)
+        }
       }
 
       textPairs.forEach(pair => {
@@ -291,10 +299,15 @@ serve(async (req) => {
       });
 
       let textSum = 0;
+      let activeTextDays = 0;
       daysWithBoth.forEach(ma => {
-        textSum += textSimilarities[ma.day_key] || 0;
+        const sim = textSimilarities[ma.day_key];
+        if (sim !== undefined) {
+          textSum += sim;
+          activeTextDays++;
+        }
       });
-      textMatchAvg = Math.round(textSum / totalDays);
+      textMatchAvg = activeTextDays > 0 ? Math.round(textSum / activeTextDays) : 0;
     }
 
     // 5. Calculate Bisou Score (0-10, one decimal place) 
@@ -302,6 +315,7 @@ serve(async (req) => {
       if (daysList.length === 0) return 0;
       
       let totSum = 0;
+      let totDaysCount = 0;
       let rankingSum = 0;
       let rankingDaysCount = 0;
       let wweSum = 0;
@@ -316,8 +330,11 @@ serve(async (req) => {
           const partnerP = parseChoice(pa.choice);
 
           // Dies-oder-Das-Frage
-          if (myP.tot && partnerP.tot && myP.tot === partnerP.tot) {
-            totSum += 100;
+          if (myP.tot && partnerP.tot) {
+            totDaysCount++;
+            if (myP.tot === partnerP.tot) {
+              totSum += 100;
+            }
           }
 
           // Ranking-Frage
@@ -354,14 +371,20 @@ serve(async (req) => {
         }
       });
 
-      const totalDays = daysList.length;
-      const totMatchAvg = Math.round(totSum / totalDays);
+      const totMatchAvg = totDaysCount > 0 ? Math.round(totSum / totDaysCount) : 0;
       const rankingMatchAvg = rankingDaysCount > 0 ? Math.round(rankingSum / rankingDaysCount) : 0;
       const wweMatchAvg = wweDaysCount > 0 ? Math.round(wweSum / wweDaysCount) : 0;
       const textMatchAvg = textDaysCount > 0 ? Math.round(textSum / textDaysCount) : 0;
 
-      // Weights: dies/das (25%), ranking (25%), wer-würde-eher (25%), freitext (25%)
-      const weightedPercent = (totMatchAvg * 0.25) + (rankingMatchAvg * 0.25) + (wweMatchAvg * 0.25) + (textMatchAvg * 0.25);
+      let activeWeights = 0;
+      let weightedSum = 0;
+
+      if (totDaysCount > 0) { activeWeights += 0.25; weightedSum += totMatchAvg * 0.25; }
+      if (rankingDaysCount > 0) { activeWeights += 0.25; weightedSum += rankingMatchAvg * 0.25; }
+      if (wweDaysCount > 0) { activeWeights += 0.25; weightedSum += wweMatchAvg * 0.25; }
+      if (textDaysCount > 0) { activeWeights += 0.25; weightedSum += textMatchAvg * 0.25; }
+
+      const weightedPercent = activeWeights > 0 ? (weightedSum / activeWeights) : 0;
       return Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
     };
 

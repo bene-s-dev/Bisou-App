@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { GoogleGenAI } from "npm:@google/genai"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,14 +30,8 @@ serve(async (req) => {
   }
 
   try {
-    const k = Deno.env.get('GEMINI_API_KEY') || ''
-    if (!k) {
-      throw new Error("GEMINI_API_KEY not configured on server")
-    }
-
     const body = await req.json()
-    const { pairs, model: requestedModel } = body
-    const embeddingModel = requestedModel || 'gemini-embedding-001'
+    const { pairs } = body
 
     if (!pairs || !Array.isArray(pairs)) {
       return new Response(
@@ -59,27 +52,32 @@ serve(async (req) => {
     }
 
     // 2. Fetch embeddings in parallel for all unique texts
-    const ai = new GoogleGenAI({ apiKey: k });
     const textToVectorMap = new Map<string, number[]>()
  
     if (uniqueTexts.size > 0) {
-      const textList = Array.from(uniqueTexts)
-      await Promise.all(
-        textList.map(async (text) => {
-          try {
-            const response = await ai.models.embedContent({
-              model: embeddingModel,
-              contents: text,
-            })
-            const vector = response.embedding?.values || response.embeddings?.[0]?.values
-            if (vector && Array.isArray(vector)) {
-              textToVectorMap.set(text, vector)
+      try {
+        // @ts-ignore: Supabase is globally available in Edge Functions
+        const session = new Supabase.ai.Session('gte-small');
+        const textList = Array.from(uniqueTexts)
+        await Promise.all(
+          textList.map(async (text) => {
+            try {
+              const embedding = await session.run(text, {
+                mean_pool: true,
+                normalize: true,
+              });
+              if (embedding) {
+                const vector = Array.from(embedding as number[] | Float32Array);
+                textToVectorMap.set(text, vector)
+              }
+            } catch (e: any) {
+              console.error(`Error generating embedding for "${text}":`, e.message)
             }
-          } catch (e: any) {
-            console.error(`Error generating embedding for "${text}":`, e.message)
-          }
-        })
-      )
+          })
+        )
+      } catch (e: any) {
+        console.error("Failed to initialize Supabase.ai.Session:", e.message)
+      }
     }
  
     // 3. Compute similarities for all pairs
