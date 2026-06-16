@@ -312,10 +312,10 @@ export default function Dashboard({
                       <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>
                       <span className="font-bold text-xs text-[var(--text-main)] opacity-90 leading-relaxed">{myAnswers[i] || '—'}</span>
                     </div>
-                    <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${!partnerAnswered ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
+                    <div className={`res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm ${(!partnerAnswered || !partnerAnswers?.[i]) ? 'bg-purple-50/20 border-dashed opacity-60' : ''}`}>
                       <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">{partnerName.toUpperCase()}</b>
-                      <span className={`font-bold text-xs text-[var(--text-main)] opacity-90 leading-relaxed ${!partnerAnswered ? 'text-purple-200 italic' : ''}`}>
-                        {partnerAnswered ? partnerAnswers?.[i] : 'Wartet...'}
+                      <span className={`font-bold text-xs text-[var(--text-main)] opacity-90 leading-relaxed ${(!partnerAnswered || !partnerAnswers?.[i]) ? 'text-purple-200 italic' : ''}`}>
+                        {(partnerAnswered && partnerAnswers?.[i]) ? partnerAnswers[i] : 'Wartet...'}
                       </span>
                     </div>
                   </div>
