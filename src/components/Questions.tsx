@@ -20,7 +20,148 @@ interface QuestionsProps {
   onComplete: () => void;
 }
 
+const EncryptionOverlay = () => {
+  const [phase, setPhase] = useState(1);
+  const [scrambledText, setScrambledText] = useState("Meine Antworten");
+  
+  const targetScrambled = useMemo(() => {
+    const chars = "ABCDEFGHiJKLMNOPQRSTUVWXYZ0123456789$&#@?%";
+    return "Meine Antworten".split("").map(() => chars[Math.floor(Math.random() * chars.length)]).join("");
+  }, []);
 
+  useEffect(() => {
+    // Sequence (sped up for a snappier, more satisfying experience)
+    const t1 = setTimeout(() => setPhase(2), 200);   // Start encrypting text
+    const t2 = setTimeout(() => setPhase(3), 1000);  // Letter moves into envelope
+    const t3 = setTimeout(() => setPhase(4), 1450);  // Envelope flap closes
+    const t4 = setTimeout(() => setPhase(5), 1800);  // Seal (Lock) appears
+    const t5 = setTimeout(() => setPhase(6), 2200);  // Move up, background fades out, disappear
+    
+    return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
+  }, []);
+
+  useEffect(() => {
+    if (phase === 2) {
+      const chars = "ABCDEFGHiJKLMNOPQRSTUVWXYZ0123456789$&#@?%";
+      const original = "Meine Antworten";
+      let iteration = 0;
+      const interval = setInterval(() => {
+        setScrambledText(original.split("").map((_, i) => {
+          if (i < iteration / 2) return targetScrambled[i];
+          return chars[Math.floor(Math.random() * chars.length)];
+        }).join(""));
+        iteration++;
+        if (iteration > original.length * 2) clearInterval(interval);
+      }, 20);
+      return () => clearInterval(interval);
+    }
+  }, [phase, targetScrambled]);
+
+  return createPortal(
+    <div 
+      className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-opacity duration-300 ease-in-out
+        ${phase >= 6 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+    >
+      <div 
+        className="relative w-48 h-48 flex items-center justify-center"
+        style={{
+          transform: phase >= 6 ? 'translate3d(0, -120vh, 0) scale(0.9)' : 'translate3d(0, 0, 0) scale(1)',
+          transition: 'transform 450ms cubic-bezier(0.32, 0, 0.67, 0)',
+          perspective: '600px',
+          transformStyle: 'preserve-3d'
+        }}
+      >
+        
+        {/* Layer 1: Envelope Back */}
+        <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-10">
+          <path 
+            d="M 8 64 L 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z" 
+            fill="#FFFFFF" 
+            stroke="currentColor" 
+            strokeWidth="3.5" 
+            strokeLinejoin="round" 
+          />
+        </svg>
+
+        {/* Layer 1b: Envelope Flap (3D folding flap) */}
+        <div 
+          className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-300 ease-in-out"
+          style={{
+            transformOrigin: '96px 64px',
+            transform: phase >= 4 ? 'rotateX(-180deg)' : 'rotateX(0deg)',
+            transformStyle: 'preserve-3d',
+            zIndex: phase >= 4 ? 40 : 15,
+          }}
+        >
+          <svg viewBox="0 0 192 192" className="w-full h-full text-[var(--secondary)]">
+            <path
+              d="M 8 64 Q 96 8 184 64"
+              fill="#FFFFFF"
+              stroke="currentColor"
+              strokeWidth="3.5" 
+              strokeLinejoin="round" 
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+
+        {/* Layer 2: The Letter (slides down behind EnvelopeFront pocket) */}
+        <div 
+          className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-2xl shadow-lg border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-350 ease-in-out z-20 
+            ${phase >= 3 ? 'translate-y-[48px] scale-90 opacity-0' : 'translate-y-[-60px] scale-100 opacity-100'}`}
+        >
+          <div className="w-full h-2 bg-[var(--secondary)] rounded-full opacity-30" />
+          <div className="w-3/4 h-2 bg-[var(--secondary)] rounded-full opacity-30" />
+          <p className="mt-2 font-mono text-[9px] font-black text-[var(--secondary)] break-words leading-relaxed text-center">
+            {scrambledText}
+          </p>
+          <div className="mt-auto flex flex-col gap-1.5">
+            <div className="w-full h-1 bg-[var(--secondary)] rounded-full opacity-20" />
+            <div className="w-full h-1 bg-[var(--secondary)] rounded-full opacity-20" />
+          </div>
+        </div>
+
+        {/* Layer 3: Envelope Front Pocket */}
+        <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-30">
+          <path 
+            d="M 8 64 Q 96 118 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z" 
+            fill="#FFFFFF" 
+            stroke="currentColor" 
+            strokeWidth="3.5" 
+            strokeLinejoin="round" 
+          />
+        </svg>
+
+        {/* Layer 4: The Lock (bounces onto the envelope seal crease) */}
+        <div 
+          className="absolute inset-0 flex items-center justify-center z-[60] translate-y-6"
+          style={{
+            transformOrigin: 'center center',
+            transform: phase >= 5 ? 'scale(1)' : 'scale(0)',
+            opacity: phase >= 5 ? 1 : 0,
+            transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 250ms ease-out'
+          }}
+        >
+          <div className="bg-[var(--secondary)] p-3 rounded-full shadow-2xl border-4 border-white">
+            <Lock className="w-6 h-6 text-white fill-white" />
+          </div>
+        </div>
+
+      </div>
+      
+      {/* Bottom info text */}
+      <div 
+        className={`absolute bottom-24 left-0 right-0 text-center transition-all duration-500 ease-in-out
+          ${phase >= 6 ? 'opacity-0 translate-y-4' : phase >= 5 ? 'opacity-100 translate-y-0 scale-105' : 'opacity-100 translate-y-0'}`}
+      >
+        <span className="text-[12px] font-black text-[var(--secondary)] uppercase tracking-[0.4em] animate-pulse">
+          {phase < 5 ? "Verschlüsseln..." : "Gesichert"}
+        </span>
+      </div>
+    </div>,
+    document.body
+  );
+};
 
 // --- HELPERS ---
 const safeSplit = (val: any, delimiter: string) => {
@@ -74,6 +215,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
   const [showJournalModal, setShowJournalModal] = useState(false);
   const [textVal, setTextVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEncrypting, setIsEncrypting] = useState(false);
   const [revealResults, setRevealResults] = useState(initialStep >= ACTIVE_QUESTIONS);
   const [rankingOptions, setRankingOptions] = useState<string[]>([]);
   const [internalError, setInternalError] = useState<string | null>(null);
@@ -203,8 +345,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
         const q = qData.questions;
         if (q.tot && q.ranking && q.text) {
           const newQs = [q.tot, q.ranking, q.text];
-          const wwe = q.wwe || FALLBACK_QUESTIONS.wwe;
-          if (wwe) newQs.push(wwe);
+          if (FALLBACK_QUESTIONS.wwe) newQs.push(FALLBACK_QUESTIONS.wwe);
           setDailyQs(newQs);
           const lastDayKey = localStorage.getItem('last_question_day_key');
           if (lastDayKey !== dayKey) {
@@ -381,10 +522,16 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
         if (myS) myS.current_streak = (myS.current_streak || 0) + 1;
       }
 
-      setMyResults(finalResults);
-      setStep(ACTIVE_QUESTIONS);
-      setRevealResults(true);
-      onComplete();
+      setIsEncrypting(true);
+      setTimeout(() => {
+        setMyResults(finalResults);
+        setStep(ACTIVE_QUESTIONS);
+        setRevealResults(true);
+      }, 2200);
+
+      await new Promise(resolve => setTimeout(resolve, 2550));
+      setIsEncrypting(false);
+      setTimeout(() => onComplete(), 50);
     } catch (err: any) {
       console.error("Submit error:", err);
       showAlert("Speichern fehlgeschlagen.", "error");
@@ -720,6 +867,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
             to { transform: translateX(100%); opacity: 0; }
           }
         `}</style>
+        {isEncrypting && <EncryptionOverlay />}
         {step < ACTIVE_QUESTIONS ? (
           <div 
             className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container pwa-quiz-view-container"
@@ -899,17 +1047,17 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
               {/* Journal Button */}
               <button 
                 onClick={() => setShowJournalModal(true)}
-                className="pointer-events-auto text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:opacity-70 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm"
+                className="pointer-events-auto text-[8.5px] font-black text-white uppercase tracking-wider hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] rounded-full shadow-sm"
               >
-                Journal <History className="w-3.5 h-3.5" />
+                Journal <History className="w-2.5 h-2.5" />
               </button>
               
               {/* Right Reset Button */}
               <button 
                 onClick={resetQuiz} 
-                className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:opacity-70 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
+                className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
               >
-                Neu starten <RefreshCcw className="w-3.5 h-3.5" />
+                Neu starten <RefreshCcw className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
