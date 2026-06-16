@@ -638,6 +638,13 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
   };
 
   const resetQuiz = async () => {
+    // Only allow reset for today
+    const todayKey = new Date().toISOString().split('T')[0];
+    if (dayKey !== todayKey) {
+      showAlert("Du kannst nur die Antworten des heutigen Tages zurücksetzen.", "error");
+      return;
+    }
+
     if (profile?.last_answer_reset_at) {
       const lastReset = new Date(profile.last_answer_reset_at).getTime();
       const elapsed = Date.now() - lastReset;
@@ -667,7 +674,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
       <span>
         Möchtest du heute wirklich neu starten? Deine bisherigen Antworten werden gelöscht.{" "}
         <span className="block mt-2">
-          <strong className="text-red-500 dark:text-red-400">Achtung:</strong> Das Zurücksetzen ist nur{" "}
+          <strong className="text-red-500 dark:text-red-400">Hinweis:</strong> Dies betrifft nur den heutigen Tag. Das Zurücksetzen ist nur{" "}
           <strong>einmal alle 7 Tage</strong> möglich!
         </span>
       </span>,

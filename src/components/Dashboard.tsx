@@ -236,7 +236,7 @@ export default function Dashboard({
       <span>
         Möchtest du deine heutigen Antworten wirklich löschen und neu starten?{" "}
         <span className="block mt-2">
-          <strong className="text-red-500 dark:text-red-400">Achtung:</strong> Das Zurücksetzen ist nur{" "}
+          <strong className="text-red-500 dark:text-red-400">Hinweis:</strong> Dies betrifft nur den heutigen Tag. Das Zurücksetzen ist nur{" "}
           <strong>einmal alle 7 Tage</strong> möglich!
         </span>
       </span>,
