@@ -1042,7 +1042,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
           />
           <div 
             className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md z-[100] pointer-events-none pwa-questions-reset-header px-4" 
-            style={{ paddingTop: 'calc(1.2rem + var(--sat, 0px))' }}
+            style={{ paddingTop: 'calc(0.25rem + var(--sat, 0px))' }}
           >
             <div className="relative flex items-center justify-end gap-2 h-10 w-full">
               {/* Journal Button */}
