@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
-import { History, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock } from 'lucide-react';
+import { History, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock, Heart, User } from 'lucide-react';
 
 const START_DATE_STR = '2026-06-14';
 
@@ -53,14 +53,18 @@ export default function JournalModal({
   partnerName, 
   userName,
   userId, 
-  partnerId 
+  partnerId,
+  partnerAvatar,
+  userAvatar
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
   partnerName: string, 
   userName: string,
   userId: string, 
-  partnerId: string 
+  partnerId: string,
+  partnerAvatar?: string | null,
+  userAvatar?: string | null
 }) {
   const [history, setHistory] = useState<any[]>([]);
   const [questionsHistory, setQuestionsHistory] = useState<Record<string, any>>({});
@@ -204,37 +208,40 @@ export default function JournalModal({
       return val;
     };
 
+    const todayKey = getLocalDateString(new Date());
+    const isLocked = key === todayKey && !!partnerAns && !myAns;
+
     return {
       questions: [
         { 
           q: qs.tot.q, 
           my: parse(myAns?.choice)[0], 
-          partner: !!myAns ? parse(partnerAns?.choice)[0] : null,
-          isPartnerLocked: !!partnerAns && !myAns
+          partner: !isLocked ? parse(partnerAns?.choice)[0] : null,
+          isPartnerLocked: isLocked
         },
         { 
           q: qs.ranking.q, 
           my: parse(myAns?.choice)[1], 
-          partner: !!myAns ? parse(partnerAns?.choice)[1] : null,
-          isPartnerLocked: !!partnerAns && !myAns
+          partner: !isLocked ? parse(partnerAns?.choice)[1] : null,
+          isPartnerLocked: isLocked
         },
         { 
           q: qs.text.q, 
           my: parse(myAns?.choice)[2], 
-          partner: !!myAns ? parse(partnerAns?.choice)[2] : null,
-          isPartnerLocked: !!partnerAns && !myAns
+          partner: !isLocked ? parse(partnerAns?.choice)[2] : null,
+          isPartnerLocked: isLocked
         },
         { 
           q: qs.wwe?.q || 'Wer würde eher...', 
           my: formatWwe(parse(myAns?.choice)[3]), 
-          partner: !!myAns ? formatWwe(parse(partnerAns?.choice)[3]) : null,
-          isPartnerLocked: !!partnerAns && !myAns
+          partner: !isLocked ? formatWwe(parse(partnerAns?.choice)[3]) : null,
+          isPartnerLocked: isLocked
         }
       ],
       myAnswered: !!myAns,
       partnerAnswered: !!partnerAns,
       bothAnswered: !!myAns && !!partnerAns,
-      isPartnerLocked: !!partnerAns && !myAns
+      isPartnerLocked: isLocked
     };
   }, [history, questionsHistory, userId, partnerId]);
 
@@ -262,49 +269,80 @@ export default function JournalModal({
     const data = getDayData(key);
 
     return (
-      <div className={`w-full h-full overflow-y-auto scrollbar-soft pr-1 px-1 ${animationClass}`}>
+      <div 
+        className={`w-full h-full overflow-y-auto scrollbar-soft px-2 ${animationClass}`}
+        style={{
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
+          isolation: 'isolate'
+        }}
+      >
         {data ? (
-          <div className="space-y-6 pb-4">
+          <div className="space-y-6 pt-12 pb-[calc(5rem + var(--sab, 0px))]">
             {data.questions.map((q, i) => (
               <div key={i}>
-                <p className="text-[9px] font-black text-[#8E89AA] uppercase tracking-widest mb-2 px-1">{q.q}</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center mb-4 pl-4 pr-2">
+                  <span className="text-[10px] font-black text-[#8E89AA] tracking-wider">{q.q}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mb-4 px-2">
                   {/* Partner Answer */}
-                  <div className={`rounded-2xl p-3 shadow-sm border transition-all ${q.isPartnerLocked ? 'bg-purple-50/50 border-dashed border-purple-200' : 'bg-white border-purple-100'}`}>
-                    <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">{partnerName}</span>
-                    {q.isPartnerLocked ? (
-                      <div className="flex items-center gap-1.5 text-purple-300">
-                        <Lock className="w-2.5 h-2.5" />
-                        <span className="text-[9px] font-bold italic">Gesperrt</span>
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 ml-2">
+                      <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
+                        {partnerAvatar ? (
+                          <img src={partnerAvatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Heart className="w-2.5 h-2.5 text-purple-200" />
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-[10px] font-bold text-[#4A4468] opacity-90 leading-tight">
-                        {i === 1 ? (
-                          q.partner ? (
-                            safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
-                          ) : 'Nicht geantwortet'
-                        ) : (q.partner || 'Nicht geantwortet')}
-                      </p>
-                    )}
+                      <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
+                    </div>
+                    <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${q.isPartnerLocked ? 'bg-purple-50/50 border-2 border-dashed border-purple-200' : 'bg-white border border-purple-100'}`}>
+                      {q.isPartnerLocked ? (
+                        <div className="flex items-center gap-1.5 text-purple-300">
+                          <Lock className="w-2.5 h-2.5" />
+                          <span className="text-[9px] font-bold italic">Gesperrt</span>
+                        </div>
+                      ) : (
+                        <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                          {i === 1 ? (
+                            q.partner ? (
+                              safeSplit(q.partner, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
+                            ) : 'Nicht geantwortet'
+                          ) : (q.partner || 'Nicht geantwortet')}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   {/* User Answer */}
-                  <div className="bg-white border border-purple-100 rounded-2xl p-3 shadow-sm">
-                    <span className="text-[7px] font-black text-[var(--secondary)] uppercase block mb-1">Ich</span>
-                    <p className="text-[10px] font-bold text-[#4A4468] opacity-90 leading-tight">
-                      {i === 1 ? (
-                        q.my ? (
-                          safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
-                        ) : 'Nicht geantwortet'
-                      ) : (q.my || 'Nicht geantwortet')}
-                    </p>
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mr-2 self-end">
+                      <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
+                      <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
+                        {userAvatar ? (
+                          <img src={userAvatar} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-2.5 h-2.5 text-purple-300" />
+                        )}
+                      </div>
+                    </div>
+                    <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-br-none bg-white border border-purple-100 shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''}`}>
+                      <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                        {i === 1 ? (
+                          q.my ? (
+                            safeSplit(q.my, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>))
+                          ) : 'Nicht geantwortet'
+                        ) : (q.my || 'Nicht geantwortet')}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
             
             {data.isPartnerLocked && (
-              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2">
+              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 text-center mt-2 mx-2">
                 <p className="text-[10px] font-bold text-[var(--secondary)] leading-snug">
                   Du kannst die Antworten von {partnerName} für diesen Tag erst sehen, wenn du selbst geantwortet hast.
                 </p>
@@ -392,7 +430,7 @@ export default function JournalModal({
 
   if (!isOpen) return null;
 
-  return createPortal(
+  return (
     <div 
       className="modal-backdrop !p-0 sm:!p-4 z-[4000]"
       onTouchStart={(e) => e.stopPropagation()}
@@ -437,15 +475,15 @@ export default function JournalModal({
       `}</style>
       <div className="absolute inset-0" onClick={onClose} />
       <div 
-        className="modal-content !bg-[var(--bg)] p-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
+        className="modal-content !bg-[var(--bg)] py-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
         style={{
           paddingTop: 'calc(1.5rem + var(--sat, 0px))',
-          paddingBottom: 'calc(1.5rem + var(--sab, 0px))',
+          paddingBottom: 0,
           touchAction: 'pan-y',
           overscrollBehaviorX: 'contain'
         }}
       >
-        <div className="flex items-center justify-between mb-6 shrink-0">
+        <div className="flex items-center justify-between mb-3 shrink-0 px-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
               <History className="w-6 h-6 text-[var(--secondary)]" />
@@ -471,7 +509,7 @@ export default function JournalModal({
         {showCalendar ? (
           <div className="flex-1 flex flex-col min-h-0 animate-in fade-in zoom-in-95 duration-200">
             {/* Calendar Month Navigation Header */}
-            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-4 shrink-0">
+            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-4 mx-4 shrink-0">
               <button 
                 onClick={() => {
                   setCalendarViewDate(prev => {
@@ -522,7 +560,7 @@ export default function JournalModal({
                 const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
                 
                 return (
-                  <div className="grid grid-cols-7 gap-2">
+                  <div className="grid grid-cols-7 gap-2 mx-4">
                     {/* Weekday headers */}
                     {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(d => (
                       <div key={d} className="text-[8px] font-black text-[#8E89AA] text-center mb-1">{d}</div>
@@ -579,7 +617,7 @@ export default function JournalModal({
             className="flex-1 flex flex-col min-h-0"
             style={{ touchAction: 'pan-y' }}
           >
-            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-6 shrink-0">
+            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-0 mx-4 shrink-0 relative z-40">
               <button 
                 onClick={() => navigateDate(-1)} 
                 disabled={selectedDateKey <= START_DATE_STR}
@@ -626,7 +664,75 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className="flex-1 relative w-full h-full">
+            <div className="flex-1 min-h-0 relative w-full">
+              {/* Top opaque background strip to hide clipping */}
+              {!loading && (
+                <div 
+                  className="absolute z-30 pointer-events-none"
+                  style={{
+                    top: '-16px',
+                    left: '-20px',
+                    right: '-20px',
+                    height: '20px',
+                    backgroundColor: 'var(--bg)'
+                  }}
+                />
+              )}
+
+              {/* Top blur-fade overlay */}
+              {!loading && (
+                <div 
+                  className="absolute z-30 pointer-events-none"
+                  style={{
+                    top: '4px',
+                    left: '-20px',
+                    right: '-20px',
+                    height: '36px',
+                    transform: 'translate3d(0, 0, 0)',
+                    WebkitTransform: 'translate3d(0, 0, 0)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
+                    maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+                    background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg-80) 50%, transparent 100%)'
+                  }}
+                />
+              )}
+
+              {/* Bottom opaque background strip to hide clipping */}
+              {!loading && (
+                <div 
+                  className="absolute z-30 pointer-events-none"
+                  style={{
+                    bottom: '-16px',
+                    left: '-20px',
+                    right: '-20px',
+                    height: '20px',
+                    backgroundColor: 'var(--bg)'
+                  }}
+                />
+              )}
+
+              {/* Bottom blur-fade overlay */}
+              {!loading && (
+                <div 
+                  className="absolute z-30 pointer-events-none"
+                  style={{
+                    bottom: '4px',
+                    left: '-20px',
+                    right: '-20px',
+                    height: 'calc(3rem + var(--sab, 0px))',
+                    transform: 'translate3d(0, 0, 0)',
+                    WebkitTransform: 'translate3d(0, 0, 0)',
+                    backdropFilter: 'blur(4px)',
+                    WebkitBackdropFilter: 'blur(4px)',
+                    maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
+                    background: 'linear-gradient(to top, var(--bg) 0%, var(--bg-80) 50%, transparent 100%)'
+                  }}
+                />
+              )}
+
               {/* Skeleton Loader */}
               <div 
                 className={`absolute inset-0 space-y-4 p-4 transition-opacity duration-300 pointer-events-none ${
@@ -657,7 +763,6 @@ export default function JournalModal({
           </div>
         )}
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }

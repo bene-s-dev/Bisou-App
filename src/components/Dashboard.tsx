@@ -306,7 +306,7 @@ export default function Dashboard({
             <div className="space-y-8 pb-40 pt-8">
               {dailyQs.map((q, i) => (
                 <div key={i} className="animate-in fade-in slide-in-from-bottom-2">
-                  <div className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em] mb-3 px-1">{q.q}</div>
+                  <div className="text-[10px] font-black text-[#8E89AA] tracking-wider mb-3 px-1">{q.q}</div>
                   <div className="grid grid-cols-2 gap-3.5">
                     <div className="res-bubble p-5 border-2 border-[var(--card-border)] rounded-[2rem] bg-white shadow-sm">
                       <b className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] mb-2 block">ICH</b>

@@ -903,20 +903,33 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
           </div>
         ) : (
           <div className={`flex flex-col flex-1 h-full overflow-hidden relative ${revealResults ? 'animate-fade-in' : 'opacity-0'}`}>
+            {/* Top opaque background behind header and buttons */}
             <div 
-              className="absolute top-0 left-0 right-0 h-32 z-10 pointer-events-none results-top-fade"
+              className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
               style={{
+                height: 'calc(3.5rem + var(--sat, 0px) + 2px)',
+                backgroundColor: 'var(--bg)',
+                margin: '0 -16px'
+              }}
+            />
+            {/* Top blur-fade overlay below the solid background */}
+            <div 
+              className="absolute left-0 right-0 z-10 pointer-events-none"
+              style={{
+                top: 'calc(3.5rem + var(--sat, 0px))',
+                height: '5rem',
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
-                maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 100%)',
+                maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg-80) 40%, transparent 100%)',
                 margin: '0 -16px'
               }}
             />
             <div className="flex-1 relative min-h-0 overflow-x-hidden">
               <div className="h-full overflow-y-auto overflow-x-hidden scroll-smooth show-scrollbar">
                 <div 
-                  className="space-y-10 pb-72 pt-24 px-2"
+                  className="space-y-6 pb-72 pt-24 px-2"
                   style={{ 
                     paddingTop: 'calc(6rem + var(--sat, 0px))',
                     paddingBottom: 'calc(18rem + var(--sab, 0px))'
@@ -935,8 +948,8 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
 
                   return (
                     <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
-                      <div className="flex items-center mb-4 px-2">
-                        <span className="text-[10px] font-black text-[#8E89AA] uppercase tracking-[0.2em]">{question?.q || "Frage"}</span>
+                      <div className="flex items-center mb-4 pl-4 pr-2">
+                        <span className="text-[10px] font-black text-[#8E89AA] tracking-wider">{question?.q || "Frage"}</span>
                       </div>
                       <div className="flex items-stretch gap-2 w-full px-2">
                         {/* Partner Bubble */}
@@ -1042,15 +1055,15 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
           />
           <div 
             className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md z-[100] pointer-events-none pwa-questions-reset-header px-4" 
-            style={{ paddingTop: 'calc(0.25rem + var(--sat, 0px))' }}
+            style={{ paddingTop: 'calc(1rem + var(--sat, 0px))' }}
           >
-            <div className="relative flex items-center justify-end gap-2 h-10 w-full">
+            <div className="relative flex items-center justify-end gap-2 h-8 w-full">
               {/* Journal Button */}
               <button 
                 onClick={() => setShowJournalModal(true)}
                 className="pointer-events-auto text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm"
               >
-                Journal <History className="w-3.5 h-3.5" />
+                Journal <History className="w-4 h-4" />
               </button>
               
               {/* Right Reset Button */}
@@ -1070,6 +1083,8 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
             userName={userName}
             userId={profile?.id}
             partnerId={partnerId as string}
+            partnerAvatar={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url}
+            userAvatar={profile?.avatar_url}
           />
         </>,
         document.body
