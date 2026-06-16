@@ -905,25 +905,28 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
           <div className={`flex flex-col flex-1 h-full overflow-hidden relative ${revealResults ? 'animate-fade-in' : 'opacity-0'}`}>
             {/* Top opaque background behind header and buttons */}
             <div 
-              className="absolute top-0 left-0 right-0 z-10 pointer-events-none"
+              className="absolute pointer-events-none z-10"
               style={{
+                top: 0,
+                left: '-20px',
+                right: '-20px',
                 height: 'calc(3.5rem + var(--sat, 0px) + 2px)',
-                backgroundColor: 'var(--bg)',
-                margin: '0 -16px'
+                backgroundColor: 'var(--bg)'
               }}
             />
             {/* Top blur-fade overlay below the solid background */}
             <div 
-              className="absolute left-0 right-0 z-10 pointer-events-none"
+              className="absolute pointer-events-none z-10"
               style={{
-                top: 'calc(3.5rem + var(--sat, 0px))',
-                height: '5rem',
+                top: 'calc(3.5rem + var(--sat, 0px) - 2px)',
+                left: '-20px',
+                right: '-20px',
+                height: 'calc(3.5rem + 2px)',
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
                 maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
                 WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
-                background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg-80) 40%, transparent 100%)',
-                margin: '0 -16px'
+                background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg-80) 40%, transparent 100%)'
               }}
             />
             <div className="flex-1 relative min-h-0 overflow-x-hidden">

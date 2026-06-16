@@ -278,7 +278,7 @@ export default function JournalModal({
         }}
       >
         {data ? (
-          <div className="space-y-6 pt-12 pb-[calc(5rem + var(--sab, 0px))]">
+          <div className="space-y-6 pt-12 pb-[calc(12rem + var(--sab, 0px))]">
             {data.questions.map((q, i) => (
               <div key={i}>
                 <div className="flex items-center mb-4 pl-4 pr-2">
@@ -684,10 +684,10 @@ export default function JournalModal({
                 <div 
                   className="absolute z-30 pointer-events-none"
                   style={{
-                    top: '4px',
+                    top: '2px',
                     left: '-20px',
                     right: '-20px',
-                    height: '36px',
+                    height: '28px',
                     transform: 'translate3d(0, 0, 0)',
                     WebkitTransform: 'translate3d(0, 0, 0)',
                     backdropFilter: 'blur(4px)',
@@ -718,10 +718,10 @@ export default function JournalModal({
                 <div 
                   className="absolute z-30 pointer-events-none"
                   style={{
-                    bottom: '4px',
+                    bottom: '2px',
                     left: '-20px',
                     right: '-20px',
-                    height: 'calc(3rem + var(--sab, 0px))',
+                    height: 'calc(3rem + var(--sab, 0px) + 2px)',
                     transform: 'translate3d(0, 0, 0)',
                     WebkitTransform: 'translate3d(0, 0, 0)',
                     backdropFilter: 'blur(4px)',
