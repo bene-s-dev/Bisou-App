@@ -278,7 +278,7 @@ export default function JournalModal({
         }}
       >
         {data ? (
-          <div className="space-y-6 pt-12 pb-[calc(12rem + var(--sab, 0px))]">
+          <div className="space-y-6 pt-12 pb-[calc(18rem + var(--sab, 0px))]">
             {data.questions.map((q, i) => (
               <div key={i}>
                 <div className="flex items-center mb-4 pl-4 pr-2">
