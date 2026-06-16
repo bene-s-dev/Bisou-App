@@ -345,7 +345,8 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
         const q = qData.questions;
         if (q.tot && q.ranking && q.text) {
           const newQs = [q.tot, q.ranking, q.text];
-          if (FALLBACK_QUESTIONS.wwe) newQs.push(FALLBACK_QUESTIONS.wwe);
+          const wwe = q.wwe || FALLBACK_QUESTIONS.wwe;
+          if (wwe) newQs.push(wwe);
           setDailyQs(newQs);
           const lastDayKey = localStorage.getItem('last_question_day_key');
           if (lastDayKey !== dayKey) {
