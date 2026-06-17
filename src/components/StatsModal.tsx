@@ -37,7 +37,7 @@ export default function StatsModal({
 
   // Animate Bisou Score and match percentages from 0 to target when modal opens or stats change
   React.useEffect(() => {
-    if (isOpen && stats) {
+    if (isOpen && stats && !loading) {
       const targets = {
         score: stats.bisouScore || 0,
         tot: stats.totMatch || 0,
@@ -79,18 +79,18 @@ export default function StatsModal({
 
       const raf = requestAnimationFrame(animate);
       return () => cancelAnimationFrame(raf);
-    } else if (!isOpen) {
+    } else if (!isOpen || loading) {
       setDisplayScore(0);
       setDisplayTotMatch(0);
       setDisplayRankingMatch(0);
       setDisplayTextMatch(0);
       setDisplayWweMatch(0);
     }
-  }, [isOpen, stats]);
+  }, [isOpen, stats, loading]);
 
   // Calculate trend from previous score (now server-side calculated!)
   React.useEffect(() => {
-    if (isOpen && stats?.bisouScore != null) {
+    if (isOpen && stats?.bisouScore != null && !loading) {
       try {
         const prevScore = stats.prevBisouScore;
         
@@ -106,10 +106,10 @@ export default function StatsModal({
       } catch {
         setScoreTrend(null);
       }
-    } else if (!isOpen) {
+    } else if (!isOpen || loading) {
       setScoreTrend(null);
     }
-  }, [isOpen, stats?.bisouScore, stats?.prevBisouScore]);
+  }, [isOpen, stats?.bisouScore, stats?.prevBisouScore, loading]);
 
   if (!isOpen) return null;
 
