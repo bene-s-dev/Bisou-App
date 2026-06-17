@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, Trash2, Share2, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3 } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, Trash2, Share2, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3, Trophy } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -39,7 +39,102 @@ const urlBase64ToUint8Array = (base64String: string) => {
   return outputArray;
 };
 
+function MilestonesModal({ 
+  isOpen, 
+  onClose, 
+  milestones, 
+  unlockedMilestones, 
+  loadingMilestones 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  milestones: any[]; 
+  unlockedMilestones: any[]; 
+  loadingMilestones: boolean; 
+}) {
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="modal-backdrop px-4 z-[9999] will-change-[opacity,backdrop-filter]">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="modal-content p-6 max-h-[90vh] overflow-y-auto w-full max-w-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
+              <Trophy className="w-6 h-6 text-[var(--secondary)]" />
+            </div>
+            <div>
+              <h3 className="font-black text-[#1F1939] text-base leading-tight">Eure Erfolge & Meilensteine</h3>
+              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">
+                {unlockedMilestones.length} von {milestones.length} freigeschaltet
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full h-2.5 bg-purple-50 rounded-full overflow-hidden border border-purple-100/50 mb-4">
+          <div 
+            className="h-full bg-gradient-to-r from-purple-400 to-[var(--secondary)] rounded-full transition-all duration-500" 
+            style={{ width: `${milestones.length > 0 ? (unlockedMilestones.length / milestones.length) * 100 : 0}%` }}
+          />
+        </div>
+
+        {/* Achievements Grid */}
+        <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-1 security-scrollbar">
+          {loadingMilestones ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+            </div>
+          ) : (
+            milestones.map(m => {
+              const unlocked = unlockedMilestones.find(um => um.milestone_id === m.id);
+              return (
+                <div 
+                  key={m.id} 
+                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all ${
+                    unlocked ? 'border-purple-100 bg-purple-50/10' : 'border-purple-50/30 opacity-60'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg border ${
+                    unlocked 
+                      ? 'bg-purple-50 border-purple-100/30 text-white' 
+                      : 'bg-slate-50 border-slate-100 grayscale'
+                  }`}>
+                    {m.icon}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center justify-between gap-1">
+                      <h4 className="text-[11px] font-black text-[#1F1939] truncate">{m.name}</h4>
+                      {unlocked && (
+                        <span className="text-[7px] font-black text-green-600 bg-green-50 px-1 rounded-[4px] border border-green-100 shrink-0">
+                          ✓
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[9px] font-bold text-[#4A4468] leading-tight mt-0.5">{m.description}</p>
+                    {unlocked && (
+                      <p className="text-[7px] font-semibold text-[#6A6588] mt-1 flex items-center gap-0.5">
+                        <span>📅</span> {new Date(unlocked.unlocked_at).toLocaleDateString('de-DE')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function Profile({ 
+
   profile: initialProfile, 
   partnerProfile, 
   userEmail: propEmail,
@@ -60,6 +155,11 @@ export default function Profile({
   
   const [profile, setProfile] = useState<any>(initialProfile);
   const [user, setUser] = useState<User | null>(initialUser || null);
+  
+  // Milestones State
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [unlockedMilestones, setUnlockedMilestones] = useState<any[]>([]);
+  const [loadingMilestones, setLoadingMilestones] = useState(false);
 
   const updateProfile = (newProfile: any) => {
     setProfile(newProfile);
@@ -107,6 +207,14 @@ export default function Profile({
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showAboutAppModal, setShowAboutAppModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showMilestonesModal, setShowMilestonesModal] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'partner' && searchParams.get('showMilestones') === 'true') {
+      setShowMilestonesModal(true);
+      setSearchParams({ tab: 'partner' }, { replace: true });
+    }
+  }, [activeTab, searchParams, setSearchParams]);
   const [stats, setStats] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('cached_bisou_stats_v3');
@@ -455,6 +563,28 @@ export default function Profile({
       fetchStats();
     }
   }, [activeTab, profile?.partner_id, fetchStats]);
+
+  // Load Milestones Effect
+  useEffect(() => {
+    if (activeTab === 'partner' && profile?.id && profile?.partner_id) {
+      const fetchMilestoneData = async () => {
+        setLoadingMilestones(true);
+        try {
+          const [mRes, umRes] = await Promise.all([
+            supabase.from('milestones').select('*').order('trigger_type', { ascending: true }).order('trigger_value', { ascending: true }),
+            supabase.from('unlocked_milestones').select('*').eq('user_id', profile.id)
+          ]);
+          if (mRes.data) setMilestones(mRes.data);
+          if (umRes.data) setUnlockedMilestones(umRes.data);
+        } catch (err) {
+          console.error("Error fetching milestones:", err);
+        } finally {
+          setLoadingMilestones(false);
+        }
+      };
+      fetchMilestoneData();
+    }
+  }, [activeTab, profile?.id, profile?.partner_id]);
 
   const handleVersionClick = () => {
     // Ignore all taps during the 2-second cooldown after activation/deactivation
@@ -1017,13 +1147,23 @@ export default function Profile({
                     </span>
                   </div>
 
-                  <button 
-                    onClick={() => setShowStatsModal(true)}
-                    className="w-fit mx-auto py-2.5 px-6 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-2 bg-[var(--secondary)] hover:bg-[#8179E0] text-white rounded-2xl transition-all active:scale-95 shadow-sm"
-                  >
-                    <BarChart3 className="w-3.5 h-3.5 text-white" />
-                    <span className="text-white">Bisou-Score</span>
-                  </button>
+                  <div className="flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => setShowStatsModal(true)}
+                      className="py-2.5 px-4 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[var(--secondary)] hover:bg-[#8179E0] text-white rounded-2xl transition-all active:scale-95 shadow-sm shrink-0"
+                    >
+                      <BarChart3 className="w-3.5 h-3.5 text-white" />
+                      <span className="text-white">Bisou-Score</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowMilestonesModal(true)}
+                      className="py-2.5 px-4 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-400 to-[var(--secondary)] text-white rounded-2xl transition-all active:scale-95 shadow-sm shrink-0"
+                    >
+                      <Trophy className="w-3.5 h-3.5 text-white" />
+                      <span className="text-white">Erfolge</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-1 text-center">
@@ -1201,6 +1341,7 @@ export default function Profile({
             </div>
           </div>
         );
+
       case 'app-info':
         return (
           <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="app-info">
@@ -1887,6 +2028,14 @@ export default function Profile({
         userName={profile?.display_name || 'Ich'}
         stats={stats}
         loading={loadingStats}
+      />
+
+      <MilestonesModal 
+        isOpen={showMilestonesModal} 
+        onClose={() => setShowMilestonesModal(false)}
+        milestones={milestones}
+        unlockedMilestones={unlockedMilestones}
+        loadingMilestones={loadingMilestones}
       />
 
       <input 

@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { GREETINGS, Question } from '../constants/questions';
 import { User as UserIcon, Clock, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { getTimeUntilReset } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 import { capitalizeName } from '../lib/stringUtils';
@@ -182,6 +183,87 @@ export default function Dashboard({
 
   const navigate = useNavigate();
   const hasPartner = !!partnerId;
+
+  const [newMilestones, setNewMilestones] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!partnerId) return;
+
+    const checkNewMilestones = async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData?.session;
+        if (!session) return;
+
+        // Fetch user's unlocked milestones
+        const { data: umData, error: umError } = await supabase
+          .from('unlocked_milestones')
+          .select('*, milestones(*)')
+          .eq('user_id', session.user.id);
+
+        if (umError || !umData) return;
+
+        const storageKey = `seen_milestones_${session.user.id}`;
+        const cachedSeenStr = localStorage.getItem(storageKey);
+        
+        const currentUnlockedIds = umData.map(um => um.milestone_id);
+
+        if (!cachedSeenStr) {
+          // First time initialized: store current IDs, do not show any popups
+          localStorage.setItem(storageKey, JSON.stringify(currentUnlockedIds));
+          return;
+        }
+
+        let seenIds: string[] = [];
+        try {
+          seenIds = JSON.parse(cachedSeenStr);
+          if (!Array.isArray(seenIds)) seenIds = [];
+        } catch (e) {
+          seenIds = [];
+        }
+
+        // Find milestones in currentUnlockedIds that are not in seenIds
+        const newUnlocks = umData.filter(um => !seenIds.includes(um.milestone_id) && um.milestones);
+
+        if (newUnlocks.length > 0) {
+          // Sort by unlocked_at ascending so we show them in order
+          newUnlocks.sort((a, b) => new Date(a.unlocked_at).getTime() - new Date(b.unlocked_at).getTime());
+          
+          setNewMilestones(prev => {
+            const existingIds = prev.map(m => m.id);
+            const filtered = newUnlocks.filter(um => !existingIds.includes(um.id));
+            return [...prev, ...filtered];
+          });
+
+          // Update cache with all newly unlocked IDs
+          const updatedSeenIds = Array.from(new Set([...seenIds, ...currentUnlockedIds]));
+          localStorage.setItem(storageKey, JSON.stringify(updatedSeenIds));
+        }
+
+      } catch (err) {
+        console.error("Error checking new milestones:", err);
+      }
+    };
+
+    checkNewMilestones();
+  }, [partnerId, dashboardData]);
+
+  useEffect(() => {
+    if (newMilestones.length > 0) {
+      // Fire confetti when a new milestone is unlocked!
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.8 },
+        colors: ['#A29BFE', '#FF8A8A', '#FFD166', '#06D6A0']
+      });
+    }
+  }, [newMilestones.length]);
+
+  const currentNewMilestone = newMilestones[0];
+  const handleDismissMilestone = () => {
+    setNewMilestones(prev => prev.slice(1));
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -550,6 +632,55 @@ export default function Dashboard({
           </div>
         </div>,
         document.body
+      )}
+
+      {currentNewMilestone && createPortal(
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] w-[90%] max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-purple-100 dark:border-purple-900/50 shadow-[0_10px_30px_rgba(162,155,254,0.15)] rounded-[2rem] p-4 flex items-center gap-3.5 animate-in fade-in slide-in-from-top-5 duration-300">
+          <div className="w-12 h-12 bg-purple-50 dark:bg-purple-950/30 rounded-2xl flex items-center justify-center shrink-0 text-2xl border border-purple-100/50 dark:border-purple-900/30">
+            {currentNewMilestone.milestones?.icon}
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <h4 className="text-[9px] font-black text-[var(--secondary)] uppercase tracking-widest leading-none mb-1">Meilenstein erreicht! 🏆</h4>
+            <h3 className="text-xs font-black text-[#1F1939] dark:text-white truncate">{currentNewMilestone.milestones?.name}</h3>
+            <p className="text-[9px] font-bold text-[#4A4468] dark:text-slate-300 opacity-80 leading-tight mt-0.5 line-clamp-2">{currentNewMilestone.milestones?.description}</p>
+          </div>
+          <div className="flex flex-col gap-1 shrink-0">
+            <button 
+              onClick={() => {
+                handleDismissMilestone();
+                navigate('/profile?tab=partner&showMilestones=true');
+              }}
+              className="px-2.5 py-1.5 bg-gradient-to-r from-purple-400 to-[var(--secondary)] text-white text-[9px] font-black rounded-lg active:scale-95 transition-transform uppercase tracking-wider"
+            >
+              Ansehen
+            </button>
+            <button 
+              onClick={handleDismissMilestone}
+              className="px-2.5 py-1 text-[#6A6588] dark:text-slate-400 text-[8px] font-black hover:text-[#1F1939] active:scale-95 transition-colors uppercase tracking-wider"
+            >
+              Schließen
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {import.meta.env.DEV && (
+        <button 
+          onClick={() => {
+            setNewMilestones(prev => [...prev, {
+              id: 'test-milestone-id',
+              milestones: {
+                icon: '🎉',
+                name: 'Test-Erfolg freigeschaltet!',
+                description: 'Dies ist eine Vorschau des Toast-Popups und der Konfetti-Animation auf Localhost.'
+              }
+            }]);
+          }}
+          className="fixed top-4 left-4 z-[99999] px-3 py-1.5 bg-purple-600/90 hover:bg-purple-700 hover:scale-105 active:scale-95 text-white text-[9px] font-black uppercase rounded-xl shadow-lg transition-all"
+        >
+          Vorschau Erfolg 🏆
+        </button>
       )}
     </div>
   );
