@@ -354,7 +354,7 @@ export default function App() {
               version_code: latestAnn.version_code,
               type: latestAnn.type || 'info',
               emoji: latestAnn.emoji || '✨',
-              button_label: latestAnn.button_label || 'Verstanden! ✨',
+              button_label: latestAnn.button_label || "Los geht's",
               action_route: latestAnn.action_route || null
             });
           }

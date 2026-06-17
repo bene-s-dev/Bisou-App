@@ -1747,7 +1747,7 @@ export default function Profile({
                  <div className="contents cursor-pointer" onClick={handleVersionClick}>
                    <span className="text-[10px] font-black text-[var(--muted)] tracking-wider pb-2 border-b border-purple-50/50 select-none">Version:</span>
                    <div className="flex justify-end border-b border-purple-50/50 pb-2 col-span-2">
-                     <span className="text-xs font-black text-[#1F1939] select-none">1.0.0</span>
+                     <span className="text-xs font-black text-[#1F1939] select-none">1.2.0</span>
                    </div>
                  </div>
 
