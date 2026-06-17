@@ -183,14 +183,10 @@ export default function Dashboard({
 
   const navigate = useNavigate();
   const hasPartner = !!partnerId;
-
-  const [newMilestones, setNewMilestones] = useState<any[]>([]);
-  const currentNewMilestone = newMilestones[0];
-  const handleDismissMilestone = () => {
-    setNewMilestones(prev => prev.slice(1));
-  };
+  const { showTestMilestone } = useMilestones();
 
   const [toastTimeLeft, setToastTimeLeft] = useState(10000);
+
   const [toastPaused, setToastPaused] = useState(false);
 
   useEffect(() => {
@@ -764,6 +760,14 @@ export default function Dashboard({
             }]);
           }}
           className="fixed top-4 left-4 z-[99999] px-3 py-1.5 bg-purple-600/90 hover:bg-purple-700 hover:scale-105 active:scale-95 text-white text-[9px] font-black uppercase rounded-xl shadow-lg transition-all"
+        >
+          Vorschau Erfolg 🏆
+        </button>
+      )}
+    </div>
+  );
+}
+urple-700 hover:scale-105 active:scale-95 text-white text-[9px] font-black uppercase rounded-xl shadow-lg transition-all"
         >
           Vorschau Erfolg 🏆
         </button>

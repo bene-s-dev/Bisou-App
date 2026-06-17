@@ -78,20 +78,11 @@ export const MilestoneProvider: React.FC<{
         // Sort by unlocked_at ascending so we show them in order
         newUnlocks.sort((a, b) => new Date(a.unlocked_at).getTime() - new Date(b.unlocked_at).getTime());
         
-        // Only show toast notifications for milestones unlocked in the last 5 minutes (300,000 ms)
-        const nowMs = Date.now();
-        const recentUnlocks = newUnlocks.filter(um => {
-          const ageMs = nowMs - new Date(um.unlocked_at).getTime();
-          return ageMs < 300000; // 5 minutes
+        setNewMilestones(prev => {
+          const existingIds = prev.map(m => m.milestone_id || m.id);
+          const filtered = newUnlocks.filter(um => !existingIds.includes(um.milestone_id));
+          return [...prev, ...filtered];
         });
-
-        if (recentUnlocks.length > 0) {
-          setNewMilestones(prev => {
-            const existingIds = prev.map(m => m.milestone_id || m.id);
-            const filtered = recentUnlocks.filter(um => !existingIds.includes(um.milestone_id));
-            return [...prev, ...filtered];
-          });
-        }
 
         // Update cache with all unlocked IDs
         const updatedSeenIds = Array.from(new Set([...seenIds, ...currentUnlockedIds]));

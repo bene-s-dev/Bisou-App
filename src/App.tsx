@@ -21,6 +21,7 @@ import ResetPassword from './components/ResetPassword';
 import { getDailyKey, isStreakActive } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider, useDialog } from './components/DialogProvider';
+import { MilestoneProvider } from './components/MilestoneProvider';
 
 // Create a safe broadcast channel wrapper to prevent crashes in restricted environments (e.g. iOS in-app browsers)
 class SafeAuthChannel {
@@ -1116,6 +1117,13 @@ export default function App() {
               {announcement.button_label}
             </button>
           </div>
+        </div>,
+        document.body
+      )}
+    </DialogProvider>
+  );
+}
+ </div>
         </div>,
         document.body
       )}
