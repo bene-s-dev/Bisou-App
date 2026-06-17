@@ -447,9 +447,10 @@ export default function App() {
           if (activeCount >= 3) finalResults.push(progress.textVal || progress.myResults?.[2] || "");
           if (activeCount >= 4) finalResults.push(progress.selectedWwe || progress.myResults?.[3] || "");
 
-          if (finalResults.filter(Boolean).length === activeCount) {
-            const sig = dailyQs.map(item => `[${item.q}]`).join("");
-            const choiceStr = finalResults.join(" | ") + " " + sig;
+          const answeredCount = finalResults.filter(Boolean).length;
+          if (answeredCount === activeCount || (answeredCount === 3 && activeCount === 4)) {
+            const sig = dailyQs.slice(0, answeredCount).map(item => `[${item.q}]`).join("");
+            const choiceStr = finalResults.slice(0, answeredCount).join(" | ") + " " + sig;
 
             const { error: insertError } = await supabase.from('answers').insert([{
               user_id: userId,

@@ -1095,6 +1095,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
             partnerId={partnerId as string}
             partnerAvatar={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url}
             userAvatar={profile?.avatar_url}
+            dayKey={dayKey}
           />
         </>,
         document.body

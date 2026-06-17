@@ -55,7 +55,8 @@ export default function JournalModal({
   userId, 
   partnerId,
   partnerAvatar,
-  userAvatar
+  userAvatar,
+  dayKey
 }: { 
   isOpen: boolean, 
   onClose: () => void, 
@@ -64,19 +65,19 @@ export default function JournalModal({
   userId: string, 
   partnerId: string,
   partnerAvatar?: string | null,
-  userAvatar?: string | null
+  userAvatar?: string | null,
+  dayKey: string
 }) {
   const [history, setHistory] = useState<any[]>([]);
   const [questionsHistory, setQuestionsHistory] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   
   const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    const todayStr = getLocalDateString(today);
-    if (todayStr < START_DATE_STR) {
-      return new Date(START_DATE_STR);
+    try {
+      return parseLocalDate(dayKey);
+    } catch (e) {
+      return new Date();
     }
-    return today;
   });
   const [showCalendar, setShowCalendar] = useState(false);
   const [calendarViewDate, setCalendarViewDate] = useState(() => new Date(selectedDate));
@@ -208,8 +209,7 @@ export default function JournalModal({
       return val;
     };
 
-    const todayKey = getLocalDateString(new Date());
-    const isLocked = key === todayKey && !!partnerAns && !myAns;
+    const isLocked = key === dayKey && !!partnerAns && !myAns;
 
     return {
       questions: [
@@ -252,8 +252,7 @@ export default function JournalModal({
     const nextKey = getLocalDateString(next);
     
     if (days < 0 && nextKey < START_DATE_STR) return;
-    const todayKey = getLocalDateString(new Date());
-    if (days > 0 && nextKey > todayKey) return;
+    if (days > 0 && nextKey > dayKey) return;
     
     setSelectedDate(next);
   };
@@ -574,7 +573,7 @@ export default function JournalModal({
                       const active = activeDays.has(key);
                       const isSelected = selectedDateKey === key;
                       const isBeforeStart = key < START_DATE_STR;
-                      const isAfterToday = key > getLocalDateString(new Date());
+                      const isAfterToday = key > dayKey;
                       const isDisabled = isBeforeStart || isAfterToday;
                       
                       return (
@@ -651,7 +650,7 @@ export default function JournalModal({
               })()}
               <button 
                 onClick={() => navigateDate(1)} 
-                disabled={selectedDateKey >= getLocalDateString(new Date())}
+                disabled={selectedDateKey >= dayKey}
                 className="p-2 bg-white rounded-xl shadow-sm text-[var(--secondary)] active:scale-90 transition-all disabled:opacity-30 disabled:pointer-events-none"
               >
                 <ChevronRight className="w-4 h-4" />
