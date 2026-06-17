@@ -28,7 +28,33 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  
+  const targetUrl = event.notification.data.url || '/';
+  const urlToOpen = new URL(targetUrl, self.location.origin).href;
+
   event.waitUntil(
-    clients.openWindow(event.notification.data.url)
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then(function(windowClients) {
+      // Check if there is already a window/tab open with the same target URL or just the app open
+      let matchingClient = null;
+
+      for (let i = 0; i < windowClients.length; i++) {
+        const client = windowClients[i];
+        // Focus the client if it's on our app origin
+        if (new URL(client.url).origin === self.location.origin) {
+          matchingClient = client;
+          break;
+        }
+      }
+
+      if (matchingClient) {
+        matchingClient.navigate(urlToOpen).catch(() => {});
+        return matchingClient.focus();
+      } else {
+        return clients.openWindow(urlToOpen);
+      }
+    })
   );
 });

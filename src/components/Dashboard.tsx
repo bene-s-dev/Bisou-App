@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import StatsModal from './StatsModal';
 import { supabase } from '../lib/supabase';
 import { GREETINGS, Question } from '../constants/questions';
-import { User as UserIcon, Lock, Heart as HeartIcon, Clock, Sparkles, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3, TrendingUp, Zap } from 'lucide-react';
+import { User as UserIcon, Clock, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getDailyKey, getTimeUntilReset } from '../lib/dateUtils';
+import { getTimeUntilReset } from '../lib/dateUtils';
 import { useDialog } from './DialogProvider';
 import { capitalizeName } from '../lib/stringUtils';
 import { translateError } from '../lib/translations';
@@ -22,7 +22,7 @@ interface DashboardProps {
   onRefreshData?: () => Promise<void>;
 }
 
-function StreakModal({ isOpen, onClose, streakData, partnerName }: { isOpen: boolean, onClose: () => void, streakData: any, partnerName: string }) {
+function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose: () => void, streakData: any }) {
   const [viewDate, setViewDate] = useState(new Date());
   
   if (!isOpen) return null;
@@ -528,7 +528,6 @@ export default function Dashboard({
         isOpen={!!showStreakModal} 
         onClose={() => setShowStreakModal(null)} 
         streakData={showStreakModal === 'user' ? myStreak : partnerStreak}
-        partnerName={partnerName}
       />
 
       {fullscreenImage && createPortal(

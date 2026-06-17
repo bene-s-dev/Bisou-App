@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Lock, Users } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, MessageCircle, Heart, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function LandingPage() {

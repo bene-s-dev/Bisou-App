@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { ReactNode, useState, useRef, useLayoutEffect } from 'react';
 
 interface ScalingContainerProps {
-  children: React.ReactNode;
+  children: ReactNode;
   /** The target width the UI was designed for (e.g. 390 for iPhone) */
   targetWidth?: number;
   /** The target height the UI was designed for (e.g. 844 for iPhone) */

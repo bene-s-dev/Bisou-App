@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Camera, ArrowRight, ArrowLeft, Users, Sparkles, Heart, Flame, Smartphone, Download, CheckCircle2, Moon, Eye, MessageSquare, 
-  Send, UserCircle2, ShieldCheck, Zap, Lock, Info, Clock, Check, Share2
+  Camera, Flame, Smartphone, Download, UserCircle2, Share2
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useDialog } from './DialogProvider';
 import ImageCropper from './ImageCropper';
 import { capitalizeName } from '../lib/stringUtils';
 import confetti from 'canvas-confetti';
@@ -232,7 +230,7 @@ const AnimatedFlame = () => {
 };
 
 export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOnly, isReplay }: IntroProps) {
-  const { showAlert } = useDialog();
+
   const navigate = useNavigate();
   const location = useLocation();
 

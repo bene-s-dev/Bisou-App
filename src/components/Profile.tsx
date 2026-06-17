@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, Mail, LogOut, Moon, Hand, Heart, RefreshCcw, Grid, BarChart3, BookOpen } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, Trash2, Share2, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3 } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -9,7 +9,6 @@ import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
 import { capitalizeName } from '../lib/stringUtils';
-import Intro from './Intro';
 import { getDailyKey, isStreakActive } from '../lib/dateUtils';
 import { User } from '@supabase/supabase-js';
 
@@ -67,8 +66,6 @@ export default function Profile({
     onProfileUpdate?.(newProfile);
   };
   
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
-
   const refreshUser = useCallback(async () => {
     const { data } = await supabase.auth.getUser();
     const latestUser = data?.user;
@@ -80,15 +77,6 @@ export default function Profile({
   useEffect(() => {
     refreshUser();
   }, [refreshUser]);
-
-  useEffect(() => {
-    const handleToggle = () => {
-      setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
-    };
-    window.addEventListener('dark-mode-toggle', handleToggle);
-    return () => window.removeEventListener('dark-mode-toggle', handleToggle);
-  }, []);
-  
   useEffect(() => {
     setProfile(initialProfile);
     setNewName(initialProfile?.display_name || '');
@@ -335,7 +323,7 @@ export default function Profile({
   useEffect(() => {
     if (user?.new_email) {
       const interval = setInterval(async () => {
-        const { data, error } = await supabase.auth.getSession();
+        const { data } = await supabase.auth.getSession();
         const session = data?.session;
         if (session?.user && !session.user.new_email) {
           // Email confirmed! Force a reload or update local state
@@ -551,7 +539,7 @@ export default function Profile({
           
           if (subscription) {
             // Check if it exists in Supabase
-            const { data, error } = await supabase
+            const { data } = await supabase
               .from('push_subscriptions')
               .select('id')
               .eq('user_id', profile?.id)

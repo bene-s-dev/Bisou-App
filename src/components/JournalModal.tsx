@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { History, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock, Heart, User } from 'lucide-react';
 
@@ -26,32 +25,12 @@ const parseLocalDate = (dateStr: string) => {
   return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
 };
 
-const getMonthsInRange = (startDateStr: string, endDateStr: string) => {
-  const start = new Date(startDateStr);
-  const end = new Date(endDateStr);
-  
-  const months: { year: number; month: number; name: string }[] = [];
-  
-  let current = new Date(start.getFullYear(), start.getMonth(), 1);
-  const last = new Date(end.getFullYear(), end.getMonth(), 1);
-  
-  while (current <= last) {
-    months.push({
-      year: current.getFullYear(),
-      month: current.getMonth(),
-      name: current.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
-    });
-    current.setMonth(current.getMonth() + 1);
-  }
-  
-  return months.reverse();
-};
+
 
 export default function JournalModal({ 
   isOpen, 
   onClose, 
   partnerName, 
-  userName,
   userId, 
   partnerId,
   partnerAvatar,
@@ -61,7 +40,6 @@ export default function JournalModal({
   isOpen: boolean, 
   onClose: () => void, 
   partnerName: string, 
-  userName: string,
   userId: string, 
   partnerId: string,
   partnerAvatar?: string | null,
@@ -134,7 +112,7 @@ export default function JournalModal({
     if (isOpen) {
       window.history.pushState({ modal: 'journal' }, '');
       
-      const handlePopState = (e: PopStateEvent) => {
+      const handlePopState = () => {
         onCloseRef.current();
       };
       

@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { ChevronRight, Heart, Sparkles, MessageCircle, ListOrdered, ArrowRightLeft, RefreshCcw, AlertCircle, XCircle, ArrowRight, Send, Mail, MailOpen, Lock, User, History } from 'lucide-react';
-import { getDailyKey } from '../lib/dateUtils';
+import { Heart, RefreshCcw, AlertCircle, ArrowRight, Send, Lock, User, History } from 'lucide-react';
 import { useDialog } from './DialogProvider';
 import { translateError } from '../lib/translations';
 import JournalModal from './JournalModal';
@@ -12,7 +11,6 @@ import JournalModal from './JournalModal';
 interface QuestionsProps {
   profile?: any;
   partnerProfile?: any;
-  userName: string;
   partnerName: string;
   partnerId?: string | null;
   dashboardData?: any;
@@ -181,7 +179,7 @@ const getResultsFromData = (data: any, uid: string | null | undefined) => {
   return safeSplit(mainPart, " | ");
 };
 
-export default function Questions({ profile, partnerProfile, userName, partnerName, partnerId, dashboardData, dayKey, onComplete }: QuestionsProps) {
+export default function Questions({ profile, partnerProfile, partnerName, partnerId, dashboardData, dayKey, onComplete }: QuestionsProps) {
   const { showAlert, showConfirm } = useDialog();
 
   // --- CONSTANTS ---
@@ -681,7 +679,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
       async () => {
         try {
           setLoading(true);
-          const { data, error: rpcError } = await supabase.rpc('reset_today_answers', {
+          const { error: rpcError } = await supabase.rpc('reset_today_answers', {
             day_key_param: dayKey
           });
           if (rpcError) throw new Error(rpcError.message);
@@ -1090,7 +1088,6 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
             isOpen={showJournalModal}
             onClose={() => setShowJournalModal(false)}
             partnerName={partnerName}
-            userName={userName}
             userId={profile?.id}
             partnerId={partnerId as string}
             partnerAvatar={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url}

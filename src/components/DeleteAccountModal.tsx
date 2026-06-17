@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CircleAlert, Shield, Fingerprint, RotateCcw, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
+import { CircleAlert, Fingerprint, Trash2, ArrowLeft, AlertCircle } from 'lucide-react';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
@@ -52,10 +52,6 @@ export default function DeleteAccountModal({ isOpen, onClose, onConfirm }: Delet
     else onClose();
   };
 
-  const confirmDeletion = async () => {
-    await onConfirm();
-    setStep(3);
-  };
 
   const proceedToDelete = () => {
     if (isTouchDevice) {

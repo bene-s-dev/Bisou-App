@@ -1,7 +1,5 @@
-import React from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { ShieldCheck, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 
 export default function PublicLayout() {
   const navigate = useNavigate();

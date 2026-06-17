@@ -28,10 +28,6 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const closeConfirm = useCallback(() => {
-    setConfirm(null);
-  }, []);
-
   const showConfirm = useCallback((message: React.ReactNode, onConfirm: () => void, options?: DialogOptions) => {
     setConfirm({ message, onConfirm, options });
     window.history.pushState({ modal: 'confirm' }, '');
@@ -46,7 +42,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       if (confirm) {
         setConfirm(null);
       }

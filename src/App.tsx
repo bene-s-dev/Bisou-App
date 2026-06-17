@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Home, MessageCircle, User as UserIcon, Lock, LogOut, Sun, Moon } from 'lucide-react';
+import { Home, MessageCircle, User as UserIcon, Lock, LogOut, Sun, Moon, Sparkles } from 'lucide-react';
 import { Routes, Route, useNavigate, useLocation, Navigate, NavLink } from 'react-router-dom';
 import { supabase } from './lib/supabase';
 import { Session } from '@supabase/supabase-js';
@@ -67,14 +67,12 @@ const authChannel = new SafeAuthChannel();
 function AppLayout({ 
   children, 
   profile, 
-  partnerProfile,
   showLockedModal,
   setShowLockedModal,
   onLogout
 }: { 
   children: React.ReactNode; 
   profile: any; 
-  partnerProfile: any;
   showLockedModal: boolean;
   setShowLockedModal: (val: boolean) => void;
   onLogout: () => void;
@@ -249,10 +247,149 @@ function AppLayout({
   );
 }
 
+// Helper to render announcement text with automatic bullet-point list parsing
+function renderAnnouncementContent(text: string) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const renderedElements: React.ReactNode[] = [];
+  let currentList: React.ReactNode[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    
+    // Check if line starts with standard bullet indicators
+    const isBullet = trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*');
+    
+    if (isBullet) {
+      // Remove the bullet character and any extra whitespace
+      const cleanedText = trimmed.substring(1).trim();
+      currentList.push(
+        <li key={`li-${i}`} className="mb-2 text-left pl-1 list-disc">
+          {cleanedText}
+        </li>
+      );
+    } else {
+      // If we had a list, flush it first
+      if (currentList.length > 0) {
+        renderedElements.push(
+          <ul key={`ul-${i}`} className="pl-5 mb-4 text-left text-sm text-[#4A4468] dark:text-[#D6D2FA] font-bold leading-relaxed">
+            {currentList}
+          </ul>
+        );
+        currentList = [];
+      }
+      
+      // Render the normal line
+      if (trimmed.length > 0) {
+        renderedElements.push(
+          <p key={`p-${i}`} className="text-sm text-[#4A4468] dark:text-[#D6D2FA] font-bold leading-relaxed mb-4 text-center">
+            {line}
+          </p>
+        );
+      } else if (i < lines.length - 1) {
+        renderedElements.push(<div key={`br-${i}`} className="h-2" />);
+      }
+    }
+  }
+  
+  // Flush any leftover list
+  if (currentList.length > 0) {
+    renderedElements.push(
+      <ul key="ul-final" className="pl-5 mb-4 text-left text-sm text-[#4A4468] dark:text-[#D6D2FA] font-bold leading-relaxed">
+        {currentList}
+      </ul>
+    );
+  }
+  
+  return renderedElements;
+}
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
+  const [announcement, setAnnouncement] = useState<{ 
+    id: number; 
+    title: string; 
+    content: string; 
+    version_code: number;
+    type: string;
+    emoji: string;
+    button_label: string;
+    action_route: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!session?.user.id) return;
+
+    const checkAnnouncements = async () => {
+      try {
+        const { data: latestAnn, error: annError } = await supabase
+          .from('announcements')
+          .select('id, title, content, version_code, type, emoji, button_label, action_route')
+          .order('version_code', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (annError) throw annError;
+        
+        if (latestAnn) {
+          // Check if this user has already seen this announcement
+          const { data: view, error: viewError } = await supabase
+            .from('announcement_views')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('announcement_id', latestAnn.id)
+            .maybeSingle();
+
+          if (viewError) throw viewError;
+
+          if (!view) {
+            setAnnouncement({
+              id: latestAnn.id,
+              title: latestAnn.title,
+              content: latestAnn.content,
+              version_code: latestAnn.version_code,
+              type: latestAnn.type || 'info',
+              emoji: latestAnn.emoji || '✨',
+              button_label: latestAnn.button_label || 'Verstanden! ✨',
+              action_route: latestAnn.action_route || null
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch announcements:", err);
+      }
+    };
+    
+    // Run after a short delay so it doesn't block critical initial loading
+    const timer = setTimeout(checkAnnouncements, 2000);
+    return () => clearTimeout(timer);
+  }, [session?.user.id]);
+
+  const handleCloseAnnouncement = async () => {
+    if (announcement && session?.user.id) {
+      const currentAnnId = announcement.id;
+      const targetRoute = announcement.action_route;
+      // Optimistically clear popup from state
+      setAnnouncement(null);
+      
+      try {
+        await supabase.from('announcement_views').insert([{
+          user_id: session.user.id,
+          announcement_id: currentAnnId
+        }]);
+      } catch (err) {
+        console.warn("Failed to save announcement view in database:", err);
+      }
+
+      // If an action route is specified, redirect the user
+      if (targetRoute) {
+        navigate(targetRoute);
+      }
+    }
+  };
 
   // One-time cache buster: clear stale question cache when app version changes
   useEffect(() => {
@@ -896,7 +1033,7 @@ export default function App() {
           {/* Protected Routes Wrapper */}
           {session && profile ? (
             <Route path="/*" element={
-              <AppLayout profile={profile} partnerProfile={partnerProfile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
+              <AppLayout profile={profile} showLockedModal={showLockedModal} setShowLockedModal={setShowLockedModal} onLogout={handleLogout}>
                 <Routes>
                   <Route path="intro" element={<Intro onComplete={handleIntroComplete} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} />} />
                   <Route path="intro-replay" element={<Intro onComplete={() => navigate('/profile')} deferredPrompt={deferredPrompt} onInstall={handleInstallClick} isReplay={true} />} />
@@ -917,7 +1054,6 @@ export default function App() {
                   <Route path="questions" element={profile.partner_id ? <Questions 
                     profile={profile}
                     partnerProfile={partnerProfile}
-                    userName={profile.display_name} 
                     partnerName={partnerProfile?.display_name || 'Partner'} 
                     partnerId={profile.partner_id} 
                     dashboardData={dashboardData}
@@ -948,6 +1084,41 @@ export default function App() {
           )}
         </Routes>
       </React.Suspense>
+      {announcement && createPortal(
+        <div className="modal-backdrop px-4 z-[99999]">
+          <div className="absolute inset-0" onClick={handleCloseAnnouncement} />
+          <div className={`modal-content p-8 text-center max-w-sm border animate-in fade-in zoom-in-95 duration-300 ${
+            announcement.type === 'warning' ? 'border-red-200/60 dark:border-red-900/40 shadow-[0_10px_30px_rgba(239,68,68,0.08)]' :
+            announcement.type === 'success' ? 'border-green-200/60 dark:border-green-900/40 shadow-[0_10px_30px_rgba(16,185,129,0.08)]' :
+            'border-purple-100/50 dark:border-purple-900/30'
+          }`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-6 mx-auto ${
+              announcement.type === 'warning' ? 'bg-red-50 dark:bg-red-950/30' :
+              announcement.type === 'success' ? 'bg-green-50 dark:bg-green-950/30' :
+              'bg-purple-50 dark:bg-purple-950/30'
+            }`}>
+              <span className="text-3xl select-none leading-none">{announcement.emoji}</span>
+            </div>
+            <h3 className="text-xl font-black text-[#1F1939] dark:text-[#F5F3FF] mb-4 tracking-tight">
+              {announcement.title}
+            </h3>
+            <div className="mb-8 px-2 max-h-60 overflow-y-auto scrollbar-soft">
+              {renderAnnouncementContent(announcement.content)}
+            </div>
+            <button 
+              onClick={handleCloseAnnouncement} 
+              className={`btn-static py-4 text-base font-black ${
+                announcement.type === 'warning' ? 'bg-red-500 hover:bg-red-600 shadow-[0_0_24px_rgba(239,68,68,0.4)] text-white border-none' :
+                announcement.type === 'success' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-[0_0_24px_rgba(16,185,129,0.4)] text-white border-none' :
+                ''
+              }`}
+            >
+              {announcement.button_label}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </DialogProvider>
   );
 }
