@@ -688,7 +688,6 @@ export default function App() {
         setPartnerProfile(null);
         setDashboardData(null);
         setLoading(false);
-        initialFetchStarted = false;
         localStorage.removeItem('cached_profile');
         localStorage.removeItem('cached_partner_profile');
         localStorage.removeItem('cached_dashboard_data');
@@ -706,7 +705,6 @@ export default function App() {
         setPartnerProfile(null);
         setDashboardData(null);
         setLoading(false);
-        initialFetchStarted = false;
         localStorage.removeItem('cached_profile');
         localStorage.removeItem('cached_partner_profile');
         localStorage.removeItem('cached_dashboard_data');
