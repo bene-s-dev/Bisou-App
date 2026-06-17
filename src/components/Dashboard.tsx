@@ -471,9 +471,9 @@ export default function Dashboard({
                 <div className="flex-1 flex flex-col items-center gap-3">
                   <button 
                     onClick={onStartQuestions} 
-                    className="w-full btn-static h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
+                    className="w-full btn-static-animated h-12 !p-0 text-xs font-black uppercase tracking-widest shadow-none"
                   >
-                    {meAnswered ? "Antworten ansehen ✨" : "Fragen starten"}
+                    {meAnswered ? "Antworten ansehen ✨" : "Fragen starten ✨"}
                   </button>
                   
                   <div className="flex items-center justify-center gap-1.5">

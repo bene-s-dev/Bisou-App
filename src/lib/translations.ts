@@ -51,6 +51,9 @@ export const translateError = (message: string): string => {
   if (lowerMessage.includes('du kannst deine antworten nur einmal alle 7 tage zurücksetzen')) {
     return message;
   }
+  if (lowerMessage.includes('du kannst nur die antworten des heutigen tages')) {
+    return message;
+  }
 
   // Storage Errors
   if (lowerMessage.includes('bucket not found')) {

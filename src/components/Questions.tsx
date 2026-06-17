@@ -941,8 +941,8 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                 <div 
                   className="space-y-6 pb-72 pt-24 px-2"
                   style={{ 
-                    paddingTop: 'calc(7.5rem + var(--sat, 0px))',
-                    paddingBottom: 'calc(18rem + var(--sab, 0px))'
+                    paddingTop: 'calc(6.5rem + var(--sat, 0px))',
+                    paddingBottom: 'calc(11rem + var(--sab, 0px))'
                   }}
                 >
                 {dailyQs.slice(0, ACTIVE_QUESTIONS).map((question, i) => {
@@ -959,20 +959,20 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                   return (
                     <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
                       <div className="flex items-center mb-4 pl-4 pr-2">
-                        <span className="text-[10px] font-black text-[#8E89AA] tracking-wider">{question?.q || "Frage"}</span>
+                        <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
                       </div>
                       <div className="flex items-stretch gap-2 w-full px-2">
                         {/* Partner Bubble */}
                         <div className="flex flex-col gap-1 flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 ml-2">
-                            <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
                               {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
                                 <img src={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <Heart className="w-2.5 h-2.5 text-purple-200" />
+                                <Heart className="w-3.5 h-3.5 text-purple-200" />
                               )}
                             </div>
-                            <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
+                            <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
                           </div>
                           <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${!p ? 'bg-gray-50 border-2 border-dashed border-gray-200 opacity-60' : 'bg-purple-50 border border-purple-100'}`}>
                             {p ? (
@@ -986,12 +986,12 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                         {/* Ich Bubble */}
                         <div className="flex flex-col gap-1 flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mr-2 self-end">
-                            <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
-                            <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
+                            <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
+                            <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
                               {profile?.avatar_url ? (
                                 <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                               ) : (
-                                <User className="w-2.5 h-2.5 text-purple-300" />
+                                <User className="w-3.5 h-3.5 text-purple-300" />
                               )}
                             </div>
                           </div>

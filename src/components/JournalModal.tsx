@@ -277,24 +277,27 @@ export default function JournalModal({
         }}
       >
         {data ? (
-          <div className="space-y-6 pt-14 pb-[calc(30rem + var(--sab, 0px))]">
+          <div 
+            className="space-y-6 pt-10"
+            style={{ paddingBottom: 'calc(8rem + var(--sab, 0px))' }}
+          >
             {data.questions.map((q, i) => (
               <div key={i}>
                 <div className="flex items-center mb-4 pl-4 pr-2">
-                  <span className="text-[10px] font-black text-[#8E89AA] tracking-wider">{q.q}</span>
+                  <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{q.q}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-4 px-2">
                   {/* Partner Answer */}
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 ml-2">
-                      <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
                         {partnerAvatar ? (
                           <img src={partnerAvatar} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Heart className="w-2.5 h-2.5 text-purple-200" />
+                          <Heart className="w-3.5 h-3.5 text-purple-200" />
                         )}
                       </div>
-                      <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
+                      <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
                     </div>
                     <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${q.isPartnerLocked ? 'bg-purple-50/50 border-2 border-dashed border-purple-200' : 'bg-white border border-purple-100'}`}>
                       {q.isPartnerLocked ? (
@@ -317,12 +320,12 @@ export default function JournalModal({
                   {/* User Answer */}
                   <div className="flex flex-col gap-1 flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mr-2 self-end">
-                      <span className="text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
-                      <div className="w-4 h-4 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
+                      <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
+                      <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
                         {userAvatar ? (
                           <img src={userAvatar} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <User className="w-2.5 h-2.5 text-purple-300" />
+                          <User className="w-3.5 h-3.5 text-purple-300" />
                         )}
                       </div>
                     </div>

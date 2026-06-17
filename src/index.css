@@ -146,6 +146,13 @@ body.modal-open #root {
     background: linear-gradient(135deg, rgba(255, 138, 138, 0.8), rgba(162, 155, 254, 0.8));
   }
 
+  .btn-static-animated {
+    @apply w-full p-5 rounded-[22px] border-none text-white font-black text-sm uppercase tracking-[0.15em] cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-sm active:scale-95 active:shadow-md hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed outline-none;
+    background: linear-gradient(135deg, rgba(255, 138, 138, 0.8), rgba(162, 155, 254, 0.8), rgba(255, 138, 138, 0.8));
+    background-size: 300% 300%;
+    animation: gradient-animation 16s ease infinite;
+  }
+
   .btn-secondary {
     @apply w-full p-5 rounded-[22px] border-2 border-[var(--card-border)] text-[var(--muted)] font-black text-[10px] uppercase tracking-[0.2em] cursor-pointer transition-all duration-300 bg-white active:scale-95 shadow-sm active:shadow-none;
   }
@@ -878,6 +885,13 @@ body.modal-open #root {
 .dark .btn-static {
   background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
   color: #0C0A15 !important;
+}
+
+.dark .btn-static-animated {
+  background: linear-gradient(135deg, var(--primary), var(--secondary), var(--primary)) !important;
+  color: #0C0A15 !important;
+  background-size: 300% 300% !important;
+  animation: gradient-animation 16s ease infinite !important;
 }
 
 .dark .bg-gray-50 {

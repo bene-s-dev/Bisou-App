@@ -447,7 +447,7 @@ export default function App() {
           if (activeCount >= 3) finalResults.push(progress.textVal || progress.myResults?.[2] || "");
           if (activeCount >= 4) finalResults.push(progress.selectedWwe || progress.myResults?.[3] || "");
 
-          if (finalResults.filter(Boolean).length > 0) {
+          if (finalResults.filter(Boolean).length === activeCount) {
             const sig = dailyQs.map(item => `[${item.q}]`).join("");
             const choiceStr = finalResults.join(" | ") + " " + sig;
 
@@ -459,6 +459,7 @@ export default function App() {
 
             if (!insertError) {
               console.log(`Successfully recovered answer for ${key}`);
+              localStorage.removeItem(`quiz_progress_${key}`);
             } else {
               console.error(`Failed to insert recovered answer for ${key}:`, insertError);
             }
