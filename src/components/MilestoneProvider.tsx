@@ -24,9 +24,17 @@ export const MilestoneProvider: React.FC<{
 
   const currentNewMilestone = newMilestones[0];
 
-  const handleDismissMilestone = useCallback(() => {
+  const handleDismissMilestone = useCallback(async () => {
+    const milestone = newMilestones[0];
+    if (milestone && userId && !milestone.is_test) {
+      // Mark as seen in database
+      await supabase
+        .from('unlocked_milestones')
+        .update({ is_seen: true })
+        .eq('id', milestone.id);
+    }
     setNewMilestones(prev => prev.slice(1));
-  }, []);
+  }, [newMilestones, userId]);
 
   const showTestMilestone = useCallback(() => {
     setNewMilestones(prev => [...prev, {
@@ -36,7 +44,8 @@ export const MilestoneProvider: React.FC<{
         name: 'Test-Erfolg freigeschaltet!',
         description: 'Dies ist eine Vorschau des Toast-Popups und der Konfetti-Animation.'
       },
-      unlocked_at: new Date().toISOString()
+      unlocked_at: new Date().toISOString(),
+      is_test: true
     }]);
   }, []);
 
@@ -44,49 +53,24 @@ export const MilestoneProvider: React.FC<{
     if (!userId || !partnerId) return;
 
     try {
-      // Fetch user's unlocked milestones
+      // Fetch user's unlocked milestones that haven't been seen yet
       const { data: umData, error: umError } = await supabase
         .from('unlocked_milestones')
         .select('*, milestones(*)')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('is_seen', false);
 
       if (umError || !umData) return;
 
-      const storageKey = `seen_milestones_${userId}`;
-      const cachedSeenStr = localStorage.getItem(storageKey);
-      
-      const currentUnlockedIds = umData.map(um => um.milestone_id);
-
-      if (!cachedSeenStr) {
-        // First time initialized: store current IDs, do not show any popups
-        localStorage.setItem(storageKey, JSON.stringify(currentUnlockedIds));
-        return;
-      }
-
-      let seenIds: string[] = [];
-      try {
-        seenIds = JSON.parse(cachedSeenStr);
-        if (!Array.isArray(seenIds)) seenIds = [];
-      } catch (e) {
-        seenIds = [];
-      }
-
-      // Find milestones in currentUnlockedIds that are not in seenIds
-      const newUnlocks = umData.filter(um => !seenIds.includes(um.milestone_id) && um.milestones);
-
-      if (newUnlocks.length > 0) {
+      if (umData.length > 0) {
         // Sort by unlocked_at ascending so we show them in order
-        newUnlocks.sort((a, b) => new Date(a.unlocked_at).getTime() - new Date(b.unlocked_at).getTime());
+        umData.sort((a, b) => new Date(a.unlocked_at).getTime() - new Date(b.unlocked_at).getTime());
         
         setNewMilestones(prev => {
-          const existingIds = prev.map(m => m.milestone_id || m.id);
-          const filtered = newUnlocks.filter(um => !existingIds.includes(um.milestone_id));
+          const existingIds = prev.map(m => m.id);
+          const filtered = umData.filter(um => !existingIds.includes(um.id));
           return [...prev, ...filtered];
         });
-
-        // Update cache with all unlocked IDs
-        const updatedSeenIds = Array.from(new Set([...seenIds, ...currentUnlockedIds]));
-        localStorage.setItem(storageKey, JSON.stringify(updatedSeenIds));
       }
     } catch (err) {
       console.error("Error checking new milestones:", err);
