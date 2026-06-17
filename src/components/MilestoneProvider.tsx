@@ -46,13 +46,23 @@ export const MilestoneProvider: React.FC<{
     setNewMilestones(prev => prev.slice(1));
   }, [newMilestones, userId]);
 
-  const showTestMilestone = useCallback(() => {
-    // Use a real ID if available, otherwise fallback to dummy
-    const realId = availableMilestones[0]?.id || 'test-milestone-' + Date.now();
+  const showTestMilestone = useCallback(async () => {
+    let realId = availableMilestones[0]?.id;
+    
+    // If not loaded yet, try a quick fetch
+    if (!realId) {
+      const { data } = await supabase.from('milestones').select('id').limit(1);
+      if (data && data[0]) {
+        realId = data[0].id;
+        setAvailableMilestones(data);
+      }
+    }
+
+    const finalId = realId || 'test-milestone-' + Date.now();
     
     setNewMilestones(prev => [...prev, {
       id: 'test-notification-' + Date.now(),
-      milestone_id: realId,
+      milestone_id: finalId,
       milestones: {
         icon: '🎉',
         name: 'Test-Erfolg freigeschaltet!',
@@ -143,6 +153,14 @@ export const MilestoneProvider: React.FC<{
     }
   }, [newMilestones.length]);
 
+  const handleViewMilestone = useCallback(() => {
+    const milestoneId = currentNewMilestone?.milestone_id;
+    if (milestoneId) {
+      handleDismissMilestone();
+      navigate(`/profile?tab=partner&showMilestones=true&highlightMilestone=${milestoneId}&scroll=true`);
+    }
+  }, [currentNewMilestone, handleDismissMilestone, navigate]);
+
   return (
     <MilestoneContext.Provider value={{ checkMilestones, showTestMilestone }}>
       {children}
@@ -152,7 +170,8 @@ export const MilestoneProvider: React.FC<{
           onMouseLeave={() => setToastPaused(false)}
           onTouchStart={() => setToastPaused(true)}
           onTouchEnd={() => setToastPaused(false)}
-          className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-purple-100/50 dark:border-purple-900/30 shadow-[0_10px_30px_rgba(162,155,254,0.15)] rounded-[2rem] p-4 flex items-center gap-3.5 animate-in fade-in slide-in-from-top-5 duration-300 select-none touch-pan-y"
+          onClick={handleViewMilestone}
+          className="fixed top-6 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-sm bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-purple-100/50 dark:border-purple-900/30 shadow-[0_15px_35px_rgba(162,155,254,0.25)] rounded-[2rem] p-4 flex items-center gap-3.5 animate-in fade-in slide-in-from-top-5 duration-300 select-none cursor-pointer active:scale-[0.98] transition-transform"
         >
           {/* Animated border progress frame */}
           <div className="absolute inset-0 pointer-events-none rounded-[2rem] overflow-visible">
@@ -182,22 +201,11 @@ export const MilestoneProvider: React.FC<{
             <h3 className="text-xs font-black text-[#1F1939] dark:text-white truncate">{currentNewMilestone.milestones?.name}</h3>
             <p className="text-[9px] font-bold text-[#4A4468] dark:text-slate-300 opacity-80 leading-tight mt-0.5 line-clamp-2">{currentNewMilestone.milestones?.description}</p>
           </div>
-          <div className="flex flex-col gap-1.5 shrink-0 z-10">
+          <div className="shrink-0 z-10">
             <button 
-              onClick={() => {
-                const milestoneId = currentNewMilestone.milestone_id;
-                handleDismissMilestone();
-                navigate(`/profile?tab=partner&showMilestones=true&highlightMilestone=${milestoneId}`);
-              }}
-              className="px-3 py-1.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-[9px] font-black rounded-xl active:scale-95 transition-all uppercase tracking-widest border-none shadow-sm hover:shadow-md hover:scale-[1.02]"
+              className="px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-[9px] font-black rounded-xl transition-all uppercase tracking-widest border-none shadow-sm"
             >
               Ansehen
-            </button>
-            <button 
-              onClick={handleDismissMilestone}
-              className="px-3 py-1.5 bg-transparent text-[var(--muted)] dark:text-slate-400 text-[8px] font-black hover:text-[var(--secondary)] dark:hover:text-white active:scale-95 transition-all uppercase tracking-widest border-2 border-[var(--card-border)] dark:border-slate-800 rounded-xl"
-            >
-              Schließen
             </button>
           </div>
         </div>,

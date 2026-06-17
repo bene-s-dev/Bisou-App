@@ -45,7 +45,8 @@ function MilestonesModal({
   milestones, 
   unlockedMilestones, 
   loadingMilestones,
-  highlightId
+  highlightId,
+  shouldScroll
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
@@ -53,11 +54,12 @@ function MilestonesModal({
   unlockedMilestones: any[]; 
   loadingMilestones: boolean;
   highlightId?: string | null;
+  shouldScroll?: boolean;
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
-    if (isOpen && highlightId && containerRef.current && !loadingMilestones) {
+    if (isOpen && highlightId && shouldScroll && containerRef.current && !loadingMilestones) {
       // Small delay to ensure DOM is fully rendered
       const timer = setTimeout(() => {
         const element = containerRef.current?.querySelector(`[data-milestone-id="${highlightId}"]`);
@@ -67,7 +69,7 @@ function MilestonesModal({
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isOpen, highlightId, loadingMilestones]);
+  }, [isOpen, highlightId, shouldScroll, loadingMilestones]);
 
   if (!isOpen) return null;
 
@@ -101,7 +103,11 @@ function MilestonesModal({
         </div>
 
         {/* Achievements Grid */}
-        <div ref={containerRef} className="grid grid-cols-1 gap-2 overflow-y-auto pr-1 security-scrollbar pb-2">
+        <div 
+          ref={containerRef} 
+          className="flex-1 min-h-0 grid grid-cols-1 gap-3 overflow-y-auto px-2 py-2 security-scrollbar pb-4 touch-pan-y overscroll-contain"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {loadingMilestones && milestones.length === 0 ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div 
@@ -119,7 +125,7 @@ function MilestonesModal({
           ) : (
             milestones.map(m => {
               const unlocked = unlockedMilestones.find(um => um.milestone_id === m.id);
-              const isHighlighted = highlightId === m.id;
+              const isHighlighted = highlightId === m.id && shouldScroll;
               return (
                 <div 
                   key={m.id} 
@@ -257,13 +263,35 @@ export default function Profile({
   const [showAboutAppModal, setShowAboutAppModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showMilestonesModal, setShowMilestonesModal] = useState(false);
+  const [highlightedMilestoneId, setHighlightedMilestoneId] = useState<string | null>(null);
+  const [mustScrollToMilestone, setMustScrollToMilestone] = useState(false);
+
+  useEffect(() => {
+    if (showMilestonesModal) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+      // Reset highlighting when closing
+      setHighlightedMilestoneId(null);
+      setMustScrollToMilestone(false);
+    }
+    return () => document.body.classList.remove('modal-open');
+  }, [showMilestonesModal]);
 
   useEffect(() => {
     if (activeTab === 'partner' && searchParams.get('showMilestones') === 'true') {
+      const highlight = searchParams.get('highlightMilestone');
+      const shouldScroll = searchParams.get('scroll') === 'true';
+      
+      setHighlightedMilestoneId(highlight);
+      setMustScrollToMilestone(shouldScroll);
       setShowMilestonesModal(true);
-      setSearchParams({ tab: 'partner' }, { replace: true });
+      
+      const newParams: any = { tab: 'partner' };
+      setSearchParams(newParams, { replace: true });
     }
   }, [activeTab, searchParams, setSearchParams]);
+
   const [stats, setStats] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('cached_bisou_stats_v3');
@@ -2094,7 +2122,8 @@ export default function Profile({
         milestones={milestones}
         unlockedMilestones={unlockedMilestones}
         loadingMilestones={loadingMilestones}
-        highlightId={searchParams.get('highlightMilestone')}
+        highlightId={highlightedMilestoneId}
+        shouldScroll={mustScrollToMilestone}
       />
 
       <input 
