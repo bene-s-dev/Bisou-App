@@ -674,7 +674,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
       <span>
         Möchtest du heute wirklich neu starten? Deine bisherigen Antworten werden gelöscht.{" "}
         <span className="block mt-2">
-          <strong className="text-red-500 dark:text-red-400">Hinweis:</strong> Dies betrifft nur den heutigen Tag. Das Zurücksetzen ist nur{" "}
+          <strong className="text-red-500 dark:text-red-400">Hinweis:</strong> Das Zurücksetzen ist<br /> nur{" "}
           <strong>einmal alle 7 Tage</strong> möglich!
         </span>
       </span>,
@@ -941,7 +941,7 @@ export default function Questions({ profile, partnerProfile, userName, partnerNa
                 <div 
                   className="space-y-6 pb-72 pt-24 px-2"
                   style={{ 
-                    paddingTop: 'calc(6rem + var(--sat, 0px))',
+                    paddingTop: 'calc(7.5rem + var(--sat, 0px))',
                     paddingBottom: 'calc(18rem + var(--sab, 0px))'
                   }}
                 >

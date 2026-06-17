@@ -267,18 +267,17 @@ export default function JournalModal({
       : '';
 
     const data = getDayData(key);
-
     return (
       <div 
         className={`w-full h-full overflow-y-auto scrollbar-soft px-2 ${animationClass}`}
         style={{
-          transform: 'translateZ(0)',
-          WebkitTransform: 'translateZ(0)',
-          isolation: 'isolate'
+          WebkitOverflowScrolling: 'touch',
+          isolation: 'isolate',
+          overscrollBehaviorY: 'auto'
         }}
       >
         {data ? (
-          <div className="space-y-6 pt-12 pb-[calc(18rem + var(--sab, 0px))]">
+          <div className="space-y-6 pt-14 pb-[calc(30rem + var(--sab, 0px))]">
             {data.questions.map((q, i) => (
               <div key={i}>
                 <div className="flex items-center mb-4 pl-4 pr-2">
@@ -443,18 +442,12 @@ export default function JournalModal({
         }
         .animate-slide-out-left {
           animation: slideOutLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-          position: absolute;
-          width: 100%;
-          height: 100%;
         }
         .animate-slide-in-left {
           animation: slideInLeft 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
         }
         .animate-slide-out-right {
           animation: slideOutRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-          position: absolute;
-          width: 100%;
-          height: 100%;
         }
         @keyframes slideInRight {
           from { transform: translateX(100%); opacity: 0; }
@@ -475,15 +468,14 @@ export default function JournalModal({
       `}</style>
       <div className="absolute inset-0" onClick={onClose} />
       <div 
-        className="modal-content !bg-[var(--bg)] py-6 w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
+        className="modal-content !bg-[var(--bg)] w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
         style={{
-          paddingTop: 'calc(1.5rem + var(--sat, 0px))',
-          paddingBottom: 0,
-          touchAction: 'pan-y',
+          paddingTop: 'var(--sat, 0px)',
+          paddingBottom: 'var(--sab, 0px)',
           overscrollBehaviorX: 'contain'
         }}
       >
-        <div className="flex items-center justify-between mb-3 shrink-0 px-4">
+        <div className="flex items-center justify-between mt-2 mb-2 shrink-0 px-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
               <History className="w-6 h-6 text-[var(--secondary)]" />
@@ -615,9 +607,8 @@ export default function JournalModal({
           <div 
             ref={setTouchContainer}
             className="flex-1 flex flex-col min-h-0"
-            style={{ touchAction: 'pan-y' }}
           >
-            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-0 mx-4 shrink-0 relative z-40">
+            <div className="flex items-center justify-between bg-purple-50/50 rounded-2xl p-2 mb-1 mx-4 shrink-0 relative z-40">
               <button 
                 onClick={() => navigateDate(-1)} 
                 disabled={selectedDateKey <= START_DATE_STR}
@@ -664,51 +655,17 @@ export default function JournalModal({
               </button>
             </div>
 
-            <div className="flex-1 min-h-0 relative w-full">
-              {/* Top opaque background strip to hide clipping */}
-              {!loading && (
-                <div 
-                  className="absolute z-30 pointer-events-none"
-                  style={{
-                    top: '-16px',
-                    left: '-20px',
-                    right: '-20px',
-                    height: '20px',
-                    backgroundColor: 'var(--bg)'
-                  }}
-                />
-              )}
-
+            <div className="flex-1 min-h-0 relative w-full flex flex-col overflow-hidden">
               {/* Top blur-fade overlay */}
               {!loading && (
                 <div 
-                  className="absolute z-30 pointer-events-none"
+                  className="absolute z-30 pointer-events-none top-0 left-[-20px] right-[-20px] h-8"
                   style={{
-                    top: '2px',
-                    left: '-20px',
-                    right: '-20px',
-                    height: '28px',
-                    transform: 'translate3d(0, 0, 0)',
-                    WebkitTransform: 'translate3d(0, 0, 0)',
-                    backdropFilter: 'blur(4px)',
-                    WebkitBackdropFilter: 'blur(4px)',
-                    maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
-                    background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg-80) 50%, transparent 100%)'
-                  }}
-                />
-              )}
-
-              {/* Bottom opaque background strip to hide clipping */}
-              {!loading && (
-                <div 
-                  className="absolute z-30 pointer-events-none"
-                  style={{
-                    bottom: '-16px',
-                    left: '-20px',
-                    right: '-20px',
-                    height: '20px',
-                    backgroundColor: 'var(--bg)'
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    maskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                    background: 'linear-gradient(to bottom, var(--bg) 0%, var(--bg-80) 40%, transparent 100%)'
                   }}
                 />
               )}
@@ -716,45 +673,28 @@ export default function JournalModal({
               {/* Bottom blur-fade overlay */}
               {!loading && (
                 <div 
-                  className="absolute z-30 pointer-events-none"
+                  className="absolute z-30 pointer-events-none bottom-0 left-[-20px] right-[-20px] h-20"
                   style={{
-                    bottom: '2px',
-                    left: '-20px',
-                    right: '-20px',
-                    height: 'calc(3rem + var(--sab, 0px) + 2px)',
-                    transform: 'translate3d(0, 0, 0)',
-                    WebkitTransform: 'translate3d(0, 0, 0)',
-                    backdropFilter: 'blur(4px)',
-                    WebkitBackdropFilter: 'blur(4px)',
-                    maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
-                    WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
-                    background: 'linear-gradient(to top, var(--bg) 0%, var(--bg-80) 50%, transparent 100%)'
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                    background: 'linear-gradient(to top, var(--bg) 0%, var(--bg-80) 40%, transparent 100%)'
                   }}
                 />
               )}
 
-              {/* Skeleton Loader */}
-              <div 
-                className={`absolute inset-0 space-y-4 p-4 transition-opacity duration-300 pointer-events-none ${
-                  loading ? 'opacity-100' : 'opacity-0'
-                }`}
-              >
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-24 bg-gray-50 rounded-[1.5rem] animate-pulse" />
-                ))}
-              </div>
-
               {/* Day Contents */}
               <div 
-                className={`w-full h-full flex flex-col ${
+                className={`flex-1 relative overflow-hidden ${
                   loading ? 'opacity-0 pointer-events-none' : 'animate-fade-in'
                 }`}
               >
-                <div key={'curr-' + displayState.current} className="w-full h-full flex flex-col">
+                <div key={'curr-' + displayState.current} className="absolute inset-0 flex flex-col">
                   {renderDayContent(displayState.current, false)}
                 </div>
                 {displayState.previous !== null && (
-                  <div key={'prev-' + displayState.previous} className="absolute inset-0 w-full h-full pointer-events-none flex flex-col z-10">
+                  <div key={'prev-' + displayState.previous} className="absolute inset-0 pointer-events-none z-10 flex flex-col">
                     {renderDayContent(displayState.previous, true)}
                   </div>
                 )}

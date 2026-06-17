@@ -53,6 +53,8 @@ serve(async (req) => {
     // 1. Prüfen, ob für heute bereits Fragen existieren
     const { data: ex } = await db.from('daily_questions').select('questions').eq('day_key', dayKey).maybeSingle()
     if (ex) {
+      // Clean up queue if it exists
+      await db.from('failed_generations').delete().eq('day_key', dayKey).catch(() => {});
       return new Response(JSON.stringify(ex), { 
         headers: { 'Content-Type': 'application/json' } 
       })
@@ -188,13 +190,55 @@ STIMMUNG & TONFALL (WICHTIG!):
       questions: content 
     })
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      if (insertError.code === '23505') {
+        console.log("Duplicate key violation caught - fetching questions from database");
+        const { data: ex2, error: fetchError } = await db
+          .from('daily_questions')
+          .select('questions')
+          .eq('day_key', dayKey)
+          .maybeSingle();
+
+        if (ex2 && ex2.questions) {
+          return new Response(JSON.stringify({ questions: ex2.questions }), { 
+            headers: { 'Content-Type': 'application/json' } 
+          });
+        }
+        if (fetchError) throw fetchError;
+      }
+      throw insertError;
+    }
+
+    // Lösche aus failed_generations Warteschlange bei Erfolg
+    await db.from('failed_generations').delete().eq('day_key', dayKey).catch(() => {});
 
     return new Response(JSON.stringify({ questions: content }), { 
       headers: { 'Content-Type': 'application/json' } 
     })
   } catch (err: any) {
     console.error("Function error:", err.message);
+
+    // Queue in failed_generations table to trigger retry via cron
+    try {
+      const { data: currentJob } = await db
+        .from('failed_generations')
+        .select('attempts')
+        .eq('day_key', dayKey)
+        .maybeSingle();
+
+      const nextAttempt = currentJob ? ((currentJob.attempts || 0) + 1) : 1;
+
+      await db.from('failed_generations').upsert({
+        day_key: dayKey,
+        attempts: nextAttempt,
+        last_attempt: new Date().toISOString(),
+        status: 'failed'
+      }, { onConflict: 'day_key' });
+      console.log(`Failed generation queued for day: ${dayKey}. Attempt: ${nextAttempt}`);
+    } catch (queueErr: any) {
+      console.error("Failed to queue failed generation:", queueErr.message);
+    }
+
     return new Response(JSON.stringify({ error: err.message }), { 
       status: 500, 
       headers: { 'Content-Type': 'application/json' } 
