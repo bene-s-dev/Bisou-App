@@ -54,7 +54,7 @@ serve(async (req) => {
     const { data: ex } = await db.from('daily_questions').select('questions').eq('day_key', dayKey).maybeSingle()
     if (ex) {
       // Clean up queue if it exists
-      await db.from('failed_generations').delete().eq('day_key', dayKey).catch(() => {});
+      try { await db.from('failed_generations').delete().eq('day_key', dayKey); } catch (e) {}
       return new Response(JSON.stringify(ex), { 
         headers: { 'Content-Type': 'application/json' } 
       })
@@ -210,7 +210,7 @@ STIMMUNG & TONFALL (WICHTIG!):
     }
 
     // Lösche aus failed_generations Warteschlange bei Erfolg
-    await db.from('failed_generations').delete().eq('day_key', dayKey).catch(() => {});
+    try { await db.from('failed_generations').delete().eq('day_key', dayKey); } catch (e) {}
 
     return new Response(JSON.stringify({ questions: content }), { 
       headers: { 'Content-Type': 'application/json' } 

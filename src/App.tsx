@@ -529,6 +529,24 @@ export default function App() {
           localStorage.setItem('last_question_fetch', new Date().toISOString());
           localStorage.setItem('last_question_day_key', dayKey);
         }
+
+        // Pre-generate tomorrow's questions in the background (1 day ahead)
+        try {
+          const parts = dayKey.split('-');
+          const currentDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+          const tomorrowDate = new Date(currentDate);
+          tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+          
+          const y = tomorrowDate.getFullYear();
+          const m = String(tomorrowDate.getMonth() + 1).padStart(2, '0');
+          const d = String(tomorrowDate.getDate()).padStart(2, '0');
+          const tomorrowKey = `${y}-${m}-${d}`;
+
+          // Non-blocking trigger of the edge function for tomorrow's key
+          supabase.functions.invoke('generate-questions', { body: { day_key: tomorrowKey } }).catch(() => {});
+        } catch (tomorrowErr) {
+          console.error("Failed to trigger pre-generation for tomorrow:", tomorrowErr);
+        }
       }
 
       const currentQs = (qData && qData.tot && qData.ranking && qData.text) 
