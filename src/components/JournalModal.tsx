@@ -99,7 +99,12 @@ export default function JournalModal({
   useEffect(() => {
     if (isOpen) {
       fetchHistory();
-      supabase.rpc('increment_journal_views').catch(err => console.error("Error updating journal views:", err));
+      supabase.rpc('increment_journal_views').then(
+        ({ error }) => {
+          if (error) console.error("Error updating journal views:", error);
+        },
+        (err) => console.error("Error updating journal views:", err)
+      );
     }
   }, [isOpen]);
 

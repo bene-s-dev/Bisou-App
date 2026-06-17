@@ -85,10 +85,20 @@ function MilestonesModal({
 
         {/* Achievements Grid */}
         <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-1 security-scrollbar">
-          {loadingMilestones ? (
-            <div className="flex items-center justify-center py-10">
-              <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
-            </div>
+          {loadingMilestones && milestones.length === 0 ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div 
+                key={`skeleton-${i}`}
+                className="border border-purple-50/10 rounded-2xl p-3 flex items-center gap-3 animate-pulse"
+              >
+                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800/50 shrink-0" />
+                <div className="flex-1 text-left">
+                  <div className="w-1/2 h-2.5 bg-slate-100 dark:bg-slate-800/50 rounded mb-2" />
+                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-800/50 rounded mb-1" />
+                  <div className="w-3/4 h-2 bg-slate-100 dark:bg-slate-800/50 rounded" />
+                </div>
+              </div>
+            ))
           ) : (
             milestones.map(m => {
               const unlocked = unlockedMilestones.find(um => um.milestone_id === m.id);
@@ -157,8 +167,22 @@ export default function Profile({
   const [user, setUser] = useState<User | null>(initialUser || null);
   
   // Milestones State
-  const [milestones, setMilestones] = useState<any[]>([]);
-  const [unlockedMilestones, setUnlockedMilestones] = useState<any[]>([]);
+  const [milestones, setMilestones] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem('cached_milestones');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [unlockedMilestones, setUnlockedMilestones] = useState<any[]>(() => {
+    try {
+      const cached = localStorage.getItem('cached_unlocked_milestones');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loadingMilestones, setLoadingMilestones] = useState(false);
 
   const updateProfile = (newProfile: any) => {
@@ -568,14 +592,23 @@ export default function Profile({
   useEffect(() => {
     if (activeTab === 'partner' && profile?.id && profile?.partner_id) {
       const fetchMilestoneData = async () => {
-        setLoadingMilestones(true);
+        // Only show spinner on initial load when there is no cached data yet
+        if (milestones.length === 0) {
+          setLoadingMilestones(true);
+        }
         try {
           const [mRes, umRes] = await Promise.all([
             supabase.from('milestones').select('*').order('trigger_type', { ascending: true }).order('trigger_value', { ascending: true }),
             supabase.from('unlocked_milestones').select('*').eq('user_id', profile.id)
           ]);
-          if (mRes.data) setMilestones(mRes.data);
-          if (umRes.data) setUnlockedMilestones(umRes.data);
+          if (mRes.data) {
+            setMilestones(mRes.data);
+            localStorage.setItem('cached_milestones', JSON.stringify(mRes.data));
+          }
+          if (umRes.data) {
+            setUnlockedMilestones(umRes.data);
+            localStorage.setItem('cached_unlocked_milestones', JSON.stringify(umRes.data));
+          }
         } catch (err) {
           console.error("Error fetching milestones:", err);
         } finally {
