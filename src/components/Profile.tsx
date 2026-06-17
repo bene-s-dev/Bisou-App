@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, Mail, LogOut, Sun, Moon, Hand, Heart, RefreshCcw, Grid, Cloud, BarChart3, BookOpen } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, ArrowLeft, Trash2, Share2, Copy, Smartphone, Users, AlertTriangle, Sparkles, Monitor, Laptop, Tablet, Settings, Flame, ExternalLink, ShieldCheck, Shield, Mail, LogOut, Moon, Hand, Heart, RefreshCcw, Grid, BarChart3, BookOpen } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -118,7 +118,6 @@ export default function Profile({
   const [showServices, setShowServices] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showAboutAppModal, setShowAboutAppModal] = useState(false);
-  const [showMoreAppsModal, setShowMoreAppsModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [stats, setStats] = useState<any>(() => {
     try {
@@ -1223,7 +1222,7 @@ export default function Profile({
               { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
               { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
               { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } },
-              { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => setShowMoreAppsModal(true) }
+              { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => window.open('https://benelabs.de', '_blank') }
             ].map(item => (
               <button 
                 key={item.id} 
@@ -1750,56 +1749,6 @@ export default function Profile({
         document.body
       )}
 
-      {showMoreAppsModal && createPortal(
-        <div className="modal-backdrop">
-          <div className="absolute inset-0" onClick={() => setShowMoreAppsModal(false)} />
-          <div 
-            className="modal-content p-6 sm:p-8 h-[max-content] max-h-[calc(100svh-32px)] w-full max-w-md flex flex-col relative" 
-            onClick={e => e.stopPropagation()}
-          >
-             <button onClick={() => setShowMoreAppsModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-purple-50 shadow-sm active:scale-95 transition-all z-10">
-               <X className="w-4 h-4 text-[var(--secondary)]" />
-             </button>
-             
-             <div className="flex flex-col gap-2 mb-6 pt-2">
-               <h3 className="text-xl font-black text-[#1F1939] uppercase tracking-widest text-center">Weitere Apps</h3>
-               <p className="text-[12px] font-bold text-[#4A4468] opacity-70 text-center">Entdecke mehr von benelabs</p>
-             </div>
-             
-             <div className="flex flex-col gap-4 overflow-y-auto custom-scrollbar px-2 pb-6">
-                <a 
-                  href="https://wetter.benelabs.de" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex flex-col gap-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-50/50 to-pink-50/50 border-2 border-white shadow-sm hover:border-purple-200 transition-all active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center shrink-0">
-                      <Sun className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[14px] font-black text-[#1F1939]">BeneWetter</span>
-                      <span className="text-[11px] font-bold text-[var(--secondary)]">wetter.benelabs.de</span>
-                    </div>
-                  </div>
-                </a>
-
-                <div className="flex flex-col gap-3 p-4 sm:p-5 rounded-2xl bg-gray-50 border-2 border-gray-100 opacity-40 grayscale">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center shrink-0">
-                      <Cloud className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[14px] font-black text-[#1F1939]">BeneCloud</span>
-                      <span className="text-[11px] font-bold text-gray-500">Private Cloud (bald verfügbar)</span>
-                    </div>
-                  </div>
-                </div>
-             </div>
-          </div>
-        </div>,
-        document.body
-      )}
 
       {showServices && createPortal(
         <div className="modal-backdrop">
