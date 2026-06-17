@@ -452,6 +452,12 @@ body.modal-open #root {
   50% { transform: translateY(-10px); }
 }
 
+.animate-bounce-subtle { animation: bounce-subtle 2s ease-in-out infinite; }
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
 .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
 @keyframes pulse-slow {
   0%, 100% { opacity: 0.3; transform: scale(1); }

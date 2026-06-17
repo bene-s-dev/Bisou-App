@@ -1021,8 +1021,13 @@ export default function App() {
 
   return (
     <DialogProvider>
-      <React.Suspense fallback={<LoadingSkeleton />}>
-        <Routes>
+      <MilestoneProvider 
+        userId={session?.user.id} 
+        partnerId={profile?.partner_id} 
+        dashboardData={dashboardData}
+      >
+        <React.Suspense fallback={<LoadingSkeleton />}>
+          <Routes>
           {/* Public Routes with Persistent Layout */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
@@ -1085,6 +1090,7 @@ export default function App() {
           )}
         </Routes>
       </React.Suspense>
+      </MilestoneProvider>
       {announcement && createPortal(
         <div className="modal-backdrop px-4 z-[99999]">
           <div className="absolute inset-0" onClick={handleCloseAnnouncement} />
@@ -1117,13 +1123,6 @@ export default function App() {
               {announcement.button_label}
             </button>
           </div>
-        </div>,
-        document.body
-      )}
-    </DialogProvider>
-  );
-}
- </div>
         </div>,
         document.body
       )}

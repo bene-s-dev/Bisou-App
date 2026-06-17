@@ -18,11 +18,21 @@ export const MilestoneProvider: React.FC<{
   dashboardData: any;
 }> = ({ children, userId, partnerId, dashboardData }) => {
   const [newMilestones, setNewMilestones] = useState<any[]>([]);
+  const [availableMilestones, setAvailableMilestones] = useState<any[]>([]);
   const [toastTimeLeft, setToastTimeLeft] = useState(10000);
   const [toastPaused, setToastPaused] = useState(false);
   const navigate = useNavigate();
 
   const currentNewMilestone = newMilestones[0];
+
+  // Fetch all possible milestones once to have IDs for testing/mapping
+  useEffect(() => {
+    const fetchAll = async () => {
+      const { data } = await supabase.from('milestones').select('id').limit(1);
+      if (data) setAvailableMilestones(data);
+    };
+    fetchAll();
+  }, []);
 
   const handleDismissMilestone = useCallback(async () => {
     const milestone = newMilestones[0];
@@ -37,17 +47,21 @@ export const MilestoneProvider: React.FC<{
   }, [newMilestones, userId]);
 
   const showTestMilestone = useCallback(() => {
+    // Use a real ID if available, otherwise fallback to dummy
+    const realId = availableMilestones[0]?.id || 'test-milestone-' + Date.now();
+    
     setNewMilestones(prev => [...prev, {
-      id: 'test-milestone-' + Date.now(),
+      id: 'test-notification-' + Date.now(),
+      milestone_id: realId,
       milestones: {
         icon: '🎉',
         name: 'Test-Erfolg freigeschaltet!',
-        description: 'Dies ist eine Vorschau des Toast-Popups und der Konfetti-Animation.'
+        description: 'Dies ist eine Vorschau des Toasts. Da wir eine echte ID nutzen, wird dieser Meilenstein im Profil golden markiert!'
       },
       unlocked_at: new Date().toISOString(),
       is_test: true
     }]);
-  }, []);
+  }, [availableMilestones]);
 
   const checkMilestones = useCallback(async () => {
     if (!userId || !partnerId) return;
@@ -171,8 +185,9 @@ export const MilestoneProvider: React.FC<{
           <div className="flex flex-col gap-1.5 shrink-0 z-10">
             <button 
               onClick={() => {
+                const milestoneId = currentNewMilestone.milestone_id;
                 handleDismissMilestone();
-                navigate('/profile?tab=partner&showMilestones=true');
+                navigate(`/profile?tab=partner&showMilestones=true&highlightMilestone=${milestoneId}`);
               }}
               className="px-3 py-1.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-[9px] font-black rounded-xl active:scale-95 transition-all uppercase tracking-widest border-none shadow-sm hover:shadow-md hover:scale-[1.02]"
             >

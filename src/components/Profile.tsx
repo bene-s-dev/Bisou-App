@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, Trash2, Share2, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3, Trophy } from 'lucide-react';
 import ImageCropper from './ImageCropper';
@@ -44,21 +44,38 @@ function MilestonesModal({
   onClose, 
   milestones, 
   unlockedMilestones, 
-  loadingMilestones 
+  loadingMilestones,
+  highlightId
 }: { 
   isOpen: boolean; 
   onClose: () => void; 
   milestones: any[]; 
   unlockedMilestones: any[]; 
-  loadingMilestones: boolean; 
+  loadingMilestones: boolean;
+  highlightId?: string | null;
 }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (isOpen && highlightId && containerRef.current && !loadingMilestones) {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        const element = containerRef.current?.querySelector(`[data-milestone-id="${highlightId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, highlightId, loadingMilestones]);
+
   if (!isOpen) return null;
 
   return createPortal(
     <div className="modal-backdrop px-4 z-[9999] will-change-[opacity,backdrop-filter]">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="modal-content p-6 max-h-[90vh] overflow-y-auto w-full max-w-sm">
-        <div className="flex items-center justify-between mb-4">
+      <div className="modal-content p-6 max-h-[90vh] overflow-hidden w-full max-w-sm flex flex-col">
+        <div className="flex items-center justify-between mb-4 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
               <Trophy className="w-6 h-6 text-[var(--secondary)]" />
@@ -76,7 +93,7 @@ function MilestonesModal({
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full h-2.5 bg-purple-50 rounded-full overflow-hidden border border-purple-100/50 mb-4">
+        <div className="w-full h-2.5 bg-purple-50 rounded-full overflow-hidden border border-purple-100/50 mb-4 shrink-0">
           <div 
             className="h-full bg-gradient-to-r from-purple-400 to-[var(--secondary)] rounded-full transition-all duration-500" 
             style={{ width: `${milestones.length > 0 ? (unlockedMilestones.length / milestones.length) * 100 : 0}%` }}
@@ -84,7 +101,7 @@ function MilestonesModal({
         </div>
 
         {/* Achievements Grid */}
-        <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-1 security-scrollbar">
+        <div ref={containerRef} className="grid grid-cols-1 gap-2 overflow-y-auto pr-1 security-scrollbar pb-2">
           {loadingMilestones && milestones.length === 0 ? (
             Array.from({ length: 5 }).map((_, i) => (
               <div 
@@ -102,32 +119,40 @@ function MilestonesModal({
           ) : (
             milestones.map(m => {
               const unlocked = unlockedMilestones.find(um => um.milestone_id === m.id);
+              const isHighlighted = highlightId === m.id;
               return (
                 <div 
                   key={m.id} 
-                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all ${
-                    unlocked ? 'border-purple-100 bg-purple-50/10' : 'border-purple-50/30 opacity-60'
+                  data-milestone-id={m.id}
+                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all duration-700 ${
+                    isHighlighted 
+                      ? 'border-amber-400 bg-amber-50/30 shadow-[0_0_20px_rgba(251,191,36,0.4)] scale-[1.03] z-10 ring-2 ring-amber-400/20' 
+                      : unlocked 
+                        ? 'border-purple-100 bg-purple-50/5' 
+                        : 'border-purple-50/20 opacity-40 grayscale-[0.5]'
                   }`}
                 >
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg border ${
-                    unlocked 
-                      ? 'bg-purple-50 border-purple-100/30 text-white' 
-                      : 'bg-slate-50 border-slate-100 grayscale'
-                  }`}>
+                    isHighlighted
+                      ? 'bg-amber-100 border-amber-200 text-amber-600 shadow-inner'
+                      : unlocked 
+                        ? 'bg-purple-50 border-purple-100/30 text-white' 
+                        : 'bg-slate-50 border-slate-100 grayscale'
+                  } ${isHighlighted ? 'animate-bounce-subtle' : ''}`}>
                     {m.icon}
                   </div>
                   <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <h4 className="text-[11px] font-black text-[#1F1939] truncate">{m.name}</h4>
+                      <h4 className={`text-[11px] font-black truncate ${isHighlighted ? 'text-amber-900' : 'text-[#1F1939]'}`}>{m.name}</h4>
                       {unlocked && (
-                        <span className="text-[7px] font-black text-green-600 bg-green-50 px-1 rounded-[4px] border border-green-100 shrink-0">
-                          ✓
+                        <span className={`text-[7px] font-black px-1 rounded-[4px] border shrink-0 ${isHighlighted ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-green-600 bg-green-50 border-green-100'}`}>
+                          {isHighlighted ? 'NEU! ✨' : '✓'}
                         </span>
                       )}
                     </div>
-                    <p className="text-[9px] font-bold text-[#4A4468] leading-tight mt-0.5">{m.description}</p>
+                    <p className={`text-[9px] font-bold leading-tight mt-0.5 ${isHighlighted ? 'text-amber-800/80' : 'text-[#4A4468]'}`}>{m.description}</p>
                     {unlocked && (
-                      <p className="text-[7px] font-semibold text-[#6A6588] mt-1 flex items-center gap-0.5">
+                      <p className={`text-[7px] font-semibold mt-1 flex items-center gap-0.5 ${isHighlighted ? 'text-amber-700/60' : 'text-[#6A6588]'}`}>
                         <span>📅</span> {new Date(unlocked.unlocked_at).toLocaleDateString('de-DE')}
                       </p>
                     )}
@@ -2069,6 +2094,7 @@ export default function Profile({
         milestones={milestones}
         unlockedMilestones={unlockedMilestones}
         loadingMilestones={loadingMilestones}
+        highlightId={searchParams.get('highlightMilestone')}
       />
 
       <input 
