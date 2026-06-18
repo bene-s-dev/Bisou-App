@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bisou Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0f13;
+      --surface: #16181f;
+      --surface2: #1e2029;
+      --border: #2a2d3a;
+      --accent: #a855f7;
+      --accent2: #7c3aed;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #f1f5f9;
+      --muted: #64748b;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- LOGIN ---- */
+    #login-screen {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    .login-card .logo { font-size: 40px; margin-bottom: 12px; }
+    .login-card h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .login-card p { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-group label { font-size: 13px; color: var(--muted); font-weight: 500; display: block; margin-bottom: 6px; }
+    .form-group input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-group input:focus { border-color: var(--accent); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:hover { background: var(--accent2); }
+    .btn:active { transform: scale(.98); }
+    .btn.full { width: 100%; justify-content: center; }
+    .btn.sm { padding: 8px 14px; font-size: 13px; }
+    .btn.ghost {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn.ghost:hover { background: var(--border); }
+    .btn.danger { background: #7f1d1d; color: #fca5a5; }
+    .btn.danger:hover { background: #991b1b; }
+    .btn.success { background: #14532d; color: #86efac; }
+    .btn.success:hover { background: #166534; }
+    .error-msg {
+      background: #450a0a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    /* ---- APP SHELL ---- */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo-badge { font-size: 22px; }
+    .app-title { font-size: 16px; font-weight: 700; }
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 6px 14px 6px 8px;
+      font-size: 13px;
+    }
+    .user-chip .avatar {
+      width: 28px; height: 28px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+
+    /* ---- NAV TABS ---- */
+    .nav {
+      display: flex;
+      gap: 2px;
+      padding: 16px 24px 0;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .nav-tab {
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      border-radius: var(--radius) var(--radius) 0 0;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      white-space: nowrap;
+      transition: color .2s, background .2s;
+      border-bottom: 2px solid transparent;
+    }
+    .nav-tab:hover { color: var(--text); background: var(--surface2); }
+    .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ---- MAIN ---- */
+    main { padding: 24px; max-width: 1100px; width: 100%; margin: 0 auto; flex: 1; }
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ---- CARDS ---- */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .card-title { font-size: 15px; font-weight: 600; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .section-title { font-size: 20px; font-weight: 700; }
+
+    /* ---- STATS ---- */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+    }
+    .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* ---- TABLE ---- */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-green { background: #14532d; color: #86efac; }
+    .badge-yellow { background: #78350f; color: #fcd34d; }
+    .badge-red { background: #450a0a; color: #fca5a5; }
+    .badge-purple { background: #3b0764; color: #d8b4fe; }
+    .badge-blue { background: #1e3a5f; color: #93c5fd; }
+
+    /* ---- FORM ---- */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      resize: vertical;
+      min-height: 90px;
+      transition: border-color .2s;
+    }
+    .form-group textarea:focus { border-color: var(--accent); }
+    .form-group select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-group select:focus { border-color: var(--accent); }
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* ---- QUESTION CARD ---- */
+    .q-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+    .q-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .q-type-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: #3b0764; color: #d8b4fe; }
+    .q-text { font-size: 14px; margin-bottom: 8px; }
+    .q-options { display: flex; flex-wrap: wrap; gap: 6px; }
+    .q-option { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--muted); }
+    .day-header { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .q-day-block { margin-bottom: 20px; }
+
+    /* ---- MODAL ---- */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-title { font-size: 16px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; line-height: 1; padding: 4px; }
+    .modal-close:hover { color: var(--text); }
+
+    /* ---- TOAST ---- */
+    .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      min-width: 220px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn .25s ease;
+      transition: opacity .3s;
+    }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error { border-left: 3px solid var(--red); }
+    @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+    .empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="logo">💑</div>
+    <h1>Bisou Admin</h1>
+    <p>Melde dich an um Inhalte zu verwalten</p>
+    <div class="form-group">
+      <label>E-Mail</label>
+      <input type="email" id="email" placeholder="admin@example.com" />
+    </div>
+    <div class="form-group">
+      <label>Passwort</label>
+      <input type="password" id="password" placeholder="••••••••" />
+    </div>
+    <button class="btn full" onclick="login()">
+      <span id="login-label">Anmelden</span>
+    </button>
+    <div id="login-error" style="display:none" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header>
+    <div class="header-left">
+      <span class="logo-badge">💑</span>
+      <span class="app-title">Bisou Admin</span>
+    </div>
+    <div class="user-chip">
+      <div class="avatar" id="user-avatar">A</div>
+      <span id="user-email-display">–</span>
+      <button class="btn ghost sm" onclick="logout()">Abmelden</button>
+    </div>
+  </header>
+
+  <div class="nav">
+    <button class="nav-tab active" onclick="showTab('dashboard', this)">📊 Dashboard</button>
+    <button class="nav-tab" onclick="showTab('questions', this)">❓ Fragen</button>
+    <button class="nav-tab" onclick="showTab('announcements', this)">📢 Announcements</button>
+    <button class="nav-tab" onclick="showTab('users', this)">👥 Nutzer</button>
+    <button class="nav-tab" onclick="showTab('failed', this)">⚠️ Failed Queue</button>
+  </div>
+
+  <main>
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="tab-dashboard">
+      <div class="section-header">
+        <h2 class="section-title">Dashboard</h2>
+        <button class="btn ghost sm" onclick="loadDashboard()">↻ Aktualisieren</button>
+      </div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">Fragen generiert</div><div class="stat-value" id="stat-questions">–</div></div>
+        <div class="stat-card"><div class="stat-label">Nutzer gesamt</div><div class="stat-value" id="stat-users">–</div></div>
+        <div class="stat-card"><div class="stat-label">Antworten heute</div><div class="stat-value" id="stat-answers">–</div></div>
+        <div class="stat-card"><div class="stat-label">Announcements</div><div class="stat-value" id="stat-announcements">–</div></div>
+        <div class="stat-card"><div class="stat-label">Failed Queue</div><div class="stat-value" id="stat-failed">–</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📅 Nächste 7 Tage – Fragenstatus</span>
+          <button class="btn sm" onclick="generateMissing()">⚡ Fehlende generieren</button>
+        </div>
+        <div id="week-status"></div>
+      </div>
+    </div>
+
+    <!-- QUESTIONS -->
+    <div class="section" id="tab-questions">
+      <div class="section-header">
+        <h2 class="section-title">Tagesfragen</h2>
+        <button class="btn" onclick="openGenerateModal()">+ Generieren</button>
+      </div>
+      <div id="questions-list"></div>
+    </div>
+
+    <!-- ANNOUNCEMENTS -->
+    <div class="section" id="tab-announcements">
+      <div class="section-header">
+        <h2 class="section-title">Announcements</h2>
+        <button class="btn" onclick="openAnnouncementModal()">+ Neu</button>
+      </div>
+      <div id="announcements-list"></div>
+    </div>
+
+    <!-- USERS -->
+    <div class="section" id="tab-users">
+      <div class="section-header">
+        <h2 class="section-title">Nutzer</h2>
+        <button class="btn ghost sm" onclick="loadUsers()">↻ Aktualisieren</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Code</th><th>Partner</th><th>Registriert</th><th>Streak</th></tr></thead>
+          <tbody id="users-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FAILED QUEUE -->
+    <div class="section" id="tab-failed">
+      <div class="section-header">
+        <h2 class="section-title">Failed Generation Queue</h2>
+        <div style="display:flex;gap:8px">
+          <button class="btn ghost sm" onclick="loadFailed()">↻ Aktualisieren</button>
+          <button class="btn sm success" onclick="retryAllFailed()">↺ Alle erneut versuchen</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Day Key</th><th>Versuche</th><th>Letzter Versuch</th><th>Status</th><th>Aktionen</th></tr></thead>
+          <tbody id="failed-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL: Generate Questions -->
+<div class="modal-overlay" id="generate-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Fragen generieren</span>
+      <button class="modal-close" onclick="closeModal('generate-modal')">×</button>
+    </div>
+    <div class="form-group">
+      <label>Tag (day_key)</label>
+      <input type="date" id="gen-date" />
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="triggerGenerate()">⚡ Generieren</button>
+      <button class="btn ghost" onclick="closeModal('generate-modal')">Abbrechen</button>
+    </div>
+    <div id="gen-result" style="margin-top:16px;font-size:13px;"></div>
+  </div>
+</div>
+
+<!-- MODAL: Announcement -->
+<div class="modal-overlay" id="announcement-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="ann-modal-title">Announcement erstellen</span>
+      <button class="modal-close" onclick="closeModal('announcement-modal')">×</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Version Code (Zahl)</label>
+        <input type="number" id="ann-version" placeholder="z.B. 12" />
+      </div>
+      <div class="form-group">
+        <label>Emoji</label>
+        <input type="text" id="ann-emoji" placeholder="✨" maxlength="4" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Titel</label>
+      <input type="text" id="ann-title" placeholder="Update Titel" />
+    </div>
+    <div class="form-group">
+      <label>Inhalt</label>
+      <textarea id="ann-content" placeholder="Was ist neu?"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Typ</label>
+        <select id="ann-type">
+          <option value="info">ℹ️ Info</option>
+          <option value="update">🆕 Update</option>
+          <option value="feature">✨ Feature</option>
+          <option value="maintenance">🔧 Wartung</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Button Label</label>
+        <input type="text" id="ann-btn-label" placeholder="Verstanden! ✨" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Action Route (optional)</label>
+      <input type="text" id="ann-route" placeholder="z.B. /settings" />
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="saveAnnouncement()">Speichern</button>
+      <button class="btn ghost" onclick="closeModal('announcement-modal')">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+  const SUPABASE_URL = 'https://odsghowxbgqnfsyjstcb.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kc2dob3d4YmdxbmZzeWpzdGNiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4Njk1MTMsImV4cCI6MjA5NDQ0NTUxM30.-3ns3ckkDcBClXix43lek-TKehfv_THqYsqkvGUf1HU';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let editingAnnouncementId = null;
+
+  // ---- AUTH ----
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const pw = document.getElementById('password').value;
+    const lbl = document.getElementById('login-label');
+    const err = document.getElementById('login-error');
+    err.style.display = 'none';
+    lbl.innerHTML = '<span class="spinner"></span>';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      lbl.textContent = 'Anmelden';
+      return;
+    }
+    // Check if user is allowed (display_name must be 'bene')
+    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', data.user.id).maybeSingle();
+    if (!profile || profile.display_name?.toLowerCase() !== 'bene') {
+      await sb.auth.signOut();
+      err.textContent = '🚫 Kein Zugriff – nur autorisierte Nutzer dürfen sich hier anmelden.';
+      err.style.display = 'block';
+      lbl.textContent = 'Anmelden';
+      return;
+    }
+    showApp(data.user);
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-label').textContent = 'Anmelden';
+  }
+
+  function showApp(user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    const e = user.email || '';
+    document.getElementById('user-email-display').textContent = e;
+    document.getElementById('user-avatar').textContent = e[0]?.toUpperCase() || 'A';
+    loadDashboard();
+    loadQuestions();
+    loadAnnouncements();
+    loadUsers();
+    loadFailed();
+  }
+
+  // Check session on load (also verify display_name)
+  sb.auth.getSession().then(async ({ data }) => {
+    if (!data.session) return;
+    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', data.session.user.id).maybeSingle();
+    if (profile?.display_name?.toLowerCase() === 'bene') {
+      showApp(data.session.user);
+    } else {
+      await sb.auth.signOut();
+    }
+  });
+
+  // ---- TABS ----
+  function showTab(name, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    el.classList.add('active');
+  }
+
+  // ---- TOAST ----
+  function toast(msg, type = 'success') {
+    const container = document.getElementById('toasts');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span> ${msg}`;
+    container.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 3000);
+  }
+
+  // ---- MODAL ----
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+  // ---- DASHBOARD ----
+  async function loadDashboard() {
+    const today = new Date().toISOString().split('T')[0];
+
+    const [{ count: qCount }, { count: uCount }, { count: aCount }, { count: annCount }, { count: fCount }] = await Promise.all([
+      sb.from('daily_questions').select('*', { count: 'exact', head: true }),
+      sb.from('profiles').select('*', { count: 'exact', head: true }),
+      sb.from('answers').select('*', { count: 'exact', head: true }).eq('day_key', today),
+      sb.from('announcements').select('*', { count: 'exact', head: true }),
+      sb.from('failed_generations').select('*', { count: 'exact', head: true }),
+    ]);
+
+    document.getElementById('stat-questions').textContent = qCount ?? '–';
+    document.getElementById('stat-users').textContent = uCount ?? '–';
+    document.getElementById('stat-answers').textContent = aCount ?? '–';
+    document.getElementById('stat-announcements').textContent = annCount ?? '–';
+    document.getElementById('stat-failed').textContent = fCount ?? '–';
+
+    // Week status
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      days.push(d.toISOString().split('T')[0]);
+    }
+    const { data: existing } = await sb.from('daily_questions').select('day_key').in('day_key', days);
+    const existingSet = new Set((existing || []).map(r => r.day_key));
+    const container = document.getElementById('week-status');
+    container.innerHTML = days.map(d => {
+      const has = existingSet.has(d);
+      const label = d === today ? 'Heute' : d;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:14px">${label}</span>
+        ${has
+          ? `<span class="badge badge-green">✓ Generiert</span>`
+          : `<span class="badge badge-red">✕ Fehlt</span>`
+        }
+      </div>`;
+    }).join('');
+  }
+
+  async function generateMissing() {
+    const today = new Date();
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      days.push(d.toISOString().split('T')[0]);
+    }
+    const { data: existing } = await sb.from('daily_questions').select('day_key').in('day_key', days);
+    const existingSet = new Set((existing || []).map(r => r.day_key));
+    const missing = days.filter(d => !existingSet.has(d));
+    if (!missing.length) { toast('Alle 7 Tage sind bereits generiert ✓'); return; }
+    toast(`Generiere ${missing.length} fehlende Tag(e)…`);
+    for (const day of missing) {
+      sb.functions.invoke('generate-questions', { body: { day_key: day } }).catch(() => {});
+    }
+    setTimeout(loadDashboard, 3000);
+  }
+
+  // ---- QUESTIONS ----
+  async function loadQuestions() {
+    const { data } = await sb.from('daily_questions').select('day_key, questions').order('day_key', { ascending: false }).limit(14);
+    const container = document.getElementById('questions-list');
+    if (!data || !data.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">❓</div>Keine Fragen gefunden</div>';
+      return;
+    }
+    container.innerHTML = data.map(row => {
+      const q = row.questions;
+      const types = [
+        { key: 'tot', label: 'Entweder-Oder', color: 'badge-purple' },
+        { key: 'ranking', label: 'Ranking', color: 'badge-blue' },
+        { key: 'text', label: 'Offene Frage', color: 'badge-yellow' },
+        { key: 'wwe', label: 'Wer würde eher', color: 'badge-green' },
+      ];
+      return `<div class="q-day-block">
+        <div class="day-header">${row.day_key}</div>
+        ${types.map(t => q[t.key] ? `
+          <div class="q-card">
+            <div class="q-card-header">
+              <span class="badge ${t.color}">${t.label}</span>
+              <button class="btn ghost sm" style="font-size:11px" onclick='deleteQuestion("${row.day_key}")'>🗑 Löschen</button>
+            </div>
+            <div class="q-text">${q[t.key].q}</div>
+            ${q[t.key].o?.length ? `<div class="q-options">${q[t.key].o.map(o => `<span class="q-option">${o}</span>`).join('')}</div>` : ''}
+          </div>
+        ` : '').join('')}
+      </div>`;
+    }).join('');
+  }
+
+  async function deleteQuestion(dayKey) {
+    if (!confirm(`Fragen für ${dayKey} wirklich löschen?`)) return;
+    const { error } = await sb.from('daily_questions').delete().eq('day_key', dayKey);
+    if (error) { toast('Fehler: ' + error.message, 'error'); return; }
+    toast(`Fragen für ${dayKey} gelöscht`);
+    loadQuestions();
+    loadDashboard();
+  }
+
+  function openGenerateModal() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('gen-date').value = today;
+    document.getElementById('gen-result').textContent = '';
+    openModal('generate-modal');
+  }
+
+  async function triggerGenerate() {
+    const dayKey = document.getElementById('gen-date').value;
+    if (!dayKey) { toast('Bitte ein Datum wählen', 'error'); return; }
+    const res = document.getElementById('gen-result');
+    res.innerHTML = '<span class="spinner"></span> Generierung läuft…';
+    const { data, error } = await sb.functions.invoke('generate-questions', { body: { day_key: dayKey } });
+    if (error || !data?.questions) {
+      res.textContent = '✕ Fehler: ' + (error?.message || 'Unbekannter Fehler');
+      toast('Generierung fehlgeschlagen', 'error');
+    } else {
+      res.textContent = '✓ Erfolgreich generiert!';
+      toast(`Fragen für ${dayKey} generiert ✓`);
+      loadQuestions();
+      loadDashboard();
+    }
+  }
+
+  // ---- ANNOUNCEMENTS ----
+  async function loadAnnouncements() {
+    const { data } = await sb.from('announcements').select('*').order('version_code', { ascending: false });
+    const container = document.getElementById('announcements-list');
+    if (!data || !data.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📢</div>Keine Announcements</div>';
+      return;
+    }
+    const typeColors = { info: 'badge-blue', update: 'badge-green', feature: 'badge-purple', maintenance: 'badge-yellow' };
+    container.innerHTML = data.map(a => `
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">${a.emoji || '✨'}</span>
+            <div>
+              <div style="font-weight:600">${a.title}</div>
+              <div style="font-size:12px;color:var(--muted)">v${a.version_code} · ${new Date(a.created_at).toLocaleDateString('de-DE')}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span class="badge ${typeColors[a.type] || 'badge-blue'}">${a.type}</span>
+            <button class="btn ghost sm" onclick='editAnnouncement(${JSON.stringify(a).replace(/'/g, "&#39;")})'>✏️</button>
+            <button class="btn danger sm" onclick='deleteAnnouncement(${a.id})'>🗑</button>
+          </div>
+        </div>
+        <p style="font-size:14px;color:var(--muted)">${a.content}</p>
+        ${a.action_route ? `<div style="margin-top:8px;font-size:12px">Route: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px">${a.action_route}</code></div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  function openAnnouncementModal(data = null) {
+    editingAnnouncementId = data?.id || null;
+    document.getElementById('ann-modal-title').textContent = data ? 'Announcement bearbeiten' : 'Announcement erstellen';
+    document.getElementById('ann-version').value = data?.version_code || '';
+    document.getElementById('ann-emoji').value = data?.emoji || '✨';
+    document.getElementById('ann-title').value = data?.title || '';
+    document.getElementById('ann-content').value = data?.content || '';
+    document.getElementById('ann-type').value = data?.type || 'info';
+    document.getElementById('ann-btn-label').value = data?.button_label || 'Verstanden! ✨';
+    document.getElementById('ann-route').value = data?.action_route || '';
+    openModal('announcement-modal');
+  }
+
+  function editAnnouncement(data) { openAnnouncementModal(data); }
+
+  async function saveAnnouncement() {
+    const payload = {
+      version_code: parseInt(document.getElementById('ann-version').value),
+      emoji: document.getElementById('ann-emoji').value || '✨',
+      title: document.getElementById('ann-title').value.trim(),
+      content: document.getElementById('ann-content').value.trim(),
+      type: document.getElementById('ann-type').value,
+      button_label: document.getElementById('ann-btn-label').value || 'Verstanden! ✨',
+      action_route: document.getElementById('ann-route').value || null,
+    };
+    if (!payload.title || !payload.content || !payload.version_code) {
+      toast('Bitte alle Pflichtfelder ausfüllen', 'error'); return;
+    }
+    let error;
+    if (editingAnnouncementId) {
+      ({ error } = await sb.from('announcements').update(payload).eq('id', editingAnnouncementId));
+    } else {
+      ({ error } = await sb.from('announcements').insert(payload));
+    }
+    if (error) { toast('Fehler: ' + error.message, 'error'); return; }
+    toast(editingAnnouncementId ? 'Announcement aktualisiert' : 'Announcement erstellt');
+    closeModal('announcement-modal');
+    loadAnnouncements();
+    loadDashboard();
+  }
+
+  async function deleteAnnouncement(id) {
+    if (!confirm('Announcement wirklich löschen?')) return;
+    const { error } = await sb.from('announcements').delete().eq('id', id);
+    if (error) { toast('Fehler: ' + error.message, 'error'); return; }
+    toast('Announcement gelöscht');
+    loadAnnouncements();
+  }
+
+  // ---- USERS ----
+  async function loadUsers() {
+    const { data } = await sb.from('profiles').select('id, display_name, partner_code, partner_id, created_at').order('created_at', { ascending: false }).limit(100);
+    const tbody = document.getElementById('users-table');
+    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Keine Nutzer gefunden</td></tr>'; return; }
+    tbody.innerHTML = data.map(u => `
+      <tr>
+        <td><strong>${u.display_name || '–'}</strong></td>
+        <td><code style="font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:4px">${u.partner_code || '–'}</code></td>
+        <td>${u.partner_id ? '<span class="badge badge-green">Verbunden</span>' : '<span class="badge badge-yellow">Alleine</span>'}</td>
+        <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('de-DE')}</td>
+        <td>–</td>
+      </tr>
+    `).join('');
+  }
+
+  // ---- FAILED QUEUE ----
+  async function loadFailed() {
+    const { data } = await sb.from('failed_generations').select('*').order('day_key');
+    const tbody = document.getElementById('failed-table');
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">Keine fehlgeschlagenen Generierungen ✓</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td><strong>${r.day_key}</strong></td>
+        <td>${r.attempts}</td>
+        <td style="color:var(--muted)">${new Date(r.last_attempt).toLocaleString('de-DE')}</td>
+        <td><span class="badge badge-red">${r.status}</span></td>
+        <td>
+          <button class="btn sm" onclick='retryDay("${r.day_key}")'>↺ Retry</button>
+          <button class="btn danger sm" style="margin-left:6px" onclick='removeFromQueue("${r.day_key}")'>✕</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function retryDay(dayKey) {
+    toast(`Starte Generierung für ${dayKey}…`);
+    const { error } = await sb.functions.invoke('generate-questions', { body: { day_key: dayKey } });
+    if (error) { toast('Fehler: ' + error.message, 'error'); }
+    else { toast(`${dayKey} erfolgreich generiert ✓`); }
+    loadFailed();
+    loadDashboard();
+    loadQuestions();
+  }
+
+  async function retryAllFailed() {
+    const { data } = await sb.from('failed_generations').select('day_key');
+    if (!data?.length) { toast('Queue ist leer'); return; }
+    toast(`Starte ${data.length} Generierungen…`);
+    for (const r of data) {
+      sb.functions.invoke('generate-questions', { body: { day_key: r.day_key } }).catch(() => {});
+    }
+    setTimeout(() => { loadFailed(); loadDashboard(); loadQuestions(); }, 3000);
+  }
+
+  async function removeFromQueue(dayKey) {
+    await sb.from('failed_generations').delete().eq('day_key', dayKey);
+    toast(`${dayKey} aus Queue entfernt`);
+    loadFailed();
+    loadDashboard();
+  }
+
+  // keyboard submit
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') login();
+  });
+</script>
+</body>
+</html>
