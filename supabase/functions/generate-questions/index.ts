@@ -4,6 +4,15 @@ import { GoogleGenAI, ThinkingLevel } from "npm:@google/genai"
 import { z } from "npm:zod"
 import { zodToJsonSchema } from "npm:zod-to-json-schema"
 
+function cleanJsonString(str: string): string {
+  let cleaned = str.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```(?:json)?/i, '');
+    cleaned = cleaned.replace(/```$/, '');
+  }
+  return cleaned.trim();
+}
+
 // ==========================================
 // ZOD-SCHEMA FÜR STRUKTURIERTE AUSGABE
 // ==========================================
@@ -40,6 +49,7 @@ serve(async (req) => {
   const ai = new GoogleGenAI({ apiKey: k });
 
   let dayKey;
+  let rawResponseText = "";
   try {
     const body = await req.json();
     dayKey = body.day_key || body.dayKey;
@@ -58,6 +68,21 @@ serve(async (req) => {
       return new Response(JSON.stringify(ex), { 
         headers: { 'Content-Type': 'application/json' } 
       })
+    }
+
+    // Check how many attempts have been recorded for this dayKey
+    let attempts = 0;
+    try {
+      const { data: currentJob } = await db
+        .from('failed_generations')
+        .select('attempts')
+        .eq('day_key', dayKey)
+        .maybeSingle();
+      if (currentJob) {
+        attempts = currentJob.attempts || 0;
+      }
+    } catch (e) {
+      console.warn("Could not fetch attempts from failed_generations:", e.message);
     }
 
     // ==========================================================
@@ -144,27 +169,68 @@ STIMMUNG & TONFALL (WICHTIG!):
 - Vermeide absurde Gedankenexperimente, seltsame/bizarre hypothetische Szenarien oder allzu abstrakte, verkopfte philosophische Rätsel. Die Fragen müssen bodenständig sein.`;
 
     // ==========================================
-    // API CALL ZU GEMINI MIT THINKING & ZOD
+    // API CALL ZU GEMINI ODER GEMMA MIT THINKING & ZOD
     // ==========================================
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: prompt,
-      config: {
-        thinkingConfig: {
-          thinkingLevel: ThinkingLevel.HIGH,
-        },
+    const useGemma = attempts >= 5;
+    const modelName = useGemma ? "gemma-4-26b-a4b-it" : "gemini-3.5-flash";
+    console.log(`Generating questions for ${dayKey} using model: ${modelName} (Attempt: ${attempts})`);
+
+    let promptText = prompt;
+    let modelConfig: any = {};
+
+    if (useGemma) {
+      promptText += `\n\nAntworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (keine Erklärungen, kein Markdown-Codeblock, nur das JSON):
+{
+  "tot": {
+    "q": "Eine Frage...",
+    "h": "Ein kurzer Hilfstext",
+    "o": ["Option 1", "Option 2"]
+  },
+  "ranking": {
+    "q": "Eine Frage...",
+    "h": "Ein kurzer Hilfstext",
+    "o": ["Option 1", "Option 2", "Option 3", "Option 4"]
+  },
+  "text": {
+    "q": "Eine Frage...",
+    "h": "Ein kurzer Hilfstext",
+    "o": []
+  },
+  "wwe": {
+    "q": "Wer würde eher...",
+    "h": "Ein kurzer Hilfstext",
+    "o": ["Ich", "Partner"]
+  }
+}`;
+      modelConfig = {
+        temperature: 0.7
+      };
+    } else {
+      modelConfig = {
         responseMimeType: "application/json",
         responseSchema: zodToJsonSchema(dailyQuestionsSchema),
-        temperature: 1.0
-      }
+        temperature: 1.0,
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.HIGH,
+        }
+      };
+    }
+
+    const response = await ai.models.generateContent({
+      model: modelName,
+      contents: promptText,
+      config: modelConfig
     });
 
     if (!response.text) {
        throw new Error("Gemini lieferte keine Inhalte zurück.");
     }
 
+    rawResponseText = response.text;
+    console.log("Raw AI response text:", rawResponseText);
+
     // JSON parsen und durch Zod absichern
-    let rawJson = JSON.parse(response.text);
+    let rawJson = JSON.parse(cleanJsonString(rawResponseText));
     
     // Gemini returns array of [{type, question, options}] — transform to expected {tot:{q,h,o}, ...}
     if (Array.isArray(rawJson)) {
@@ -239,7 +305,10 @@ STIMMUNG & TONFALL (WICHTIG!):
       console.error("Failed to queue failed generation:", queueErr.message);
     }
 
-    return new Response(JSON.stringify({ error: err.message }), { 
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      rawResponseText: rawResponseText
+    }), { 
       status: 500, 
       headers: { 'Content-Type': 'application/json' } 
     })
