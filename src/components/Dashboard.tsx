@@ -124,11 +124,11 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
         </div>
 
         <div className="grid grid-cols-3 gap-3 items-stretch">
-          {/* Links: Längster Streak */}
+          {/* Links: Rekord */}
           <div className="bg-purple-50/50 rounded-2xl p-3 text-center border border-purple-100 flex flex-col justify-center">
-            <p className="text-[8px] font-black text-[var(--muted)] uppercase tracking-wider mb-1 leading-tight">Längster Streak</p>
-            <p className="text-sm font-black text-[var(--secondary)] whitespace-nowrap">
-              {streakData?.longest_streak || 0} <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider">{(streakData?.longest_streak || 0) === 1 ? 'Tag' : 'Tage'}</span>
+            <p className="text-[8px] font-black text-[var(--muted)] uppercase tracking-wider mb-1 leading-tight">Rekord</p>
+            <p className="text-sm font-black text-[var(--secondary)]">
+              {streakData?.longest_streak || 0}
             </p>
           </div>
           
@@ -137,20 +137,20 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
             <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest mb-1">Aktuell</p>
             <div className="flex items-center gap-1 justify-center">
               <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
-              <p className="text-lg font-black text-orange-600">
+              <span className="text-lg font-black text-orange-600 leading-none">
                 {streakData?.current_streak || 0}
-              </p>
+              </span>
             </div>
           </div>
 
           {/* Rechts: Streak Freeze */}
           <div className="bg-blue-50/50 rounded-2xl p-3 text-center border border-blue-100 flex flex-col justify-center items-center">
             <p className="text-[8px] font-black text-[var(--muted)] uppercase tracking-wider mb-1 leading-tight">Streak Freeze</p>
-            <div className="flex items-center gap-0.5 justify-center">
+            <div className="flex items-center gap-1 justify-center">
               <Flame className="w-3.5 h-3.5 text-blue-500 fill-blue-500" />
-              <p className="text-sm font-black text-blue-600 whitespace-nowrap">
-                {freezesRemaining} <span className="text-[8px] font-bold text-blue-400 uppercase tracking-wider">übrig</span>
-              </p>
+              <span className="text-sm font-black text-blue-600 leading-none">
+                {freezesRemaining}
+              </span>
             </div>
           </div>
         </div>
