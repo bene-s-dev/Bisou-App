@@ -45,6 +45,8 @@ export default function Dashboard({
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [showStreakModal, setShowStreakModal] = useState<string | null>(null);
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
+  const [isFullscreenPartner, setIsFullscreenPartner] = useState(false);
+  const [isNudging, setIsNudging] = useState(false);
   const [isPartnerHovered, setIsPartnerHovered] = useState(false);
 
   const [stats, setStats] = useState<any>(() => {
@@ -180,6 +182,113 @@ export default function Dashboard({
     const freezes = partnerStreak?.freeze_history || [];
     return freezes.includes(yesterdayKey) && partnerStreak?.last_answer_date === yesterdayKey;
   }, [partnerStreak, yesterdayKey]);
+
+  const handleNudge = async () => {
+    if (!partnerId) return;
+    
+    setIsNudging(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) return;
+      
+      const userId = session.user.id;
+
+      // Fetch latest profile info for accurate cooldown check
+      const { data: profile, error: profileErr } = await supabase
+        .from('profiles')
+        .select('id, last_nudge_at, nudge_count, partner_id')
+        .eq('id', userId)
+        .maybeSingle();
+        
+      if (profileErr || !profile) {
+        throw new Error("Profil konnte nicht geladen werden.");
+      }
+
+      // Cooldown progression: increments by 20s (first 20s, then 40s, then 60s, etc.)
+      const BASE_COOLDOWN_MS = 20 * 1000;
+      const RESET_WINDOW_MS = 30 * 60 * 1000; // reset progression after 30 minutes of inactivity
+      
+      const dbLastNudgeTime = profile.last_nudge_at ? new Date(profile.last_nudge_at).getTime() : 0;
+      const dbNudgeCount = profile.nudge_count || 0;
+      
+      const lastNudgeTimeStr = localStorage.getItem(`last_nudge_${profile.id}`);
+      const localLastNudgeTime = lastNudgeTimeStr ? parseInt(lastNudgeTimeStr, 10) : 0;
+      const localNudgeCount = parseInt(localStorage.getItem(`nudge_count_${profile.id}`) || '0', 10);
+      
+      // Use the most recent of the two (DB vs LocalStorage)
+      const lastNudgeTime = Math.max(dbLastNudgeTime, localLastNudgeTime);
+      let nudgeCount = lastNudgeTime === dbLastNudgeTime ? dbNudgeCount : localNudgeCount;
+      
+      if (lastNudgeTime > 0) {
+        const elapsed = Date.now() - lastNudgeTime;
+        
+        // Reset progression count if the user has been inactive for more than 30 minutes
+        if (elapsed > RESET_WINDOW_MS) {
+          nudgeCount = 0;
+        }
+        
+        if (nudgeCount > 0) {
+          const requiredCooldown = nudgeCount * BASE_COOLDOWN_MS;
+          if (elapsed < requiredCooldown) {
+            const remainingMs = requiredCooldown - elapsed;
+            const minutes = Math.floor(remainingMs / 60000);
+            const seconds = Math.floor((remainingMs % 60000) / 1000);
+            const timeString = minutes > 0 
+              ? `${minutes} Min. und ${seconds} Sek.` 
+              : `${seconds} Sek.`;
+            showAlert(`Hör auf, deinen Bisou-Partner zu nerven! Nächster Anstupster möglich in: ${timeString}`, "error");
+            return;
+          }
+        }
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-push-notification', {
+        body: {
+          user_id: profile.id,
+          partner_id: profile.partner_id,
+          type: 'nudge'
+        }
+      });
+
+      if (error) {
+        let detailMsg = error.message;
+        try {
+          const errText = await error.context.text();
+          const errJson = JSON.parse(errText);
+          if (errJson && errJson.error) {
+            detailMsg = errJson.error;
+          } else if (errJson && errJson.message) {
+            detailMsg = errJson.message;
+          } else {
+            detailMsg = errText;
+          }
+        } catch (_) {}
+        throw new Error(detailMsg);
+      }
+
+      if (data?.skipped) {
+        showAlert(`${partnerName ? capitalizeName(partnerName) : 'Partner'} hat Benachrichtigungen nicht aktiviert.`, "info");
+      } else {
+        showAlert(`${partnerName ? capitalizeName(partnerName) : 'Partner'} wurde angestupst! ❤️`, "success");
+        // Save timestamp and increment count ONLY for successful, non-skipped nudge actions
+        const nextNudgeTime = Date.now();
+        const nextNudgeCount = nudgeCount + 1;
+        localStorage.setItem(`last_nudge_${profile.id}`, nextNudgeTime.toString());
+        localStorage.setItem(`nudge_count_${profile.id}`, nextNudgeCount.toString());
+        
+        // Update the database to persist nudge info (this will also trigger milestones updates)
+        await supabase.from('profiles').update({
+          last_nudge_at: new Date(nextNudgeTime).toISOString(),
+          nudge_count: nextNudgeCount
+        }).eq('id', profile.id);
+      }
+    } catch (err: any) {
+      showAlert(translateError(err.message), "error");
+    } finally {
+      setIsNudging(false);
+    }
+  };
 
   const deleteMyOwn = async () => {
     showConfirm(
@@ -337,7 +446,11 @@ export default function Dashboard({
                 {/* Unclipped shadow element behind the masked avatar */}
                 <div className="absolute inset-0 rounded-[2.2rem] sm:rounded-[2.6rem] shadow-md pointer-events-none -z-10" />
                 <div 
-                  onClick={() => partnerAvatar && setFullscreenImage(partnerAvatar)}
+                  onClick={() => {
+                    if (!hasPartner) return;
+                    setFullscreenImage(partnerAvatar || 'placeholder');
+                    setIsFullscreenPartner(true);
+                  }}
                   className={`w-full h-full rounded-[2.2rem] sm:rounded-[2.6rem] border-2 border-white flex items-center justify-center overflow-hidden transition-transform active:scale-95 ${hasPartner ? 'bg-white cursor-pointer' : 'bg-purple-50/50 border-dashed border-purple-200'}`}
                   style={{
                     maskImage: isPartnerHovered 
@@ -365,11 +478,14 @@ export default function Dashboard({
                   <Flame className={`w-3.5 h-3.5 shrink-0 ${isPartnerStreakFrozen ? 'text-blue-500 fill-blue-500' : 'text-orange-500 fill-orange-500'}`} />
                 </div>
               </div>
-
+ 
               {/* User Avatar (on the right) */}
               <div className="relative z-10 w-[88px] h-[88px] sm:w-[106px] sm:h-[106px]">
                 <div 
-                  onClick={() => userAvatar && setFullscreenImage(userAvatar)}
+                  onClick={() => {
+                    setFullscreenImage(userAvatar || 'placeholder');
+                    setIsFullscreenPartner(false);
+                  }}
                   className="w-full h-full rounded-[2.2rem] sm:rounded-[2.6rem] bg-white border-2 border-white flex items-center justify-center overflow-hidden z-20 shadow-md transition-transform active:scale-95 cursor-pointer"
                 >
                   {userAvatar ? (<img src={userAvatar} alt="U" className="w-full h-full object-cover" />) : (<UserIcon className="w-9 h-9 sm:w-11 sm:h-11 text-[var(--secondary)]" />)}
@@ -509,21 +625,42 @@ export default function Dashboard({
 
       {fullscreenImage && createPortal(
         <div 
-          className="modal-backdrop z-[3000] animate-in fade-in duration-300"
+          className="modal-backdrop z-[3000] animate-in fade-in duration-300 flex flex-col items-center justify-center p-4"
           onClick={() => setFullscreenImage(null)}
         >
-          <div className="relative w-full max-w-[280px] aspect-square animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
-            <img 
-              src={fullscreenImage} 
-              alt="Fullscreen Avatar" 
-              className="w-full h-full rounded-[3rem] shadow-2xl border-4 border-white/20 object-cover"
-            />
-            <button 
-              className="absolute -top-12 right-0 p-3 text-white/70 hover:text-white transition-colors"
-              onClick={() => setFullscreenImage(null)}
-            >
-              <X className="w-8 h-8" />
-            </button>
+          <div className="flex flex-col items-center gap-6 animate-in zoom-in-95 duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="relative w-full max-w-[280px] aspect-square">
+              {fullscreenImage === 'placeholder' ? (
+                <div className="w-[280px] h-[280px] rounded-[3rem] bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center border-4 border-white/20">
+                  <UserIcon className="w-24 h-24 text-[var(--secondary)]" />
+                </div>
+              ) : (
+                <img 
+                  src={fullscreenImage} 
+                  alt="Fullscreen Avatar" 
+                  className="w-[280px] h-[280px] rounded-[3rem] shadow-2xl border-4 border-white/20 object-cover"
+                />
+              )}
+              <button 
+                className="absolute -top-12 right-0 p-3 text-white/70 hover:text-white transition-colors"
+                onClick={() => setFullscreenImage(null)}
+              >
+                <X className="w-8 h-8" />
+              </button>
+            </div>
+
+            {isFullscreenPartner && (
+              <button
+                onClick={handleNudge}
+                disabled={isNudging}
+                className="px-6 py-3.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest border-none shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isNudging && (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                )}
+                <span>Anstupsen 👋</span>
+              </button>
+            )}
           </div>
         </div>,
         document.body

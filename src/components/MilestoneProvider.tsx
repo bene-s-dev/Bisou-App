@@ -23,7 +23,6 @@ export const MilestoneProvider: React.FC<{
   const [toastPaused, setToastPaused] = useState(false);
   const navigate = useNavigate();
 
-  const isFirstCheck = useRef(true);
   const lastUserId = useRef<string | undefined>(undefined);
 
   const currentNewMilestone = newMilestones[0];
@@ -81,7 +80,6 @@ export const MilestoneProvider: React.FC<{
 
     if (userId !== lastUserId.current) {
       lastUserId.current = userId;
-      isFirstCheck.current = true;
     }
 
     try {
@@ -94,16 +92,19 @@ export const MilestoneProvider: React.FC<{
 
       if (umError || !umData) return;
 
-      const wasFirstCheck = isFirstCheck.current;
-      isFirstCheck.current = false;
-
       if (umData.length > 0) {
         // Sort by unlocked_at ascending so we show them in order
         umData.sort((a, b) => new Date(a.unlocked_at).getTime() - new Date(b.unlocked_at).getTime());
         
-        if (wasFirstCheck) {
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+
+        const pastMilestones = umData.filter(m => new Date(m.unlocked_at) < todayStart);
+        const recentMilestones = umData.filter(m => new Date(m.unlocked_at) >= todayStart);
+
+        if (pastMilestones.length > 0) {
           // Silently mark these past milestones as seen in the database so they don't prompt next time
-          const ids = umData.map(m => m.id);
+          const ids = pastMilestones.map(m => m.id);
           const { error: updateError } = await supabase
             .from('unlocked_milestones')
             .update({ is_seen: true })
@@ -111,14 +112,15 @@ export const MilestoneProvider: React.FC<{
           if (updateError) {
             console.error("Error marking past milestones as seen:", updateError);
           }
-          return;
         }
 
-        setNewMilestones(prev => {
-          const existingIds = prev.map(m => m.id);
-          const filtered = umData.filter(um => !existingIds.includes(um.id));
-          return [...prev, ...filtered];
-        });
+        if (recentMilestones.length > 0) {
+          setNewMilestones(prev => {
+            const existingIds = prev.map(m => m.id);
+            const filtered = recentMilestones.filter(um => !existingIds.includes(um.id));
+            return [...prev, ...filtered];
+          });
+        }
       }
     } catch (err) {
       console.error("Error checking new milestones:", err);
@@ -152,7 +154,7 @@ export const MilestoneProvider: React.FC<{
         const next = prev - delta;
         if (next <= 0) {
           handleDismissMilestone();
-          return 10000;
+          return 0;
         }
         return next;
       });
