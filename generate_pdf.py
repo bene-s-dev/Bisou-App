@@ -177,7 +177,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph("Bisou App", title_style))
     story.append(Paragraph("Vollständiges Anwender-Handbuch & Technische Systemarchitektur", subtitle_style))
     
-    meta_line = "<b>Version:</b> 8.0 (Aktualisiert) • <b>Erstellt am:</b> 20. Juni 2026 • <b>Entwickler:</b> Benedikt S. • <b>Tech-Stack:</b> React, PWA, Supabase, Deno"
+    meta_line = "<b>Version:</b> 8.0 (Aktualisiert) • <b>Erstellt am:</b> 1. Juni 2026 • <b>Entwickler:</b> Benedikt S. • <b>Tech-Stack:</b> React, PWA, Supabase, Deno"
     story.append(Paragraph(meta_line, ParagraphStyle('MetaLine', parent=body_style, fontSize=7.5, textColor=secondary, spaceAfter=15)))
     
     # 2. Inhaltsverzeichnis (TOC)
