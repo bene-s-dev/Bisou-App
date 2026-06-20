@@ -661,6 +661,18 @@ export default function Dashboard({
                 <span>Anstupsen 👋</span>
               </button>
             )}
+
+            {!isFullscreenPartner && (
+              <button
+                onClick={() => {
+                  setFullscreenImage(null);
+                  navigate('/profile?tab=main&editAvatar=true');
+                }}
+                className="px-6 py-3.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest border-none shadow-lg active:scale-95 flex items-center gap-2"
+              >
+                <span>Profilbild ändern 📸</span>
+              </button>
+            )}
           </div>
         </div>,
         document.body

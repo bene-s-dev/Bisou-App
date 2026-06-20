@@ -311,6 +311,15 @@ export default function Profile({
     }
   }, [activeTab, searchParams, setSearchParams]);
 
+  useEffect(() => {
+    if (searchParams.get('editAvatar') === 'true') {
+      setShowAvatarMenu(true);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('editAvatar');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   const [stats, setStats] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('cached_bisou_stats_v3');
