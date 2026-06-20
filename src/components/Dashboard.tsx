@@ -536,9 +536,9 @@ export default function Dashboard({
                 <span className={`status-pill ${meAnswered ? 'pill-green' : 'pill-orange'}`}>
                   {meAnswered ? (
                     <>
-                      antwort gesendet <span className="ml-1.5 opacity-50 font-bold">{myTime}</span>
+                      Antwort gesendet <span className="ml-1.5 opacity-50 font-bold">{myTime}</span>
                     </>
-                  ) : 'noch keine antwort'}
+                  ) : 'Noch nicht geantwortet'}
                 </span>
               </div>
 
@@ -550,9 +550,9 @@ export default function Dashboard({
                 <span className={`status-pill ${partnerAnswered ? 'pill-green' : 'pill-orange'}`}>
                   {partnerAnswered ? (
                     <>
-                      antwort gesendet <span className="ml-1.5 opacity-50 font-bold">{partnerTime}</span>
+                      Antwort gesendet <span className="ml-1.5 opacity-50 font-bold">{partnerTime}</span>
                     </>
-                  ) : 'noch keine antwort'}
+                  ) : 'Noch nicht geantwortet'}
                 </span>
               </div>
             </div>
