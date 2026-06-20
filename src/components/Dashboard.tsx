@@ -78,9 +78,6 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
             </div>
             <div>
               <h3 className="font-black text-[#1F1939] text-lg leading-tight">Streak-Übersicht</h3>
-              <p className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-widest">
-                Aktueller Streak: {streakData?.current_streak || 0} { (streakData?.current_streak === 1) ? 'Flamme' : 'Flammen' }
-              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 bg-purple-50 rounded-full text-[var(--muted)]"><X className="w-5 h-5" /></button>
@@ -117,7 +114,7 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
                       : 'text-[#8E89AA]'
                 }`}>{day}</span>
                 {frozen ? (
-                  <Flame className="w-4 h-4 text-blue-500 fill-blue-500 absolute -top-1.5 -right-1.5 drop-shadow-sm animate-pulse" />
+                  <Flame className="w-4 h-4 text-blue-500 fill-blue-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />
                 ) : active ? (
                   <Flame className="w-4 h-4 text-orange-500 fill-orange-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />
                 ) : null}
@@ -126,19 +123,33 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
           })}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-purple-50 rounded-3xl p-4 text-center border-2 border-purple-100 flex flex-col justify-center">
-            <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Längster Streak</p>
-            <p className="text-base font-black text-[var(--secondary)]">
-              {streakData?.longest_streak || 0} <span className="text-[10px] font-bold text-[var(--muted)] uppercase tracking-wider">{(streakData?.longest_streak || 0) === 1 ? 'TAG' : 'TAGE'}</span>
+        <div className="grid grid-cols-3 gap-3 items-stretch">
+          {/* Links: Längster Streak */}
+          <div className="bg-purple-50/50 rounded-2xl p-3 text-center border border-purple-100 flex flex-col justify-center">
+            <p className="text-[8px] font-black text-[var(--muted)] uppercase tracking-wider mb-1 leading-tight">Längster Streak</p>
+            <p className="text-sm font-black text-[var(--secondary)] whitespace-nowrap">
+              {streakData?.longest_streak || 0} <span className="text-[8px] font-bold text-[var(--muted)] uppercase tracking-wider">{(streakData?.longest_streak || 0) === 1 ? 'Tag' : 'Tage'}</span>
             </p>
           </div>
-          <div className="bg-blue-50 rounded-3xl p-4 text-center border-2 border-blue-100 flex flex-col justify-center items-center">
-            <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Streak Freeze</p>
-            <div className="flex items-center gap-1 justify-center mt-0.5">
-              <Flame className="w-4 h-4 text-blue-500 fill-blue-500" />
-              <p className="text-base font-black text-blue-600">
-                {freezesRemaining} <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">übrig</span>
+          
+          {/* Mittig: Aktueller Streak (große Karte) */}
+          <div className="bg-orange-50 rounded-2xl p-4 text-center border-2 border-orange-100 flex flex-col justify-center items-center shadow-sm relative -translate-y-1">
+            <p className="text-[9px] font-black text-orange-600 uppercase tracking-widest mb-1">Aktuell</p>
+            <div className="flex items-center gap-1 justify-center">
+              <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
+              <p className="text-lg font-black text-orange-600">
+                {streakData?.current_streak || 0}
+              </p>
+            </div>
+          </div>
+
+          {/* Rechts: Streak Freeze */}
+          <div className="bg-blue-50/50 rounded-2xl p-3 text-center border border-blue-100 flex flex-col justify-center items-center">
+            <p className="text-[8px] font-black text-[var(--muted)] uppercase tracking-wider mb-1 leading-tight">Streak Freeze</p>
+            <div className="flex items-center gap-0.5 justify-center">
+              <Flame className="w-3.5 h-3.5 text-blue-500 fill-blue-500" />
+              <p className="text-sm font-black text-blue-600 whitespace-nowrap">
+                {freezesRemaining} <span className="text-[8px] font-bold text-blue-400 uppercase tracking-wider">übrig</span>
               </p>
             </div>
           </div>
