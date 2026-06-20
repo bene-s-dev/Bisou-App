@@ -773,7 +773,8 @@ body.modal-open #root {
 
 /* Background & Wrapper overrides */
 .dark #root,
-.dark .bg-\[\#F8F7FF\] {
+.dark .bg-\[\#F8F7FF\],
+.dark .bg-\[\#F8F7FF\]\/90 {
   background-color: var(--bg) !important;
 }
 
@@ -807,8 +808,12 @@ body.modal-open #root {
 /* Border overrides */
 .dark .border-purple-50,
 .dark .border-purple-100,
+.dark .border-purple-200,
+.dark .border-purple-300,
 .dark .border-rose-100,
-.dark .border-gray-100 {
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
   border-color: var(--card-border) !important;
 }
 
@@ -844,23 +849,36 @@ body.modal-open #root {
   background-color: #201B3A !important;
   color: var(--secondary) !important;
 }
-.dark .bg-purple-50\/20 {
-  background-color: rgba(32, 27, 58, 0.2) !important;
+.dark .bg-purple-50\/10,
+.dark .bg-purple-50\/20,
+.dark .bg-purple-50\/30,
+.dark .bg-purple-50\/40,
+.dark .bg-purple-50\/50,
+.dark .bg-purple-50\/80 {
+  background-color: rgba(32, 27, 58, 0.45) !important;
 }
-.dark .bg-purple-100 {
+.dark .bg-purple-100,
+.dark .bg-purple-100\/50 {
   background-color: #2C264D !important;
 }
 .dark .text-purple-600 {
   color: var(--secondary) !important;
 }
 
-.dark .bg-red-50 {
+.dark .bg-purple-200\/30,
+.dark .bg-purple-200\/50 {
+  background-color: rgba(180, 175, 255, 0.15) !important;
+}
+
+.dark .bg-red-50,
+.dark .bg-red-50\/80 {
   background-color: #2D1418 !important;
   color: #FF6B6B !important;
 }
 
-.dark .bg-orange-50 {
-  background-color: #3B2023 !important;
+.dark .bg-orange-50,
+.dark .bg-orange-50\/40 {
+  background-color: #2D1B16 !important;
   color: var(--primary) !important;
 }
 .dark .text-orange-600 {
@@ -883,6 +901,11 @@ body.modal-open #root {
   color: #8CA2FF !important;
 }
 
+.dark .bg-rose-50\/40 {
+  background-color: rgba(255, 138, 138, 0.08) !important;
+  color: var(--primary) !important;
+}
+
 .dark .pill-green {
   background-color: #102E26 !important;
   color: var(--accent-green) !important;
@@ -895,24 +918,90 @@ body.modal-open #root {
   border: 1px solid rgba(249, 115, 22, 0.2) !important;
 }
 
+/* Translucent/soft borders in dark mode */
+.dark .border-purple-100\/50,
+.dark .border-purple-50\/50 {
+  border-color: rgba(180, 175, 255, 0.2) !important;
+}
+
+.dark .border-rose-100\/50 {
+  border-color: rgba(255, 138, 138, 0.15) !important;
+}
+
+.dark .border-orange-50\/50,
+.dark .border-orange-100,
+.dark .border-orange-200 {
+  border-color: rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Dark mode buttons - replacement for bright styling */
 .dark .btn-static {
-  background: linear-gradient(135deg, var(--primary), var(--secondary)) !important;
-  color: #0C0A15 !important;
+  background: linear-gradient(135deg, rgba(255, 155, 155, 0.15), rgba(180, 175, 255, 0.15)) !important;
+  color: var(--text-main) !important;
+  border: 2px solid rgba(180, 175, 255, 0.25) !important;
+}
+.dark .btn-static:hover {
+  background: linear-gradient(135deg, rgba(255, 155, 155, 0.25), rgba(180, 175, 255, 0.25)) !important;
+  border-color: rgba(180, 175, 255, 0.45) !important;
 }
 
 .dark .btn-static-animated {
-  background: linear-gradient(135deg, var(--primary), var(--secondary), var(--primary)) !important;
-  color: #0C0A15 !important;
+  background: linear-gradient(135deg, rgba(255, 155, 155, 0.15), rgba(180, 175, 255, 0.15), rgba(255, 155, 155, 0.15)) !important;
+  color: var(--text-main) !important;
+  border: 2px solid rgba(180, 175, 255, 0.25) !important;
   background-size: 300% 300% !important;
-  animation: gradient-animation 16s ease infinite !important;
+  animation: gradient-animation 8s ease infinite !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+.dark .btn-static-animated:hover {
+  background: linear-gradient(135deg, rgba(255, 155, 155, 0.25), rgba(180, 175, 255, 0.25), rgba(255, 155, 155, 0.25)) !important;
+  border-color: rgba(180, 175, 255, 0.45) !important;
 }
 
-.dark .bg-gray-50 {
+/* Ensure danger confirm buttons in Dialog remain red in dark mode */
+.dark .btn-static.bg-\[var\(--primary\)\] {
+  background: #EF4444 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-50\/50 {
   background-color: #171329 !important;
   color: var(--text) !important;
 }
 .dark .text-gray-600 {
   color: var(--text) !important;
+}
+
+/* Hover state overrides */
+.dark .hover\:bg-purple-100:hover {
+  background-color: #2C264D !important;
+}
+.dark .hover\:bg-purple-50\/30:hover {
+  background-color: rgba(44, 38, 77, 0.3) !important;
+}
+.dark .hover\:bg-purple-50\/50:hover {
+  background-color: rgba(44, 38, 77, 0.5) !important;
+}
+.dark .hover\:bg-green-100:hover {
+  background-color: #163B31 !important;
+}
+.dark .hover\:bg-red-100:hover {
+  background-color: #3D1C22 !important;
+}
+
+/* Milestone Highlights */
+.dark .bg-amber-50\/30 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+}
+.dark .border-amber-400 {
+  border-color: #F59E0B !important;
+}
+.dark .text-amber-600,
+.dark .text-amber-900,
+.dark .text-amber-800\/80 {
+  color: #FBBF24 !important;
 }
 
 /* Skeletons */
@@ -923,14 +1012,22 @@ body.modal-open #root {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent) !important;
 }
 
-/* Tailwind Gradient overrides */
+/* Tailwind Gradient overrides & explicit gradient hooks */
 .dark .from-\[\#F8F7FF\] {
   --tw-gradient-from: var(--bg) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent) !important;
+  --tw-gradient-to: transparent !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
 .dark .via-\[\#F8F7FF\]\/95 {
-  --tw-gradient-stops: var(--tw-gradient-from), var(--bg-95) 40%, var(--tw-gradient-to, transparent) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--bg-95) 50%, var(--tw-gradient-to) !important;
+}
+
+.dark .bg-gradient-to-t.from-\[\#F8F7FF\] {
+  background-image: linear-gradient(to top, var(--bg) 0%, var(--bg-95) 50%, transparent 100%) !important;
+}
+.dark .bg-gradient-to-b.from-\[\#F8F7FF\] {
+  background-image: linear-gradient(to bottom, var(--bg) 0%, var(--bg-95) 50%, transparent 100%) !important;
 }
 
 /* Results header blur background */

@@ -101,6 +101,7 @@ serve(async (req) => {
           if (row.questions.tot?.q) bisherigeFragen.push(`- ${row.questions.tot.q}`);
           if (row.questions.ranking?.q) bisherigeFragen.push(`- ${row.questions.ranking.q}`);
           if (row.questions.text?.q) bisherigeFragen.push(`- ${row.questions.text.q}`);
+          if (row.questions.wwe?.q) bisherigeFragen.push(`- ${row.questions.wwe.q}`);
         }
       });
     }
@@ -153,26 +154,40 @@ serve(async (req) => {
     const todaysThemes = themeSets[dayOfYear % themeSets.length];
     const [themaTot, themaRanking, themaText, themaWwe] = todaysThemes;
 
-    const prompt = `Du bist ein einfühlsamer, bodenständiger Fragenautor für eine Pärchen-App. Generiere exakt 4 Fragen.
+    const prompt = `Du bist ein einfühlsamer, kreativer und bodenständiger Fragenautor für eine Pärchen-App. Deine Aufgabe ist es, exakt 4 Fragen für den heutigen Tag zu schreiben.
 
-WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich, semantisch identisch oder strukturell wiederholend sind, überlege, welche Fragen nicht langweilig und wiederholend sind, wenn man folgende Fragen aus den vergangenen Tagen kennt:
+WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich, semantisch identisch oder strukturell wiederholend sind. Die neuen Fragen müssen sich frisch und unverbraucht anfühlen:
 ${ausgeschlosseneFragenText}
 
-Befolge für den heutigen Tag exakt diese Themen-Vorgaben und Zeichenlimits:
-1. "tot" (Entweder-Oder): Thema muss "${themaTot}" sein. Frage: ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.
-2. "ranking" (4 Dinge ordnen): Thema muss "${themaRanking}" sein. Frage: ca. 40-130 Zeichen. Die 4 Antwortoptionen sollen jeweils ca. 10-60 Zeichen lang sein.
-3. "text" (Offene Frage): Thema muss "${themaText}" sein. Frage: ca. 40-130 Zeichen.
-4. "wwe" (Wer würde eher): Thema muss "${themaWwe}" sein. Frage: ca. 40-130 Zeichen. Die Antwortoptionen müssen IMMER ["Ich", "Partner"] sein.
+Um maximale Abwechslung zu garantieren, befolge für die 4 heutigen Fragen exakt diese Themen-Vorgaben, Fragentypen und Zeichenlimits:
 
-STIMMUNG & TONFALL (WICHTIG!):
-- Schreibe alltagsnahe, nahbare und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
-- Vermeide absurde Gedankenexperimente, seltsame/bizarre hypothetische Szenarien oder allzu abstrakte, verkopfte philosophische Rätsel. Die Fragen müssen bodenständig sein.`;
+1. "tot" (Entweder-Oder-Frage):
+   - Thema: "${themaTot}" (Die Frage und die beiden Antwortoptionen müssen sich um dieses Thema drehen).
+   - Format: Frage ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.
+
+2. "ranking" (4 Dinge ordnen/priorisieren):
+   - Thema: "${themaRanking}" (Die Frage und alle 4 Antwortoptionen müssen zu diesem Thema passen).
+   - Format: Frage ca. 40-130 Zeichen. Die 4 Antwortoptionen zum Sortieren sollen jeweils ca. 10-60 Zeichen lang sein.
+
+3. "text" (Offene Frage):
+   - Thema: "${themaText}" (Die offene Frage muss sich auf dieses Thema beziehen).
+   - Format: Frage ca. 40-130 Zeichen. Das Antwortoptionen-Array ("o") MUSS leer sein (also []).
+
+4. "wwe" (Wer würde eher-Frage):
+   - Thema: "${themaWwe}" (Die "Wer würde eher"-Situation muss zu diesem Thema passen).
+   - Format: Frage ca. 40-130 Zeichen. Die Antwortoptionen müssen IMMER exakt ["Ich", "Partner"] sein.
+
+STIMMUNG & TONFALL (SEHR WICHTIG!):
+- Schreibe alltagsnahe, nahbare, liebevolle und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
+- Jede Frage muss im Kontext einer Liebesbeziehung stehen und einen echten Gesprächsimpuls für die Partner bieten.
+- Vermeide absurde Gedankenexperimente, bizarre hypothetische Szenarien oder allzu abstrakte philosophische Rätsel. Die Fragen müssen bodenständig und realistisch sein.
+- Variiere die Stimmung zwischen den 4 Fragen: Mache eine eher leicht/humorvoll, eine tiefgründig/reflektiert, eine alltäglich/praktisch und eine neugierig/spielerisch.`;
 
     // ==========================================
     // API CALL ZU GEMINI ODER GEMMA MIT THINKING & ZOD
     // ==========================================
     const useGemma = attempts >= 5;
-    const modelName = useGemma ? "gemma-4-26b-a4b-it" : "gemini-3.5-flash";
+    const modelName = useGemma ? "gemma-4-31b-it" : "gemini-3.5-flash";
     console.log(`Generating questions for ${dayKey} using model: ${modelName} (Attempt: ${attempts})`);
 
     let promptText = prompt;

@@ -342,6 +342,30 @@
     .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
     .empty-state .empty-icon { font-size: 40px; margin-bottom: 10px; }
     .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+    /* ---- MOBILE RESPONSIVENESS ---- */
+    @media (max-width: 768px) {
+      main { padding: 16px; }
+      header { padding: 0 16px; }
+      .nav { padding: 12px 16px 0; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+      .login-card { padding: 32px 24px; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 10px; }
+      #user-email-display { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .section-header, .card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .section-header > div, .card-header > div { width: 100%; justify-content: flex-start; }
+      .section-header .btn, .card-header .btn { width: auto; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .header-left .app-title { display: none; }
+      .user-chip { padding: 4px 10px 4px 6px; }
+      .user-chip .avatar { width: 24px; height: 24px; font-size: 11px; }
+      .btn { padding: 10px 16px; font-size: 13px; }
+      .btn.sm { padding: 6px 12px; font-size: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -349,12 +373,12 @@
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="logo">💑</div>
+    <div class="logo">🔐</div>
     <h1>Bisou Admin</h1>
     <p>Melde dich an um Inhalte zu verwalten</p>
     <div class="form-group">
       <label>E-Mail</label>
-      <input type="email" id="email" placeholder="admin@example.com" />
+      <input type="email" id="email" />
     </div>
     <div class="form-group">
       <label>Passwort</label>
@@ -371,7 +395,7 @@
 <div id="app">
   <header>
     <div class="header-left">
-      <span class="logo-badge">💑</span>
+      <span class="logo-badge">🛠️</span>
       <span class="app-title">Bisou Admin</span>
     </div>
     <div class="user-chip">
@@ -563,9 +587,9 @@
       lbl.textContent = 'Anmelden';
       return;
     }
-    // Check if user is allowed (display_name must be 'bene')
+    // Check if user is allowed (display_name must be 'bene' and ID must match Bene's UUID)
     const { data: profile } = await sb.from('profiles').select('display_name').eq('id', data.user.id).maybeSingle();
-    if (!profile || profile.display_name?.toLowerCase() !== 'bene') {
+    if (!profile || profile.display_name?.toLowerCase() !== 'bene' || data.user.id !== '438bce53-5c85-4035-82a1-d6fbd23bc1e8') {
       await sb.auth.signOut();
       err.textContent = '🚫 Kein Zugriff – nur autorisierte Nutzer dürfen sich hier anmelden.';
       err.style.display = 'block';
@@ -595,11 +619,11 @@
     loadFailed();
   }
 
-  // Check session on load (also verify display_name)
+  // Check session on load (also verify display_name and User ID)
   sb.auth.getSession().then(async ({ data }) => {
     if (!data.session) return;
     const { data: profile } = await sb.from('profiles').select('display_name').eq('id', data.session.user.id).maybeSingle();
-    if (profile?.display_name?.toLowerCase() === 'bene') {
+    if (profile?.display_name?.toLowerCase() === 'bene' && data.session.user.id === '438bce53-5c85-4035-82a1-d6fbd23bc1e8') {
       showApp(data.session.user);
     } else {
       await sb.auth.signOut();
@@ -661,10 +685,13 @@
       const label = d === today ? 'Heute' : d;
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <span style="font-size:14px">${label}</span>
-        ${has
-          ? `<span class="badge badge-green">✓ Generiert</span>`
-          : `<span class="badge badge-red">✕ Fehlt</span>`
-        }
+        <div style="display:flex;align-items:center;gap:12px">
+          ${has
+            ? `<span class="badge badge-green">✓ Generiert</span>`
+            : `<span class="badge badge-red">✕ Fehlt</span>
+               <button class="btn sm success" style="padding:4px 8px;font-size:11px" onclick="triggerDirectGenerate('${d}')">⚡ Generieren</button>`
+          }
+        </div>
       </div>`;
     }).join('');
   }
@@ -686,6 +713,19 @@
       sb.functions.invoke('generate-questions', { body: { day_key: day } }).catch(() => {});
     }
     setTimeout(loadDashboard, 3000);
+  }
+
+  async function triggerDirectGenerate(dayKey) {
+    toast(`Generierung für ${dayKey} gestartet…`);
+    const { data, error } = await sb.functions.invoke('generate-questions', { body: { day_key: dayKey } });
+    if (error || !data?.questions) {
+      toast('Fehler: ' + (error?.message || 'Generierung fehlgeschlagen'), 'error');
+    } else {
+      toast(`Fragen für ${dayKey} erfolgreich generiert ✓`);
+    }
+    loadDashboard();
+    loadQuestions();
+    loadFailed();
   }
 
   // ---- QUESTIONS ----
