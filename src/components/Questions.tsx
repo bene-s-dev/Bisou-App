@@ -1016,7 +1016,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         </div>
       )}
 
-      {step < ACTIVE_QUESTIONS && createPortal(
+      {step < ACTIVE_QUESTIONS && (
         <div 
           className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90] pwa-quiz-next-btn-container" 
         >
@@ -1048,11 +1048,10 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               </>
             )}
           </button>
-        </div>,
-        document.body
+        </div>
       )}
 
-      {step >= ACTIVE_QUESTIONS && createPortal(
+      {step >= ACTIVE_QUESTIONS && (
         <>
           <div 
             className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
@@ -1094,8 +1093,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
             userAvatar={profile?.avatar_url}
             dayKey={dayKey}
           />
-        </>,
-        document.body
+        </>
       )}
     </div>
     );

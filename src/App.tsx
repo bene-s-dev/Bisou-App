@@ -140,56 +140,54 @@ function AppLayout({
                         Bisou
                       </h1>
                     </button>
-
-
                   </div>
                 </header>
               </>
             )}
             {children}
+
+            {/* Blurry fade transition at the bottom */}
+            {profile.intro_completed && !['/intro', '/intro-replay', '/questions'].includes(location.pathname) && (
+              <div 
+                className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
+                style={{ 
+                  maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)'
+                }}
+              />
+            )}
+
+            {profile.intro_completed && !['/intro', '/intro-replay'].includes(location.pathname) && (
+              <nav className="nav-dock">
+                <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
+                  <Home className="w-6 h-6" />
+                  <span className="nav-label">Start</span>
+                </NavLink>
+
+                {profile.partner_id ? (
+                  <NavLink to="/questions" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
+                    <MessageCircle className="w-6 h-6" />
+                    <span className="nav-label">Fragen&Antworten</span>
+                  </NavLink>
+                ) : (
+                  <div 
+                    onClick={() => setShowLockedModal(true)}
+                    className="nav-item cursor-pointer"
+                  >
+                    <Lock className="w-6 h-6 text-red-500" />
+                    <span className="nav-label">Fragen&Antworten</span>
+                  </div>
+                )}
+
+                <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
+                  <UserIcon className="w-6 h-6" />
+                  <span className="nav-label">Profil</span>
+                </NavLink>
+              </nav>
+            )}
           </div>
         </ScalingContainer>
       </main>
-
-      {/* Blurry fade transition at the bottom */}
-      {profile.intro_completed && !['/intro', '/intro-replay', '/questions'].includes(location.pathname) && (
-        <div 
-          className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
-          style={{ 
-            maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)'
-          }}
-        />
-      )}
-
-      {profile.intro_completed && !['/intro', '/intro-replay'].includes(location.pathname) && (
-        <nav className="nav-dock">
-          <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
-            <Home className="w-6 h-6" />
-            <span className="nav-label">Start</span>
-          </NavLink>
-
-          {profile.partner_id ? (
-            <NavLink to="/questions" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
-              <MessageCircle className="w-6 h-6" />
-              <span className="nav-label">Fragen&Antworten</span>
-            </NavLink>
-          ) : (
-            <div 
-              onClick={() => setShowLockedModal(true)}
-              className="nav-item cursor-pointer"
-            >
-              <Lock className="w-6 h-6 text-red-500" />
-              <span className="nav-label">Fragen&Antworten</span>
-            </div>
-          )}
-
-          <NavLink to="/profile" className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}>
-            <UserIcon className="w-6 h-6" />
-            <span className="nav-label">Profil</span>
-          </NavLink>
-        </nav>
-      )}
 
       {showLockedModal && createPortal(
         <div className="modal-backdrop px-4">
