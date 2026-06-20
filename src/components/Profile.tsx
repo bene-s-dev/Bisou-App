@@ -909,7 +909,7 @@ export default function Profile({
     const isIOS = localStorage.getItem('mock_ios_mode') === 'true' || ((/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (isIOS && !isStandalone) {
-      showAlert("Auf iOS funktionieren Benachrichtigungen nur in der installierten App.", "info");
+      showAlert("Benachrichtigungen auf iPhones nur im 'Zum Home-Bildschirm hinzugefügt'-Modus aktivierbar.", "error");
       setActiveTab('install');
       return;
     }
@@ -1441,7 +1441,7 @@ export default function Profile({
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
-                  {isDarkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                  {isDarkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
                 </div>
                 <div className="text-left">
                   <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">Erscheinungsbild</span>
