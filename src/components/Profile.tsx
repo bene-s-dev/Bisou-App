@@ -1459,93 +1459,98 @@ export default function Profile({
             ))}
           </div>
         );
-      default:
+      default: {
+        const isAdmin = profile?.display_name?.toLowerCase() === 'bene' || profile?.id === '438bce53-5c85-4035-82a1-d6fbd23bc1e8';
+
         return (
           <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="main">
-            {/* E-Mail ändern Card */}
-            <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm text-left w-full">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
-                  {!isEditingEmail ? (
-                    <div className="flex flex-col">
-                      <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
-                      {user?.new_email && (
-                        <div className="flex flex-col gap-1 mt-1">
-                          <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
-                            Warte auf Bestätigung: {user.new_email}
-                          </div>
-                          <div className="text-[7px] font-bold text-[var(--muted)] leading-tight italic">
-                            Info: Du musst den Link in der <b>alten</b> und der <b>neuen</b> Mail anklicken.
-                          </div>
+                {/* E-Mail ändern Card */}
+                <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm text-left w-full">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
+                      {!isEditingEmail ? (
+                        <div className="flex flex-col">
+                          <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
+                          {user?.new_email && (
+                            <div className="flex flex-col gap-1 mt-1">
+                              <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
+                                Warte auf Bestätigung: {user.new_email}
+                              </div>
+                              <div className="text-[7px] font-bold text-[var(--muted)] leading-tight italic">
+                                Info: Du musst den Link in der <b>alten</b> und der <b>neuen</b> Mail anklicken.
+                              </div>
+                            </div>
+                          )}
                         </div>
+                      ) : (
+                        <input
+                          type="email"
+                          value={emailInput}
+                          onChange={(e) => setEmailInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleUpdateEmail()}
+                          disabled={isUpdatingEmail}
+                          className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-2.5 py-1 text-xs font-bold text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-colors mt-0.5"
+                          placeholder="neue@email.de"
+                          autoFocus
+                        />
                       )}
                     </div>
+                  </div>
+                  {!isEditingEmail ? (
+                    <button 
+                      onClick={() => { setEmailInput(userEmail); setIsEditingEmail(true); }}
+                      className="w-7 h-7 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all shrink-0"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
                   ) : (
-                    <input
-                      type="email"
-                      value={emailInput}
-                      onChange={(e) => setEmailInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateEmail()}
-                      disabled={isUpdatingEmail}
-                      className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-2.5 py-1 text-xs font-bold text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-colors mt-0.5"
-                      placeholder="neue@email.de"
-                      autoFocus
-                    />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button 
+                        onClick={handleUpdateEmail}
+                        disabled={isUpdatingEmail}
+                        className="p-1 bg-green-50 text-green-500 hover:bg-green-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-green-100"
+                      >
+                        {isUpdatingEmail ? (
+                          <div className="w-3.5 h-3.5 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button 
+                        onClick={() => setIsEditingEmail(false)}
+                        disabled={isUpdatingEmail}
+                        className="p-1 bg-red-50 text-red-400 hover:bg-red-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-red-100"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   )}
                 </div>
-              </div>
-              {!isEditingEmail ? (
-                <button 
-                  onClick={() => { setEmailInput(userEmail); setIsEditingEmail(true); }}
-                  className="w-7 h-7 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all shrink-0"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button 
-                    onClick={handleUpdateEmail}
-                    disabled={isUpdatingEmail}
-                    className="p-1 bg-green-50 text-green-500 hover:bg-green-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-green-100"
-                  >
-                    {isUpdatingEmail ? (
-                      <div className="w-3.5 h-3.5 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
-                    ) : (
-                      <Check className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                  <button 
-                    onClick={() => setIsEditingEmail(false)}
-                    disabled={isUpdatingEmail}
-                    className="p-1 bg-red-50 text-red-400 hover:bg-red-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-red-100"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
 
-            {[
-              { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
-              { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
-              !isPWA && { id: 'install', label: isAlreadyInstalled ? 'App bereits installiert' : 'App installieren', icon: Smartphone },
-              { id: 'app-info', label: 'Info & Mehr', icon: Info }
-            ].filter((item): item is any => !!item).map(item => {
-              const isDisabled = false;
-              const isPwaInstalled = item.id === 'install' && isAlreadyInstalled;
-              return (
-                <button 
-                  key={item.id} 
-                  onClick={() => {
-                    if (isDisabled || isPwaInstalled) {
-                      // Do nothing for normal users or if already installed as PWA
-                    }
-                    else setActiveTab(item.id as any);
-                  }} 
+                {[
+                  { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
+                  { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
+                  !isPWA && { id: 'install', label: isAlreadyInstalled ? 'App bereits installiert' : 'App installieren', icon: Smartphone },
+                  { id: 'app-info', label: 'Info & Mehr', icon: Info },
+                  isAdmin && { id: 'admin', label: 'Admin-Bereich', icon: Settings, action: () => window.location.href = '/admin.html' }
+                ].filter((item): item is any => !!item).map(item => {
+                  const isDisabled = false;
+                  const isPwaInstalled = item.id === 'install' && isAlreadyInstalled;
+                  return (
+                    <button 
+                      key={item.id} 
+                      onClick={() => {
+                        if (item.action) {
+                          item.action();
+                        } else if (isDisabled || isPwaInstalled) {
+                          // Do nothing for normal users or if already installed as PWA
+                        }
+                        else setActiveTab(item.id as any);
+                      }} 
                   className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
                     item.isDanger 
                       ? 'border-red-50 hover:border-red-200' 
@@ -1587,6 +1592,7 @@ export default function Profile({
             })}
           </div>
         );
+      }
     }
   };
 
