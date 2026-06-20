@@ -183,28 +183,34 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     # 2. Inhaltsverzeichnis (TOC)
     story.append(Paragraph("Inhaltsverzeichnis", ParagraphStyle('H1_Compact2', parent=h1_style, fontSize=11, spaceBefore=4, spaceAfter=5)))
     toc_data = [
-        [Paragraph("<b>Kapitel / Thema</b>", table_text_bold), Paragraph("<b>Inhalt & Technische Komponenten</b>", table_text_bold), Paragraph("<b>Seite</b>", table_text_bold)],
-        [Paragraph("1. Benutzerhandbuch", table_text_bold), Paragraph("Ausführliche Anwender-Dokumentation (Ritual, Fragentypen, Streak-Freeze, Score, Erfolge, Tagebuch).", table_text), Paragraph("2", table_text)],
-        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("JSONB-Struktur, Gemini-Prompting, Failbacks, failed_generations retry-queue.", table_text), Paragraph("4", table_text)],
-        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Ablauf, LocalStorage quiz_progress, Serialisierungsformat und Signaturvalidierung.", table_text), Paragraph("5", table_text)],
-        [Paragraph("4. Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangkorrelation, WWE & normalisierter Bisou-Score.", table_text), Paragraph("6", table_text)],
-        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("Automatisches Einfrieren, check_and_freeze_streak, update_streak & history-Erhalt.", table_text), Paragraph("7", table_text)],
-        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Holiday-Trigger, und clientseitige local_seen-Deduplizierung.", table_text), Paragraph("8", table_text)],
-        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("announcements-Tabelle, gelesene Views, dynamic renderAnnouncementContent Bullet-Parser.", table_text), Paragraph("9", table_text)],
-        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS-Geräte.", table_text), Paragraph("10", table_text)],
-        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Themes (Hell/Dunkel), Fraunces/Jakarta-Typografie, float/float-in & flame wobble Keyframes.", table_text), Paragraph("11", table_text)],
-        [Paragraph("10. Datenbank-Schema & RLS Policies", table_text_bold), Paragraph("SQL DDL-Matrix der Tabellen (profiles, answers, streaks, failed_generations, milestones).", table_text), Paragraph("12", table_text)],
-        [Paragraph("11. PL/pgSQL RPC-Funktionen & Trigger", table_text_bold), Paragraph("Verknüpfung link_partners, unlink_partners, Cooldown-Antwort-Reset, Löschung & ntfy.", table_text), Paragraph("14", table_text)],
-        [Paragraph("12. Web-Push Notifications & Edge Functions", table_text_bold), Paragraph("Push-Abonnements, Deno Web Crypto API, ES256 VAPID JWT, ECDH shared secret, AES-128-GCM.", table_text), Paragraph("16", table_text)],
-        [Paragraph("13. Systemdatenfluss & Datenarchitektur", table_text_bold), Paragraph("Sequenzdiagramm-Matrix vom Client über Trigger bis hin zur Edge-Function & Web-Push.", table_text), Paragraph("17", table_text)],
+        [Paragraph("<b>Teil I: Benutzerhandbuch & Anwender-Dokumentation</b>", table_text_bold), Paragraph("", table_text), Paragraph("<b>Seite</b>", table_text_bold)],
+        [Paragraph("1. Benutzerhandbuch", table_text_bold), Paragraph("Ausführliche Anwender-Dokumentation (Ritual, Fragentypen, Streak-Freeze, Score, Erfolge, Tagebuch, Themenauswahl).", table_text), Paragraph("2", table_text)],
+        
+        [Paragraph("<b>Teil II: Technische Systemdokumentation</b>", table_text_bold), Paragraph("", table_text), Paragraph("<b>Seite</b>", table_text_bold)],
+        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("JSONB-Struktur, Gemini-Prompting, Failbacks, failed_generations retry-queue.", table_text), Paragraph("5", table_text)],
+        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Ablauf, LocalStorage quiz_progress, Serialisierungsformat und Signaturvalidierung.", table_text), Paragraph("6", table_text)],
+        [Paragraph("4. Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangkorrelation, WWE & normalisierter Bisou-Score.", table_text), Paragraph("7", table_text)],
+        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("Automatisches Einfrieren, check_and_freeze_streak, update_streak & history-Erhalt.", table_text), Paragraph("8", table_text)],
+        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Holiday-Trigger, und clientseitige local_seen-Deduplizierung.", table_text), Paragraph("9", table_text)],
+        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("announcements-Tabelle, gelesene Views, dynamic renderAnnouncementContent Bullet-Parser.", table_text), Paragraph("10", table_text)],
+        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS-Geräte.", table_text), Paragraph("11", table_text)],
+        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Themes (Hell/Dunkel), Fraunces/Jakarta-Typografie, float/float-in & flame wobble Keyframes.", table_text), Paragraph("12", table_text)],
+        [Paragraph("10. Datenbank-Schema & RLS Policies", table_text_bold), Paragraph("SQL DDL-Matrix der Tabellen (profiles, answers, streaks, failed_generations, milestones).", table_text), Paragraph("13", table_text)],
+        [Paragraph("11. PL/pgSQL RPC-Funktionen & Trigger", table_text_bold), Paragraph("Verknüpfung link_partners, unlink_partners, Cooldown-Antwort-Reset, Löschung & ntfy.", table_text), Paragraph("15", table_text)],
+        [Paragraph("12. Web-Push Notifications & Edge Functions", table_text_bold), Paragraph("Push-Abonnements, Deno Web Crypto API, ES256 VAPID JWT, ECDH shared secret, AES-128-GCM.", table_text), Paragraph("17", table_text)],
+        [Paragraph("13. Systemdatenfluss & Datenarchitektur", table_text_bold), Paragraph("Sequenzdiagramm-Matrix vom Client über Trigger bis hin zur Edge-Function & Web-Push.", table_text), Paragraph("18", table_text)],
     ]
-    t_toc = Table(toc_data, colWidths=[95, 220, 27])
+    t_toc = Table(toc_data, colWidths=[100, 215, 27])
     t_toc.setStyle(TableStyle([
+        ('SPAN', (0,0), (1,0)),
+        ('SPAN', (0,2), (1,2)),
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#DED9FF")),
+        ('BACKGROUND', (0,2), (-1,2), colors.HexColor("#DED9FF")),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('ROWBACKGROUNDS', (0,1), (-1,1), [colors.white]),
+        ('ROWBACKGROUNDS', (0,3), (-1,-1), [colors.white, bg_light]),
+        ('TOPPADDING', (0,0), (-1,-1), 1.0),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.0),
     ]))
     story.append(t_toc)
     story.append(PageBreak())
@@ -292,6 +298,24 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "Erinnerungen zu schwelgen und zu sehen, wie sich eure Ansichten und Gefühle über die Zeit entwickelt haben.",
         body_style
     ))
+    
+    story.append(Paragraph("1.8 Themenauswahl & Rotation", h2_style))
+    story.append(Paragraph(
+        "Um das tägliche Ritual abwechslungsreich zu gestalten, greift das System auf eine <b>deterministische 30-Tage-Rotation</b> mit insgesamt 90 völlig isolierten Beziehungsthemen zurück. "
+        "Jeden Tag wählt das System vier unterschiedliche Themen für die vier Fragentypen aus (z.B. 'Romantik' für Dies-oder-Das, 'Finanzen' für das Ranking, 'Alltagsmacken' für den Freitext und 'Abenteuer' für Wer-würde-eher). "
+        "Diese Themen dienen der Gemini-KI als direkte Leitlinien bei der Generierung der Fragen und sorgen für ein breites Spektrum an Themen über den Monat hinweg.",
+        body_style
+    ))
+    story.append(PageBreak())
+
+    # ==========================================
+    # SEITE 4: ZWISCHENÜBERSCHRIFT (TRENNUNG)
+    # ==========================================
+    story.append(Spacer(1, 180))
+    story.append(Paragraph("TEIL II: TECHNISCHE SYSTEMDOKUMENTATION", ParagraphStyle('Part2Header', parent=h1_style, fontSize=13, leading=16, textColor=primary, alignment=TA_CENTER, spaceBefore=20, spaceAfter=15)))
+    story.append(Paragraph("Die folgenden Kapitel richten sich an Entwickler und Systemadministratoren.<br/>"
+                           "Sie beschreiben die Systemarchitektur, Datenbankschemata, RLS-Policies, PL/pgSQL-Funktionen und Schnittstellen-Spezifikationen der Bisou App.", 
+                           ParagraphStyle('Part2Sub', parent=body_style, fontSize=9.5, leading=13.5, textColor=text_muted, alignment=TA_CENTER, spaceAfter=20)))
     story.append(PageBreak())
 
     # ==========================================
@@ -899,15 +923,21 @@ CREATE TABLE public.push_subscriptions (
     doc.build(story, canvasmaker=NumberedCanvas)
     print(f"PDF erfolgreich erstellt unter: {public_path}")
 
-    # Copy to desktop as well for user convenience
+    # Copy to desktop and dist as well for user convenience
     try:
+        import shutil
         desktop_path = os.path.expanduser("~/Desktop")
         desktop_pdf_path = os.path.join(desktop_path, filename)
-        import shutil
         shutil.copy2(public_path, desktop_pdf_path)
         print(f"PDF erfolgreich kopiert nach: {desktop_pdf_path}")
+        
+        dist_dir = os.path.join(current_dir, "dist")
+        if os.path.exists(dist_dir):
+            dist_pdf_path = os.path.join(dist_dir, filename)
+            shutil.copy2(public_path, dist_pdf_path)
+            print(f"PDF erfolgreich kopiert nach: {dist_pdf_path}")
     except Exception as e:
-        print(f"Konnte PDF nicht auf Desktop kopieren: {e}")
+        print(f"Konnte PDF nicht kopieren: {e}")
 
 if __name__ == "__main__":
     build_pdf()
