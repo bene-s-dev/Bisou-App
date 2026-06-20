@@ -119,14 +119,14 @@ export default function StreakModal({
             const active = isDateActive(day);
             const frozen = isDateFrozen(day);
             return (
-              <div key={day} className={`aspect-square rounded-lg flex items-center justify-center relative transition-all ${
+              <div key={day} className={`aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all ${
                 frozen 
                   ? 'bg-blue-50 border border-blue-100' 
                   : active 
                     ? 'bg-orange-50 border border-orange-100' 
                     : 'bg-gray-50/50 border border-transparent'
               }`}>
-                <span className={`text-[9px] font-black ${
+                <span className={`text-[9px] font-black -translate-y-[5px] ${
                   frozen 
                     ? 'text-blue-500' 
                     : active 
@@ -134,9 +134,9 @@ export default function StreakModal({
                       : 'text-[#8E89AA]'
                 }`}>{day}</span>
                 {frozen ? (
-                  <Flame className="w-3.5 h-3.5 text-blue-500 fill-blue-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />
+                  <Flame className="w-3 h-3 text-blue-500 fill-blue-500 absolute bottom-1 left-1/2 -translate-x-1/2" />
                 ) : active ? (
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />
+                  <Flame className="w-3 h-3 text-orange-500 fill-orange-500 absolute bottom-1 left-1/2 -translate-x-1/2" />
                 ) : null}
               </div>
             );
