@@ -33,14 +33,14 @@ class NumberedCanvas(canvas.Canvas):
 
     def draw_page_number(self, page_count):
         if self._pageNumber == 1:
-            return  # Übersichtsseite ohne Kopf-/Fußzeile
+            return  # Cover-Seite / Seite 1 ohne Kopf-/Fußzeile
         
         self.saveState()
         self.setFont("Helvetica-Bold", 8)
         self.setFillColor(colors.HexColor("#A29BFE"))
         
         # Kopfzeile
-        self.drawString(54, 800, "Bisou App - Technische Systemdokumentation & Funktionsanalyse")
+        self.drawString(54, 800, "Bisou App - Handbuch & Technische Systemdokumentation")
         self.setStrokeColor(colors.HexColor("#E2DFFF"))
         self.setLineWidth(0.5)
         self.line(54, 792, 558, 792)
@@ -50,7 +50,7 @@ class NumberedCanvas(canvas.Canvas):
         self.setFillColor(colors.HexColor("#6A6588"))
         page_text = f"Seite {self._pageNumber} von {page_count}"
         self.drawRightString(558, 40, page_text)
-        self.drawString(54, 40, "Bisou App • Vollständige Funktionsspezifikation")
+        self.drawString(54, 40, "Bisou App • Benutzerhandbuch & Spezifikations-Dokument")
         self.line(54, 52, 558, 52)
         
         self.restoreState()
@@ -68,8 +68,8 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         pagesize=A4,
         rightMargin=54,
         leftMargin=54,
-        topMargin=72,
-        bottomMargin=72
+        topMargin=54,
+        bottomMargin=54
     )
 
     styles = getSampleStyleSheet()
@@ -86,33 +86,33 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=24,
-        leading=30,
+        fontSize=20,
+        leading=24,
         textColor=text_main,
-        alignment=TA_CENTER,
-        spaceAfter=15
+        alignment=TA_LEFT,
+        spaceAfter=5
     )
     
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=10.5,
-        leading=14,
+        fontSize=9,
+        leading=11,
         textColor=secondary,
-        alignment=TA_CENTER,
-        spaceAfter=40
+        alignment=TA_LEFT,
+        spaceAfter=10
     )
     
     h1_style = ParagraphStyle(
         'H1',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=13,
-        leading=17,
+        fontSize=12,
+        leading=15,
         textColor=text_main,
-        spaceBefore=16,
-        spaceAfter=6,
+        spaceBefore=14,
+        spaceAfter=5,
         keepWithNext=True
     )
 
@@ -120,11 +120,11 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'H2',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=10.5,
-        leading=13.5,
+        fontSize=9.5,
+        leading=12,
         textColor=secondary,
-        spaceBefore=10,
-        spaceAfter=5,
+        spaceBefore=8,
+        spaceAfter=4,
         keepWithNext=True
     )
     
@@ -132,28 +132,28 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'Body',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=8.5,
-        leading=12.5,
+        fontSize=8,
+        leading=11,
         textColor=text_muted,
-        spaceAfter=5
+        spaceAfter=4
     )
 
     code_style = ParagraphStyle(
         'Code',
         parent=styles['Normal'],
         fontName='Courier',
-        fontSize=7,
-        leading=9,
+        fontSize=6.5,
+        leading=8.5,
         textColor=colors.HexColor("#2d3748"),
-        spaceAfter=5
+        spaceAfter=4
     )
     
     table_text_bold = ParagraphStyle(
         'TableTextBold',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=7,
-        leading=8.5,
+        fontSize=6.5,
+        leading=8,
         textColor=text_main
     )
 
@@ -161,35 +161,70 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'TableText',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=6.5,
-        leading=8,
+        fontSize=6,
+        leading=7.5,
         textColor=text_muted
     )
 
     story = []
 
     # ==========================================
-    # TITELSEITE
+    # SEITE 1: TITEL, LAIEN-HANDBUCH & INHALTSVERZEICHNIS
     # ==========================================
-    story.append(Spacer(1, 100))
-    story.append(Paragraph("Bisou App", title_style))
-    story.append(Paragraph("Detaillierte Funktionsspezifikation & Systemdokumentation", subtitle_style))
-    story.append(Spacer(1, 80))
     
-    meta_text = """
-    <b>Entwickler & Architekt:</b> Benedikt S.<br/>
-    <b>Dokumentation erstellt durch:</b> Antigravity AI Partner<br/>
-    <b>Datum:</b> 20. Juni 2026<br/>
-    <b>Version:</b> 6.0 (Optimiert auf Hauptfunktionen & lückenlose Detailtiefe)<br/>
-    <b>Stack:</b> React Frontend & Supabase (Postgres Database, Edge Functions) Backend
-    """
-    story.append(Paragraph(meta_text, ParagraphStyle('Meta', parent=body_style, alignment=TA_CENTER, leading=16)))
+    # 1. Titel-Header
+    story.append(Paragraph("Bisou App", title_style))
+    story.append(Paragraph("Vollständiges Anwender-Handbuch & Technische Systemarchitektur", subtitle_style))
+    
+    meta_line = "<b>Version:</b> 8.0 (Aktualisiert) • <b>Erstellt am:</b> 20. Juni 2026 • <b>Entwickler:</b> Benedikt S. • <b>Tech-Stack:</b> React, PWA, Supabase, Deno"
+    story.append(Paragraph(meta_line, ParagraphStyle('MetaLine', parent=body_style, fontSize=7, textColor=secondary, spaceAfter=8)))
+    
+    # 2. Laien-Erklärung (Sehr kompakt für Seite 1)
+    story.append(Paragraph("Benutzerhandbuch: Funktionsweise für Endanwender (Laien-Erklärung)", ParagraphStyle('H1_Compact', parent=h1_style, fontSize=10, spaceBefore=4, spaceAfter=3)))
+    story.append(Paragraph(
+        "Die Bisou App bietet Paaren einen geschützten, privaten digitalen Raum für ein tägliches Ritual:<br/>"
+        "• <b>Tägliche Fragen:</b> Jeden Tag um 12:00 Uhr mittags generiert die Gemini-KI vier abwechslungsreiche Fragen: Dies oder Das (tot), ein Prioritäten-Ranking (ranking), eine freie Textfrage (text) und ein 'Wer würde eher' (wwe).<br/>"
+        "• <b>Abschreibschutz:</b> Du siehst die Antworten deines Partners erst, wenn du selbst geantwortet hast (Schloss-Symbol).<br/>"
+        "• <b>Antwortserie & Streak-Freeze:</b> Eure Flamme wächst mit jedem Tag, an dem ihr beide antwortet. Solltet ihr einen Tag verpassen, schützt euch das <b>Streak-Freeze-System</b> (max. 2 pro Monat) automatisch vor dem Zurücksetzen.<br/>"
+        "• <b>Bisou-Score:</b> Berechnet aus euren Antworten der letzten 30 Tage eine spielerische Kompatibilität (0.0 bis 10.0) samt Trendpfeil.<br/>"
+        "• <b>Meilensteine & Erfolge:</b> Für Erfolge (z.B. Neujahrs-Antwort, lange Texte oder 5-Minuten-Zeitgleichheit) erhaltet ihr Banner & Konfetti.<br/>"
+        "• <b>Tagebuch:</b> Ihr könnt bis zu 60 Tage zurückblättern, um eure alten Antworten und Gedanken noch einmal zu lesen.",
+        ParagraphStyle('Body_Compact', parent=body_style, fontSize=7.5, leading=10, spaceAfter=8)
+    ))
+    
+    # 3. Inhaltsverzeichnis (TOC)
+    story.append(Paragraph("Inhaltsverzeichnis", ParagraphStyle('H1_Compact2', parent=h1_style, fontSize=10, spaceBefore=4, spaceAfter=3)))
+    toc_data = [
+        [Paragraph("<b>Kapitel / Thema</b>", table_text_bold), Paragraph("<b>Inhalt & Technische Komponenten</b>", table_text_bold), Paragraph("<b>Seite</b>", table_text_bold)],
+        [Paragraph("1. Benutzerhandbuch", table_text_bold), Paragraph("Laien-Erklärung der App-Features (Tägliche Fragen, Streak-Freeze, Score, Tagebuch).", table_text), Paragraph("1", table_text)],
+        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("JSONB-Struktur, Gemini-Prompting, Failbacks, failed_generations retry-queue.", table_text), Paragraph("2", table_text)],
+        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Ablauf, LocalStorage quiz_progress, Serialisierungsformat und Signaturvalidierung.", table_text), Paragraph("3", table_text)],
+        [Paragraph("4. Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangkorrelation, WWE & normalisierter Bisou-Score.", table_text), Paragraph("4", table_text)],
+        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("Automatisches Einfrieren, check_and_freeze_streak, update_streak & history-Erhalt.", table_text), Paragraph("5", table_text)],
+        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Holiday-Trigger, und clientseitige local_seen-Deduplizierung.", table_text), Paragraph("5", table_text)],
+        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("announcements-Tabelle, gelesene Views, dynamic renderAnnouncementContent Bullet-Parser.", table_text), Paragraph("6", table_text)],
+        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS-Geräte.", table_text), Paragraph("7", table_text)],
+        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Themes (Hell/Dunkel), Fraunces/Jakarta-Typografie, float/float-in & flame wobble Keyframes.", table_text), Paragraph("7", table_text)],
+        [Paragraph("10. Datenbank-Schema & RLS Policies", table_text_bold), Paragraph("SQL DDL-Matrix der Tabellen (profiles, answers, streaks, failed_generations, milestones).", table_text), Paragraph("8", table_text)],
+        [Paragraph("11. PL/pgSQL RPC-Funktionen & Trigger", table_text_bold), Paragraph("Verknüpfung link_partners, unlink_partners, Cooldown-Antwort-Reset, Löschung & ntfy.", table_text), Paragraph("9", table_text)],
+        [Paragraph("12. Web-Push Notifications & Edge Functions", table_text_bold), Paragraph("Push-Abonnements, Deno Web Crypto API, ES256 VAPID JWT, ECDH shared secret, AES-128-GCM.", table_text), Paragraph("10", table_text)],
+        [Paragraph("13. Systemdatenfluss & Datenarchitektur", table_text_bold), Paragraph("Sequenzdiagramm-Matrix vom Client über Trigger bis hin zur Edge-Function & Web-Push.", table_text), Paragraph("11", table_text)],
+    ]
+    t_toc = Table(toc_data, colWidths=[140, 310, 37])
+    t_toc.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EAE5FF")),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
+        ('TOPPADDING', (0,0), (-1,-1), 1.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.5),
+    ]))
+    story.append(t_toc)
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 1: DAS FRAGENSYSTEM & KI-GENERIERUNG
+    # KAPITEL 2: DAS FRAGENSYSTEM & KI-GENERIERUNG
     # ==========================================
-    story.append(Paragraph("1. Das Fragensystem & die Gemini-KI-Generierung", h1_style))
+    story.append(Paragraph("2. Das Fragensystem & die Gemini-KI-Generierung", h1_style))
     story.append(Paragraph(
         "Die tägliche Interaktion basiert auf vier verschiedenen Fragentypen, die Paare auf emotionale und spielerische "
         "Weise einander näherbringen. Die Bereitstellung der Fragen erfolgt vollautomatisch über eine Supabase Edge Function "
@@ -198,11 +233,10 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         body_style
     ))
     
-    story.append(Paragraph("1.1 JSON-Struktur der täglichen Fragen", h2_style))
+    story.append(Paragraph("2.1 JSON-Struktur der täglichen Fragen", h2_style))
     story.append(Paragraph(
         "In der Tabelle <code>daily_questions</code> werden die Fragen im Feld <code>questions</code> als strukturiertes "
-        "JSONB-Dokument gespeichert. Dies ermöglicht eine flexible Auswertung und Übergabe an das Frontend. Ein valides JSON-Dokument "
-        "besitzt folgendes Schema:",
+        "JSONB-Dokument gespeichert. Ein valides JSON-Dokument besitzt folgendes Schema:",
         body_style
     ))
 
@@ -224,20 +258,20 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
 }"""
     story.append(Paragraph(json_schema_example.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
 
-    story.append(Paragraph("1.2 Der Prompt-Algorithmus der Gemini API", h2_style))
+    story.append(Paragraph("2.2 Der Prompt-Algorithmus der Gemini API", h2_style))
     story.append(Paragraph(
         "Falls für ein angefordertes Datum (<code>day_key</code>) noch kein Fragen-Datensatz existiert, formuliert die Edge Function "
         "einen detaillierten System-Prompt an das Modell <code>gemini-1.5-flash</code>. Der Prompt instruiert die KI wie folgt:<br/>"
         "• Generiere genau 4 Fragen mit den Typen <code>tot</code> (Dies oder Das mit 2 Optionen), <code>ranking</code> (mit exakt 4 Optionen), "
         "<code>text</code> (offene Freitextfrage) und <code>wwe</code> (Wer würde eher).<br/>"
         "• Die Fragen müssen sich auf die Themen Partnerschaft, Emotionen, Alltag, Träume und gemeinsame Zukunft beziehen. "
-        "Sie müssen abwechslungsreich sein und dürfen sich niemals wiederholen. Plattitüden oder rein materielle Abfragen (z.B. Automarken) sind verboten.<br/>"
+        "Sie müssen abwechslungsreich sein und dürfen sich niemals wiederholen. Plattitüden oder rein materielle Abfragen sind verboten.<br/>"
         "• Erzwinge die Ausgabe als reines, valides JSON-Dokument ohne Markdown-Formatting (keine Backticks wie ```json), "
         "damit der Deno-Server die Antwort ohne reguläre Ausdrücke parsen und direkt in die Datenbank schreiben kann.",
         body_style
     ))
 
-    story.append(Paragraph("1.3 Robuste Fallbacks & Fehlerbehandlung", h2_style))
+    story.append(Paragraph("2.3 Robuste Fallbacks & failed_generations Retry-Queue", h2_style))
     story.append(Paragraph(
         "Um einen Systemausfall bei API-Drosselungen oder Netzwerkstörungen der Google API zu verhindern, implementiert die Funktion "
         "ein mehrstufiges Sicherheitsnetz:<br/>"
@@ -246,23 +280,23 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "keine Fehlermeldung sieht.<br/>"
         "2. <b>Wiederholungs-Warteschlange (Retry-Queue):</b> Schlägt die Generierung fehl, schreibt die Funktion einen Datensatz mit dem "
         "betroffenen Datum in die Tabelle <code>failed_generations</code>. Ein Datenbank-Cronjob (<code>retry_failed_generations</code>) "
-        "prüft diese Tabelle alle 10 Minuten und versucht, die fehlenden Fragen asynchron im Hintergrund erneut per KI zu generieren. "
+        "prüft diese Tabelle stündlich und versucht, die fehlenden Fragen asynchron im Hintergrund erneut per KI zu generieren. "
         "Ist dies erfolgreich, wird der Queue-Eintrag gelöscht.",
         body_style
     ))
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 2: DER BEANTWORTUNGSPROZESS
+    # KAPITEL 3: DER BEANTWORTUNGSPROZESS
     # ==========================================
-    story.append(Paragraph("2. Der Beantwortungsprozess & die Datenserialisierung", h1_style))
+    story.append(Paragraph("3. Der Beantwortungsprozess & die Datenserialisierung", h1_style))
     story.append(Paragraph(
         "Der Beantwortungsprozess im Client wird über einen Wizard gesteuert. Die App stellt sicher, dass "
         "Teilantworten lokal geschützt sind und dass die Antworten beider Partner sicher miteinander verglichen werden können.",
         body_style
     ))
     
-    story.append(Paragraph("2.1 Clientseitige Zustandssicherung (LocalStorage-Cache)", h2_style))
+    story.append(Paragraph("3.1 Clientseitige Zustandssicherung (LocalStorage-Cache)", h2_style))
     story.append(Paragraph(
         "Während der Benutzer die Fragen beantwortet, speichert die Komponente <code>Questions.tsx</code> nach jedem Einzelschritt "
         "den aktuellen Zustand im LocalStorage (Schlüssel: <code>quiz_progress_{dayKey}</code>). Das Objekt speichert den aktuellen "
@@ -273,7 +307,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         body_style
     ))
 
-    story.append(Paragraph("2.2 Das serielle Antwort-String-Format & Signaturen", h2_style))
+    story.append(Paragraph("3.2 Das serielle Antwort-String-Format & Signaturen", h2_style))
     story.append(Paragraph(
         "Die Antworten eines Benutzers für einen Tag werden nicht als separate Spalten oder Zeilen abgelegt, sondern als ein einziger, "
         "strukturiert serialisierter Text-String in der Spalte <code>choice</code> der Tabelle <code>answers</code> gespeichert. "
@@ -283,14 +317,14 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "<code>Sofa & Netflix | Offene Kommunikation > Körperliche Nähe > Hobbys | Zusammen kochen | Partner [tot:Was macht ihr sonntags?][ranking:Sortiert nach Prio...][text:Lieblingsgericht?][wwe:Wer ist ungeduldiger?]</code><br/><br/>"
         "<b>Der Zweck der Signatur-Klammern (Spionschutz & Integrität):</b><br/>"
         "Die am Ende angehängten Signatur-Klammern <code>[...]</code> enthalten den exakten Fragetext zum Zeitpunkt der Beantwortung. "
-        "Da die Fragen theoretisch im Laufe des Tages regeneriert werden könnten (z. B. durch manuelle Admin-Eingriffe oder System-Resets), "
+        "Da die Fragen theoretisch im Laufe des Tages regeneriert werden könnten, "
         "dient die Signatur als Validierung. Die Auswertungs-Function <code>calculate-stats</code> vergleicht die Signaturen beider Partner. "
         "Stimmen die Signaturen nicht überein, erkennt das System, dass die Partner auf unterschiedliche Fragen geantwortet haben. "
         "Dies verhindert Berechnungsfehler und falsche Auswertungen bei asynchronen Datumswechseln.",
         body_style
     ))
 
-    story.append(Paragraph("2.3 Ablauf beim Absenden der Daten", h2_style))
+    story.append(Paragraph("3.3 Ablauf beim Absenden der Daten", h2_style))
     story.append(Paragraph(
         "Sobald der Benutzer den letzten Schritt abschließt, führt die App eine Datenbanktransaktion aus:<br/>"
         "1. Löscht eventuell bereits vorhandene temporäre Antworten des Benutzers für diesen Tag (falls korrigiert wird).<br/>"
@@ -302,71 +336,198 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 3: DER AUSWERTUNGS- ALGORITHMUS
+    # KAPITEL 4: DER AUSWERTUNGS- ALGORITHMUS
     # ==========================================
-    story.append(Paragraph("3. Der Kompatibilitäts- & Matching-Algorithmus (calculate-stats)", h1_style))
+    story.append(Paragraph("4. Der Kompatibilitäts- & Matching-Algorithmus (calculate-stats)", h1_style))
     story.append(Paragraph(
         "Die Berechnung der Übereinstimmungswerte erfolgt in der Deno Edge Function <code>calculate-stats</code>. "
-        "Sie analysiert die letzten 30 Tage der Beziehung und wendet für jeden Fragentyp spezifische mathematische Verfahren an.",
+        "Sie analysesiert die letzten 30 Tage der Beziehung und wendet für jeden Fragentyp spezifische mathematische Verfahren an.",
         body_style
     ))
     
-    story.append(Paragraph("3.1 Die vier Abgleich-Methoden im Detail", h2_style))
+    story.append(Paragraph("4.1 Die vier Abgleich-Methoden im Detail", h2_style))
     story.append(Paragraph(
         "• <b>Dies oder Das (tot) - Binär-Matching:</b> Ein einfacher String-Vergleich. Stimmen die ausgewählten Optionen überein, "
         "beträgt der Match-Wert für diesen Tag 100%, andernfalls 0%.<br/>"
-        "• <b>Ranking-Frage - Spearman-Distanz mit Wurzel-Dämpfung:</b> Die Partner sortieren 4 Elemente. Die Abweichung wird über die Summe "
+        "• <b>Ranking-Frage - Spearman-Distanz mit Wurzel-Dämpfung:</b> Die Partner sortieren 4 Optionen. Die Abweichung wird über die Summe "
         "der quadrierten Differenzen der Ränge (1 bis 4) berechnet. Der maximal mögliche quadratische Abstand bei 4 Elementen "
-        "beträgt d^2_max = 20 (wenn die Listen komplett entgegengesetzt sortiert sind). Um eine Überstrafung kleiner Abweichungen zu verhindern "
+        "beträgt d^2_max = 20. Um eine Überstrafung kleiner Abweichungen zu verhindern "
         "und Paare psychologisch zu ermutigen, wird die Ähnlichkeit über eine Wurzelfunktion geglättet:<br/>"
         "<code>Score = Wurzel(1 - (Summe(Rang_A - Rang_B)^2 / 20)) * 100</code><br/>"
         "• <b>Freitext-Frage - Semantische Kosinus-Ähnlichkeit:</b> Die Texte werden durch das in der Edge Function ausgeführte Embedding-Modell "
         "<code>gte-small</code> in 384-dimensionale Vektor-Arrays konvertiert. Die mathematische Ähnlichkeit ist das Skalarprodukt der "
         "normierten Vektoren:<br/>"
         "<code>CosineSimilarity = (A · B) / (||A|| * ||B||)</code><br/>"
-        "Ein identischer Text liefert 1.0 (100%), völlig unterschiedliche Texte liegen meist bei 0.3. Das System mappt den Bereich "
-        "[0.3; 0.9] linear auf [0%; 100%]. Schlägt die Generierung fehl (z.B. Timeout), berechnet das System als Fallback den Jaccard-Koeffizienten "
-        "(Schnittmenge der Wörter geteilt durch die Vereinigungsmenge).<br/>"
-        "• <b>Wer würde eher (wwe) - Komplementär-Abgleich:</b> Da sich Partner bei der Frage 'Wer verliert eher die Geduld?' einig sind, "
-        "wenn einer 'Ich' und der andere 'Partner' wählt, liegt ein Match vor, wenn die Antwort-Strings *ungleich* sind: "
+        "Das System mappt den Bereich [0.3; 0.9] linear auf [0%; 100%]. Schlägt die Vektor-Erstellung fehl, berechnet das System als Fallback den Jaccard-Koeffizienten (Schnittmenge der Wörter geteilt durch die Vereinigungsmenge).<br/>"
+        "• <b>Wer würde eher (wwe) - Komplementär-Abgleich:</b> Da sich Partner bei WWE-Fragen einig sind, "
+        "wenn einer 'Ich' und der andere 'Partner' wählt, liegt ein Match vor, wenn die Antwort-Strings <i>ungleich</i> sind: "
         "<code>choice_A !== choice_B</code> (Match: 100%, sonst 0%).",
         body_style
     ))
 
-    story.append(Paragraph("3.2 Dynamische Gewichtung & Berechnung des Bisou-Scores", h2_style))
+    story.append(Paragraph("4.2 Dynamische Gewichtung & Berechnung des Bisou-Scores", h2_style))
     story.append(Paragraph(
         "Der Gesamt-Bisou-Score liegt auf einer Skala von 0.0 bis 10.0. Jede der vier Fragenkategorien hat das gleiche Gewicht von 25% (Faktor 0.25). "
-        "Um verfälschte Ergebnisse bei unvollständigen Daten (z. B. wenn an einem Tag keine Freitext-Frage gestellt wurde oder die Partner "
-        "die wwe-Frage übersprungen haben) zu vermeiden, wendet die Funktion eine <b>dynamische Gewichtungs-Normalisierung</b> an:<br/>"
+        "Um verfälschte Ergebnisse bei unvollständigen Daten zu vermeiden, wendet die Funktion eine <b>dynamische Gewichtungs-Normalisierung</b> an:<br/>"
         "• Es werden nur Kategorien in die Berechnung einbezogen, bei denen für die betrachteten Tage tatsächlich Antworten beider Partner vorliegen.<br/>"
         "• Die Summe der Übereinstimmungsprozente der aktiven Kategorien wird durch die Anzahl der tatsächlich aktiven Kategorien geteilt.<br/>"
-        "• Der resultierende Prozentwert wird durch 10 geteilt und mathematisch auf eine Dezimalstelle gerundet (z.B. 84.3% Übereinstimmung = Score 8.4).",
+        "• Der resultierende Prozentwert wird durch 10 geteilt und mathematisch auf eine Dezimalstelle gerundet.",
         body_style
     ))
 
-    story.append(Paragraph("3.3 Trendberechnung und Trendpfeile", h2_style))
+    story.append(Paragraph("4.3 Trendberechnung und Trendpfeile", h2_style))
     story.append(Paragraph(
         "Das Dashboard zeigt neben dem Bisou-Score einen Trendpfeil (Up/Down) an. Um diesen zu ermitteln, berechnet die Edge Function "
         "zwei Werte parallel: Den aktuellen Bisou-Score der letzten 30 Tage (inklusive heute) und den vorherigen Bisou-Score (indem der "
         "allerneueste gemeinsame Antworttag aus der Berechnung ausgeschlossen wird). Ist der aktuelle Score höher als der vorherige, "
-        "wird ein steigender Trend signalisiert, andernfalls ein fallender. Dies motiviert Paare, durch kontinuierlich übereinstimmende "
-        "Antworten ihren Score aktiv zu steigern.",
+        "wird ein steigender Trend signalisiert, andernfalls ein fallender.",
         body_style
     ))
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 4: FRONTEND-DETAILS, SKALIERUNG
+    # KAPITEL 5: STREAK SYSTEM & STREAK FREEZE
     # ==========================================
-    story.append(Paragraph("4. Frontend-Architektur & Design-Spezifikation", h1_style))
+    story.append(Paragraph("5. Streak-Verwaltung & Streak-Freeze System", h1_style))
+    story.append(Paragraph(
+        "Das Halten einer Antwortserie (Streak) ist ein wesentlicher Motivationsfaktor der App. Um unverschuldete "
+        "Serienverluste abzufedern, implementiert die App eine ausgeklügelte "
+        "Zustandsmaschine zur automatischen Streak-Einfrierung.",
+        body_style
+    ))
+
+    story.append(Paragraph("5.1 Funktionsweise von check_and_freeze_streak()", h2_style))
+    story.append(Paragraph(
+        "Jedes Mal, wenn ein Benutzer die App öffnet, triggert der Client die RPC-Datenbankfunktion "
+        "<code>check_and_freeze_streak(p_today)</code>. Die Funktion arbeitet wie folgt:<br/>"
+        "1. Sie prüft, ob der Streak des Nutzers aktiv ist. Ist das letzte Antwortdatum (<code>last_answer_date</code>) heute "
+        "oder gestern, bleibt der Streak unberührt.<br/>"
+        "2. Hat der Nutzer gestern nicht geantwortet, ermittelt das System, ob ein <b>Streak-Freeze</b> angewendet werden kann. "
+        "Dazu analysiert die Funktion das Array <code>freeze_history</code>. Sie zählt die verbrauchten Freezes im Kalendermonat "
+        "des Vortages. Liegt die Anzahl bei <b>unter 2</b>, wird das gestrige Datum in die <code>freeze_history</code> eingetragen "
+        "und der Streak bleibt erhalten (eingefroren).<br/>"
+        "3. Sind bereits 2 Freezes für diesen Monat verbraucht, bricht der Streak ab und wird auf 0 zurückgesetzt.",
+        body_style
+    ))
+
+    story.append(Paragraph("5.2 Integration in update_streak() & Erhalt der Streak-Historie", h2_style))
+    story.append(Paragraph(
+        "Der AFTER INSERT-Trigger <code>update_streak</code> auf Antworten integriert diese Logik nahtlos. Gibt ein Benutzer eine Antwort ab, "
+        "wird geprüft, ob er gestern verpasst hat. Ist dies der Fall und ein Freeze steht zur Verfügung, wird der Streak "
+        "fortgeführt (+2 Tage addiert für den Freeze-Tag und heute) und das verpasste Datum in die <code>freeze_history</code> eingetragen. "
+        "<b>Wichtiger Erhalt der Historie:</b> Bricht der Streak ab oder wird er zurückgesetzt (oder korrigiert der Nutzer seine Antworten), "
+        "überschreibt die Funktion <code>streak_history</code> nicht mehr mit dem heutigen Tag, sondern hängt das Datum an. "
+        "Dies verhindert Datenverluste und sichert die Validität der historischen Antwortstatistiken.",
+        body_style
+    ))
+    story.append(PageBreak())
+
+    # ==========================================
+    # KAPITEL 6: ACHIEVEMENTS & MILESTONES ZÄHLER
+    # ==========================================
+    story.append(Paragraph("6. Erfolge & Meilenstein-Zählersystem", h1_style))
+    story.append(Paragraph(
+        "Das Achievement-System der Bisou App ist vollständig entkoppelt von der temporären Tabelle `answers` (die nach 90 Tagen bereinigt wird). "
+        "Es basiert auf persistenten Zählerfeldern direkt in der Tabelle <code>profiles</code>, die synchron bei Antwort-Interaktionen gewartet werden.",
+        body_style
+    ))
+
+    story.append(Paragraph("6.1 Die synchronisierten Datenbank-Metriken", h2_style))
+    story.append(Paragraph(
+        "Die folgenden 20+ persistenten Metriken werden in <code>public.profiles</code> gepflegt:<br/>"
+        "• <code>total_answers</code>: Erfasst alle jemals eingereichten Antworten des Benutzers.<br/>"
+        "• <code>total_matches</code>: Zählt die Übereinstimmungen aller Dies-oder-Das- und Ranking-Antworten.<br/>"
+        "• <code>perfect_tot_days_count</code>: Zählt Tage mit perfekter Übereinstimmung bei Dies-oder-Das (tot) Fragen.<br/>"
+        "• <code>perfect_match_days_count</code>: Tage, an denen alle Auswahlfragen (tot & wwe) absolut identisch beantwortet wurden.<br/>"
+        "• <code>perfect_rankings_count</code>: Erzielt durch 100%-Übereinstimmungen im Prioritäten-Ranking.<br/>"
+        "• <code>time_sync_5min_count</code> / <code>time_sync_1min_count</code>: Erfasst, wie oft Partner innerhalb von 5 Minuten bzw. 60 Sekunden nacheinander geantwortet haben.<br/>"
+        "• <code>morning_answers_count</code> / <code>night_answers_count</code> / <code>lunch_answers_count</code> / <code>last_minute_answers_count</code>: Zeitbasierte Beantwortungsmuster.<br/>"
+        "• <code>long_answers_count</code>: Freitext-Antworten mit mehr als 150 Zeichen.<br/>"
+        "• <code>both_long_answers_count</code>: Tage, an denen beide Partner eine lange Freitext-Antwort (&gt; 200 Zeichen) abgegeben haben.<br/>"
+        "• <code>avatar_change_count</code>: Zählt Profilbild-Aktualisierungen.<br/>"
+        "• <code>nudges_sent</code>: Gesamtzahl aller an den Partner übermittelten Anstupser (nudge).<br/>"
+        "• <code>journal_views</code>: Erfasst das Interesse der Partner am Archiv.<br/>"
+        "• <code>streaks_rebuilt</code>: Zählt, wie oft ein abgebrochener Streak wieder auf 7 Tage aufgebaut wurde.",
+        body_style
+    ))
+
+    story.append(Paragraph("6.2 Feiertags-Trigger & Meilenstein-Deduplizierung", h2_style))
+    story.append(Paragraph(
+        "• <b>Feiertags-Trigger (Boolean-Flags):</b> Die Tabelle <code>profiles</code> hält dedizierte Flags für Feiertage: "
+        "<code>answered_valentines</code> (14. Feb), <code>answered_new_years</code> (1. Jan), <code>answered_christmas</code> (24.-26. Dez), "
+        "<code>answered_halloween</code> (31. Okt), <code>answered_labor_day</code> (1. Mai), <code>answered_unity_day</code> (3. Okt), "
+        "<code>answered_leap_day</code> (29. Feb) und <code>answered_anniversary</code> (am Jahrestag der Kopplung). "
+        "Diese Trigger schalten die speziellen Event-Meilensteine frei.<br/>"
+        "• <b>Clientseitige Toast-Deduplizierung:</b> Um wiederholtes Anzeigen desselben Meilenstein-Banners zu unterbinden, "
+        "liest der Client die Liste bereits gesehener Meilensteine beim Start in ein lokales Set (<code>seen_milestones_{userId}</code>) ein. "
+        "Nur wenn ein neu eingelesener Erfolg nicht in diesem Set existiert, wird der Dashboard-Toast gerendert, Konfetti ausgelöst "
+        "und die ID dem Set hinzugefügt. Dies entlastet das Backend von wiederholten Sichtbarkeits-Updates.",
+        body_style
+    ))
+    story.append(PageBreak())
+
+    # ==========================================
+    # KAPITEL 7: SERVER-DRIVEN UI & ANNOUNCEMENTS
+    # ==========================================
+    story.append(Paragraph("7. Server-Driven UI & Systemankündigungen", h1_style))
+    story.append(Paragraph(
+        "Das Ankündigungssystem ermöglicht es, Benachrichtigungen mit strukturiertem Inhalt direkt aus der Datenbank zu steuern. "
+        "Dazu wertet die Client-seitige Funktion <code>renderAnnouncementContent(text)</code> in <code>App.tsx</code> das Textfeld <code>content</code> der Tabelle <code>announcements</code> zeilenweise aus:<br/><br/>"
+        "• <b>Listenpunkte (Bullet-Points):</b> Zeilen, die mit einem der Sonderzeichen <b>•</b>, <b>-</b> oder <b>*</b> beginnen, werden automatisch erkannt. Das System entfernt das Sonderzeichen sowie führende Leerzeichen und gruppiert alle direkt aufeinanderfolgenden Listenpunkte in eine linksbündige ungeordnete HTML-Liste (<code>&lt;ul&gt;</code> und <code>&lt;li&gt;</code>) mit Standard-Aufzählungspunkten.<br/>"
+        "• <b>Standard-Text:</b> Normale Textzeilen werden als zentrierte Textabsätze (<code>&lt;p&gt;</code>) dargestellt.<br/>"
+        "• <b>Absätze & Zeilenumbrüche:</b> Leere Zeilen im Text erzeugen einen kleinen vertikalen Abstand zur visuellen Gliederung.",
+        body_style
+    ))
+    story.append(PageBreak())
+
+    # ==========================================
+    # KAPITEL 8: FRONTEND-DETAILS, TAB-SYNC & DIALOGS
+    # ==========================================
+    story.append(Paragraph("8. Frontend-Architektur, Tab-Sync & Dialog-System", h1_style))
+    story.append(Paragraph(
+        "Die Client-Architektur fokussiert sich auf eine immersive PWA-Erfahrung, die auch unter restriktiven Bedingungen stabil läuft.",
+        body_style
+    ))
+
+    story.append(Paragraph("8.1 Der SafeAuthChannel für resilienten Tab-Sync", h2_style))
+    story.append(Paragraph(
+        "Um An- und Abmeldungen über mehrere offene Browser-Tabs hinweg synchron zu halten, verwendet die App normalerweise die native "
+        "<code>BroadcastChannel</code>-API. In restriktiven Umgebungen (wie iOS In-App-Browsern in Instagram, Telegram oder WebViews) "
+        "kann die Initialisierung der BroadcastChannel-API jedoch zu harten JavaScript-Abstürzen führen. Die App kapselt den Aufruf daher in der Klasse "
+        "<code>SafeAuthChannel</code>. Tritt beim Erstellen des Kanals oder Senden von Nachrichten ein Fehler auf, wird dieser abgefangen, "
+        "protokolliert und ein stummer Fallback aktiviert. Dadurch bleibt die App auf allen Endgeräten voll einsatzbereit.",
+        body_style
+    ))
+
+    story.append(Paragraph("8.2 Responsive UI-Skalierung (Virtual-Canvas)", h2_style))
+    story.append(Paragraph(
+        "Die gesamte Anwendung nutzt einen <code>ScalingContainer</code>. Dieser verhält sich wie eine virtuelle Canvas, die das Layout "
+        "bei extremen Auflösungen oder Seitenverhältnissen (wie iPhone SE oder großen Tablets) proportional skaliert. "
+        "Dadurch wird das Abschnippeln von Steuerungselementen oder der Dock-Navigationsleiste am unteren Bildschirmrand effektiv verhindert.",
+        body_style
+    ))
+
+    story.append(Paragraph("8.3 Das anpassbare DialogProvider-System", h2_style))
+    story.append(Paragraph(
+        "Die klassischen JavaScript-Funktionen <code>alert()</code> und <code>confirm()</code> wurden vollständig durch React-Modals ersetzt:<br/>"
+        "• <code>showAlert(message, type)</code>: Blendet ein unaufdringliches, aber unübersehbares Overlay mit dem Nachrichtext ein.<br/>"
+        "• <code>showConfirm(message, onConfirm, options)</code>: Rendert eine Ja/Nein-Abfrage (z. B. beim Zurücksetzen von Antworten) mit anpassbaren Button-Labels.",
+        body_style
+    ))
+    story.append(PageBreak())
+
+    # ==========================================
+    # KAPITEL 9: DESIGNKONZEPT
+    # ==========================================
+    story.append(Paragraph("9. Designkonzept, HSL-Theme & Micro-Animations", h1_style))
     story.append(Paragraph(
         "Das visuelle Design der Bisou App zeichnet sich durch weiche Verläufe, harmonische Farbtöne und intuitive Bedienung aus.",
         body_style
     ))
 
-    story.append(Paragraph("4.1 HSL-Theme Farbvariablen", h2_style))
+    story.append(Paragraph("9.1 HSL-Theme Farbvariablen", h2_style))
     story.append(Paragraph(
-        "Das CSS-Theme steuert alle Farben über native Variablen, um eine nahtlose Umschaltung zwischen Hell- und Dunkelmodus "
+        "Das CSS-Theme steuert alle Farben über native HSL-Variablen, um eine nahtlose Umschaltung zwischen Hell- und Dunkelmodus "
         "zu ermöglichen. Die Primärfarbe (Rose/Rot) vermittelt Wärme, während die Sekundärfarbe (Soft Lila) für Vertrauen steht.",
         body_style
     ))
@@ -384,42 +545,32 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EAE5FF")),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
     ]))
     story.append(t_colors)
 
-    story.append(Paragraph("4.2 Typografie", h2_style))
+    story.append(Paragraph("9.2 Typografie & Micro-Animations", h2_style))
     story.append(Paragraph(
-        "• <b>Fraunces:</b> Eine ausdrucksstarke Serifenschrift. Sie wird im Header für das 'Bisou'-Logo und ausgewählte emotionale "
-        "Überschriften verwendet, um Intimität und Individualität zu vermitteln.<br/>"
-        "• <b>Plus Jakarta Sans:</b> Eine hochmoderne, geometrische Sans-Serif-Schrift. Sie dient als Haupt-Schriftart der Benutzeroberfläche "
-        "und sorgt dank großzügiger Zeichenbreiten für hervorragende Lesbarkeit auf Smartphone-Bildschirmen.",
-        body_style
-    ))
-
-    story.append(Paragraph("4.3 Micro-Animations & Interaktionseffekte", h2_style))
-    story.append(Paragraph(
-        "• <b>Wobble & Flicker (`.animate-flicker`):</b> Animiert die Flammen-Icons bei aktiven Antwortserien mit zufallsnahen "
-        "Rotationsänderungen (±3 Grad), um das Flackern einer echten Kerze nachzuahmen.<br/>"
-        "• <b>Eingangs-Transitionen (`.animate-fade-in-up`):</b> Karten und Formularelemente gleiten beim Laden um 24 Pixel "
-        "von unten nach oben und blenden gleichzeitig ein. Eine gestaffelte CSS-Verzögerung (Stagger-Effekt) von 80ms pro Element "
-        "lässt die Seiten organisch und flüssig aufgebaut erscheinen.",
+        "• <b>Fraunces & Plus Jakarta Sans:</b> Fraunces (Serif) wird im Header für das Logo verwendet, um Intimität zu vermitteln. "
+        "Plus Jakarta Sans dient dank breiter geometrischer Formen als Hauptschriftart für die UI.<br/>"
+        "• <b>Flame Wobble & Flicker (`.animate-flicker`):</b> Animiert die Flammen-Icons bei aktiven Antwortserien mit zufallsnahen "
+        "Rotationsänderungen (±3 Grad), um das Flackern einer echten Kerze nachzuahmen.",
         body_style
     ))
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 5: DATENBANKSCHEMA
+    # KAPITEL 10: DATENBANKSCHEMA
     # ==========================================
-    story.append(Paragraph("5. Datenbank-Struktur & Schema-Referenz", h1_style))
+    story.append(Paragraph("10. Datenbank-Struktur & Schema-Referenz", h1_style))
     story.append(Paragraph(
         "Die PostgreSQL-Datenbank strukturiert alle Relationen, Integritätsbedingungen (Foreign Keys) und Trigger.",
         body_style
     ))
 
     # Profiles Table Schema
-    story.append(Paragraph("5.1 Profile-Tabelle (public.profiles)", h2_style))
+    story.append(Paragraph("10.1 Profile-Tabelle (public.profiles) mit neuen Spalten", h2_style))
     profiles_sql = """CREATE TABLE public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name text,
@@ -446,15 +597,22 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
   avatar_change_count integer DEFAULT 0 NOT NULL,
   time_sync_5min_count integer DEFAULT 0 NOT NULL,
   time_sync_1min_count integer DEFAULT 0 NOT NULL,
+  perfect_rankings_count integer DEFAULT 0 NOT NULL,
+  perfect_match_days_count integer DEFAULT 0 NOT NULL,
+  perfect_tot_days_count integer DEFAULT 0 NOT NULL,
   answered_valentines boolean DEFAULT false NOT NULL,
   answered_new_years boolean DEFAULT false NOT NULL,
-  perfect_rankings_count integer DEFAULT 0 NOT NULL,
-  perfect_match_days_count integer DEFAULT 0 NOT NULL
+  answered_christmas boolean DEFAULT false NOT NULL,
+  answered_halloween boolean DEFAULT false NOT NULL,
+  answered_labor_day boolean DEFAULT false NOT NULL,
+  answered_unity_day boolean DEFAULT false NOT NULL,
+  answered_anniversary boolean DEFAULT false NOT NULL,
+  answered_leap_day boolean DEFAULT false NOT NULL
 );"""
     story.append(Paragraph(profiles_sql.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
 
     # Answers Table Schema
-    story.append(Paragraph("5.2 Antworten-Tabelle (public.answers)", h2_style))
+    story.append(Paragraph("10.2 Antworten-Tabelle (public.answers)", h2_style))
     answers_sql = """CREATE TABLE public.answers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
@@ -466,7 +624,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph(answers_sql.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
 
     # Streaks Table Schema
-    story.append(Paragraph("5.3 Streaks-Tabelle (public.streaks)", h2_style))
+    story.append(Paragraph("10.3 Streaks-Tabelle (public.streaks)", h2_style))
     streaks_sql = """CREATE TABLE public.streaks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
@@ -475,15 +633,23 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
   longest_streak integer DEFAULT 0 NOT NULL,
   last_answer_date date,
   streak_history jsonb DEFAULT '[]'::jsonb NOT NULL,
+  freeze_history jsonb DEFAULT '[]'::jsonb NOT NULL,
   CONSTRAINT streaks_user_id_partner_id_key UNIQUE (user_id, partner_id)
 );"""
     story.append(Paragraph(streaks_sql.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
     story.append(PageBreak())
 
     # Additional Tables Specification
-    story.append(Paragraph("5.4 Zusätzliche Tabellen-Spezifikationen", h1_style))
+    story.append(Paragraph("10.4 Zusätzliche Tabellen-Spezifikationen & failed_generations", h1_style))
     
-    other_tables_sql = """-- Ankündigungen (Server-Driven Popups)
+    other_tables_sql = """-- failed_generations (Retry-Queue)
+CREATE TABLE public.failed_generations (
+  day_key date PRIMARY KEY,
+  failed_at timestamptz DEFAULT now() NOT NULL,
+  retry_count integer DEFAULT 0 NOT NULL
+);
+
+-- Ankündigungen (Server-Driven Popups)
 CREATE TABLE public.announcements (
   id bigint PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
   version_code integer UNIQUE NOT NULL,
@@ -510,193 +676,98 @@ CREATE TABLE public.push_subscriptions (
   user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   subscription jsonb NOT NULL,
   created_at timestamptz DEFAULT now() NOT NULL
-);
-
--- Erfolge / Meilensteine Definitionen
-CREATE TABLE public.milestones (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  description text NOT NULL,
-  icon text NOT NULL,
-  trigger_type text NOT NULL,
-  trigger_value integer NOT NULL,
-  created_at timestamptz DEFAULT now() NOT NULL
-);
-
--- Freigeschaltete Erfolge
-CREATE TABLE public.unlocked_milestones (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
-  milestone_id uuid REFERENCES public.milestones(id) ON DELETE CASCADE NOT NULL,
-  unlocked_at timestamptz DEFAULT now() NOT NULL,
-  is_seen boolean DEFAULT false NOT NULL,
-  CONSTRAINT unlocked_milestones_user_id_milestone_id_key UNIQUE (user_id, milestone_id)
 );"""
     story.append(Paragraph(other_tables_sql.replace("\n", "<br/>").replace(" ", "&nbsp;"), code_style))
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 6: RLS POLICIES & SECURITY
+    # KAPITEL 11: PL/PGSQL RPC FUNCTIONS
     # ==========================================
-    story.append(Paragraph("6. RLS (Row Level Security) & Zugriffskontrolle", h1_style))
-    story.append(Paragraph(
-        "Die Sicherheit der Benutzerdaten ist über restriktive Postgres-RLS-Regeln geregelt. Jeder Nutzer "
-        "kann ausschließlich seine eigenen Einträge modifizieren, während Lesezugriffe für Partner über SQL-Unterabfragen freigegeben werden.",
-        body_style
-    ))
+    story.append(Paragraph("11. PL/pgSQL Funktionen, Trigger & RPCs", h1_style))
     
-    rls_data = [
-        [Paragraph("<b>Tabelle</b>", table_text_bold), Paragraph("<b>Operation</b>", table_text_bold), Paragraph("<b>SQL Policy Bedingung (USING / WITH CHECK)</b>", table_text_bold)],
-        [
-            Paragraph("profiles", table_text_bold),
-            Paragraph("SELECT<br/>INSERT/UPDATE<br/>DELETE", table_text),
-            Paragraph("TO authenticated USING (true)<br/>USING (auth.uid() = id)<br/>USING (auth.uid() = id)", table_text)
-        ],
-        [
-            Paragraph("answers", table_text_bold),
-            Paragraph("SELECT<br/><br/>INSERT/DELETE", table_text),
-            Paragraph("auth.uid() = user_id OR user_id IN (<br/>  SELECT partner_id FROM public.profiles WHERE id = auth.uid()<br/>)<br/>USING (auth.uid() = user_id)", table_text)
-        ],
-        [
-            Paragraph("streaks", table_text_bold),
-            Paragraph("SELECT", table_text),
-            Paragraph("auth.uid() = user_id OR user_id IN (<br/>  SELECT partner_id FROM public.profiles WHERE id = auth.uid()<br/>)", table_text)
-        ],
-        [
-            Paragraph("announcements", table_text_bold),
-            Paragraph("SELECT", table_text),
-            Paragraph("TO public USING (true)", table_text)
-        ],
-        [
-            Paragraph("announcement_views", table_text_bold),
-            Paragraph("SELECT<br/>INSERT", table_text),
-            Paragraph("USING (auth.uid() = user_id)<br/>WITH CHECK (auth.uid() = user_id)", table_text)
-        ],
-        [
-            Paragraph("milestones", table_text_bold),
-            Paragraph("SELECT", table_text),
-            Paragraph("TO authenticated USING (true)", table_text)
-        ],
-        [
-            Paragraph("unlocked_milestones", table_text_bold),
-            Paragraph("SELECT<br/>INSERT", table_text),
-            Paragraph("TO authenticated USING (true)<br/>TO service_role WITH CHECK (true)", table_text)
-        ]
-    ]
-    t_rls = Table(rls_data, colWidths=[100, 87, 300])
-    t_rls.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#DFFFE2")),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-    ]))
-    story.append(t_rls)
-    story.append(PageBreak())
-
-    # ==========================================
-    # KAPITEL 7: PL/PGSQL RPC FUNCTIONS & TRIGGERS
-    # ==========================================
-    story.append(Paragraph("7. PL/pgSQL Funktionen, Trigger & RPCs", h1_style))
-    story.append(Paragraph(
-        "Komplexe Geschäftslogik und relationale Updates werden direkt im PostgreSQL-Server ausgeführt. Dies vermeidet Race-Conditions und minimiert Roundtrips vom Client.",
-        body_style
-    ))
-    
-    story.append(Paragraph("7.1 Partnerkopplung: public.link_partners()", h2_style))
+    story.append(Paragraph("11.1 Partnerkopplung: public.link_partners()", h2_style))
     story.append(Paragraph(
         "Führt eine atomare, bidirektionale Verknüpfung zweier Profile durch. Die Funktion nimmt den `partner_code_to_link` "
         "entgegen, sucht die zugehörige UUID und setzt gegenseitig `partner_id` sowie `partner_since` auf den aktuellen Zeitstempel.",
         body_style
     ))
     
-    story.append(Paragraph("7.2 Kontolöschung: public.delete_user_account()", h2_style))
+    story.append(Paragraph("11.2 Kontolöschung: public.delete_user_account()", h2_style))
     story.append(Paragraph(
         "Löscht das Konto des angemeldeten Benutzers sicher aus `auth.users`. Um eine Verletzung von Fremdschlüsselbedingungen "
-        "(FK Violation) zu vermeiden, hebt die Funktion zuerst die Koppelung beim Partner auf (setzt dort `partner_id` auf NULL) "
-        "und löscht anschließend den User-Datensatz. Kaskadierende Löschungen leeren automatisch verknüpfte Tabellen (Answers, Streaks).",
+        "zu vermeiden, hebt die Funktion zuerst die Koppelung beim Partner auf (setzt dort `partner_id` auf NULL) "
+        "und löscht anschließend den User-Datensatz.",
         body_style
     ))
 
-    story.append(Paragraph("7.3 Streak-Verwaltung: public.update_streak()", h2_style))
+    story.append(Paragraph("11.3 Streak-Verwaltung: public.update_streak()", h2_style))
     story.append(Paragraph(
-        "Ein AFTER INSERT-Trigger auf `public.answers`. Wird eine Antwort gespeichert, ermittelt der Trigger "
+        "Ein AFTER INSERT-Trigger auf <code>public.answers</code>. Wird eine Antwort gespeichert, ermittelt der Trigger "
         "das aktuelle Datum und prüft den Tag der letzten Antwort. War die letzte Antwort gestern, wird der Streak "
-        "inkrementiert und das Datum an die `streak_history` angehängt. Liegt die letzte Antwort länger zurück, "
-        "wird die Serie auf 1 zurückgesetzt. Das System stellt sicher, dass Korrekturen am selben Tag den Streak nicht brechen.",
+        "inkrementiert und das Datum an die <code>streak_history</code> angehängt. Liegt die letzte Antwort länger zurück, "
+        "wird die Serie auf 1 zurückgesetzt. <b>Historie-Schutz:</b> Wenn der Streak zurückgesetzt wird, wird die Historie "
+        "nicht überschrieben, sondern der heutige Tag wird angehängt. Dies stellt sicher, dass die vollständige Antwort-Historie "
+        "in <code>streak_history</code> erhalten bleibt.",
         body_style
     ))
 
-    story.append(Paragraph("7.4 Antwort-Reset: public.reset_today_answers(day_key_param text)", h2_style))
+    story.append(Paragraph("11.4 Antwort-Reset: public.reset_today_answers(day_key_param text)", h2_style))
     story.append(Paragraph(
         "Erlaubt es Nutzern, ihre heutigen Antworten zu löschen, um sie neu zu beantworten. Die Funktion implementiert "
         "einen harten 7-Tage-Cooldown. Sie prüft `profiles.last_answer_reset_at`. Liegt der Wert weniger als 7 Tage in der Vergangenheit, "
-        "wird die Ausführung mit einer Fehlermeldung (RAISE EXCEPTION) abgebrochen, die dem Nutzer die verbleibenden Tage/Stunden anzeigt.",
+        "wird die Ausführung mit einer Fehlermeldung (RAISE EXCEPTION) abgebrochen.",
         body_style
     ))
 
-    story.append(Paragraph("7.5 Cronjobs (Datenbereinigung & Retry-Queue)", h2_style))
+    story.append(Paragraph("11.5 Cronjobs (Datenbereinigung & Retry-Queue)", h2_style))
     story.append(Paragraph(
-        "• <b>public.cleanup_old_answers():</b> Löscht täglich um 3:00 Uhr alle Antworten, die älter als 90 Tage sind. "
-        "Dies schont Speicherressourcen und wahrt die Datensparsamkeit.<br/>"
-        "• <b>public.retry_failed_generations():</b> Wird alle 10 Minuten ausgeführt. Sucht in `failed_generations` nach "
+        "• <b>public.cleanup_old_answers():</b> Löscht täglich um 3:00 Uhr alle Antworten, die älter als 90 Tage sind.<br/>"
+        "• <b>public.retry_failed_generations():</b> Wird stündlich ausgeführt. Sucht in `failed_generations` nach "
         "Fehlversuchen und sendet mittels der PostgreSQL-Erweiterung <i>pg_net</i> einen neuen asynchronen HTTP-POST-Request "
         "an die Edge Function zur Fragengenerierung.",
         body_style
     ))
 
-    story.append(Paragraph("7.6 Meilenstein-Freischaltung: check_and_unlock_milestones()", h2_style))
+    story.append(Paragraph("11.6 Meilenstein-Freischaltung: check_and_unlock_milestones()", h2_style))
     story.append(Paragraph(
         "Ein vollautomatisches Daten-Auswertungssystem auf Datenbankebene. Um die historische Unvollständigkeit der Tabelle "
         "<code>answers</code> zu umgehen, erfasst das System alle Fortschritte über persistente Zähler-Felder in der Tabelle <code>profiles</code>. "
-        "Diese Felder werden automatisch über verschiedene Trigger gewartet:<br/>"
-        "• <b>Antworten & Habits:</b> <code>total_answers</code>, <code>morning_answers_count</code>, <code>night_answers_count</code>, <code>lunch_answers_count</code> und <code>last_minute_answers_count</code> werden bei jedem Antwort-Einfügen (Insert) oder Löschen (Delete) gepflegt (Zeitzone Berlin). Ein 2-Tage-Schwellenwert verhindert das Zurücksetzen bei der automatischen 90-Tage-Bereinigung.<br/>"
-        "• <b>Synchronität:</b> <code>time_sync_5min_count</code> und <code>time_sync_1min_count</code> erfassen zeitnahe Beantwortungen des Paars. <code>both_long_answers_count</code> trackt gleichzeitige detaillierte Freitext-Beantwortungen.<br/>"
-        "• <b>Kalender & Harmonie:</b> <code>answered_valentines</code>, <code>answered_new_years</code> fangen Feiertage ab. <code>perfect_rankings_count</code> und <code>perfect_match_days_count</code> zählen perfekte inhaltliche Übereinstimmungen.<br/>"
-        "• <b>Matches & Tiefe:</b> <code>total_matches</code> wird bei Übereinstimmungen inkrementiert. <code>long_answers_count</code> zählt Antworten &gt; 150 Zeichen.<br/>"
-        "• <b>Anstupser & Avatare:</b> <code>nudges_sent</code> und <code>avatar_change_count</code> werden über <code>BEFORE UPDATE</code>-Trigger erfasst.<br/>"
-        "• <b>Journal & Rebuilds:</b> <code>journal_views</code> wird via Client-RPC erhöht. <code>streaks_rebuilt</code> wird erhöht, wenn eine fortlaufende Antwortserie nach einem Abbruch wieder auf 7 Tage anwächst.<br/><br/>"
-        "Die Meilenstein-Prüfung bewertet alle 20 Metriken parallel und schaltet Auszeichnungen freischaltungsdatum-genau frei.",
+        "Diese Felder werden automatisch über verschiedene Trigger gewartet (inklusive der neuen Spalten für Feiertage).",
         body_style
     ))
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 8: WEB-PUSH & NOTIFICATION SERVER
+    # KAPITEL 12: WEB-PUSH & NOTIFICATION SERVER
     # ==========================================
-    story.append(Paragraph("8. Web-Push Notifications & Edge Function Integration", h1_style))
+    story.append(Paragraph("12. Web-Push Notifications & Edge Function Integration", h1_style))
     story.append(Paragraph(
         "Die PWA-Push-Infrastruktur nutzt Deno-basierte Supabase Edge Functions für kryptografisch gesicherte Benachrichtigungen.",
         body_style
     ))
 
-    story.append(Paragraph("8.1 Der Push-Notification-Dienst (send-push-notification)", h2_style))
+    story.append(Paragraph("12.1 Der Push-Notification-Dienst (send-push-notification)", h2_style))
     story.append(Paragraph(
-        "Dieser Deno-Dienst empfängt API-Requests vom Client und bereitet das Notification-Payload-JSON (Titel, Nachricht, Ziel-URL) vor. "
-        "Die eigentliche Übertragung erfolgt über das standardisierte Web-Push-Protokoll directly an den Push-Service des Empfänger-Browsers (z. B. Google FCM, Mozilla autopush).",
+        "Dieser Deno-Dienst empfängt API-Requests vom Client und bereitet das Payload-JSON vor. Die Übertragung "
+        "erfolgt über das standardisierte Web-Push-Protokoll direkt an den Push-Service des Empfänger-Browsers.",
         body_style
     ))
 
-    story.append(Paragraph("8.2 Kryptografische Absicherung (VAPID & AES-128-GCM)", h2_style))
+    story.append(Paragraph("12.2 Kryptografische Absicherung (VAPID & AES-128-GCM)", h2_style))
     story.append(Paragraph(
-        "Da Deno keine Node.js-Bibliotheken nativ unterstützt, wurde die Web-Push-Verschlüsselung vollständig über die Deno-interne "
-        "<b>Web Crypto API</b> realisiert:<br/>"
-        "1. <b>VAPID-Signierung (ES256):</b> Ein JSON Web Token (JWT) mit der Ziel-Audienz (Push-Endpoint des Browsers) und einer Ablaufzeit von 12 Stunden "
-        "wird mit dem privaten VAPID-Schlüssel (ECDSA P-256) signiert. Der öffentliche VAPID-Schlüssel wird als Header-Information mitgeschickt.<br/>"
-        "2. <b>Schlüsselaustausch (ECDH):</b> Die Edge Function generiert ein temporäres ECDH-Schlüsselpaar. Über das empfangene Client-Schlüsselpaar "
-        "(p256dh und auth) wird ein gemeinsames Geheimnis (Shared Secret) berechnet.<br/>"
-        "3. <b>Schlüsselableitung (HKDF):</b> Das System leitet über HKDF-SHA-256 den symmetrischen Content Encryption Key (CEK) und ein Nonce ab.<br/>"
-        "4. <b>Verschlüsselung (AES-128-GCM):</b> Die Payload wird verschlüsselt und als binärer Datenstrom gesendet. "
-        "Der Push-Service leitet die Nachricht an das Gerät weiter. Der lokale Service-Worker (<code>sw-push.js</code>) "
-        "entschlüsselt die Payload und zeigt den System-Toast an.",
+        "Die Push-Verschlüsselung wird vollständig über die Deno-interne Web Crypto API realisiert:<br/>"
+        "1. <b>VAPID-Signierung (ES256):</b> Ein JWT mit der Ziel-Audienz und Ablaufzeit von 12 Stunden wird mit dem privaten VAPID-Schlüssel (ECDSA P-256) signiert.<br/>"
+        "2. <b>Schlüsselaustausch (ECDH):</b> Deno generiert ein temporäres ECDH-Schlüsselpaar und berechnet über Diffie-Hellman-Schlüsselaustausch mit dem Client ein Shared Secret.<br/>"
+        "3. <b>Schlüsselableitung (HKDF):</b> Das System leitet den symmetrischen Content Encryption Key (CEK) und ein Nonce ab.<br/>"
+        "4. <b>Verschlüsselung (AES-128-GCM):</b> Die Payload wird verschlüsselt und als binärer Datenstrom gesendet.",
         body_style
     ))
     story.append(PageBreak())
 
     # ==========================================
-    # KAPITEL 9: SYSTEMDATENFLUSS
+    # KAPITEL 13: SYSTEMDATENFLUSS
     # ==========================================
-    story.append(Paragraph("9. Systemdatenfluss & Datenarchitektur", h1_style))
+    story.append(Paragraph("13. Systemdatenfluss & Datenarchitektur", h1_style))
     story.append(Paragraph(
         "Nachfolgend wird der typische Ablauf einer Interaktion visuell dargestellt, um das Zusammenspiel zwischen "
         "Frontend-Aktionen, Trigger-Prozessen und Hintergrund-Diensten zu verdeutlichen.",
@@ -723,7 +794,7 @@ CREATE TABLE public.unlocked_milestones (
         [
             Paragraph("4. Notification", table_text_bold),
             Paragraph("Edge Function", table_text),
-            Paragraph("Questions.tsx ruft 'send-push-notification' auf. VAPID verschlüsselte Push-Nachricht wird an Partner gesendet.", table_text)
+            Paragraph("Questions.tsx ruft 'send-push-notification' auf. VAPID-verschlüsselte Push-Nachricht wird an Partner gesendet.", table_text)
         ],
         [
             Paragraph("5. Auswertung", table_text_bold),
@@ -736,13 +807,13 @@ CREATE TABLE public.unlocked_milestones (
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#EAE5FF")),
         ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
     ]))
     story.append(t_flow)
-    story.append(Spacer(1, 15))
+    story.append(Spacer(1, 10))
 
-    story.append(Paragraph("9.1 Fazit", h2_style))
+    story.append(Paragraph("13.1 Fazit", h2_style))
     story.append(Paragraph(
         "Dank des Server-Driven UI-Prinzips, der server-seitigen Trigger für geschäftskritische Zustände (Streaks, Koppelungen) "
         "und der Auslagerung komplexer mathematischer Modelle in isolierte, bedarfsgesteuerte Edge Functions ist die Bisou App "
