@@ -179,7 +179,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     t_header_data = [
         [Paragraph("Bisou App", title_style)],
         [Paragraph("Das umfassende Handbuch & Technische Systemdokumentation", subtitle_style)],
-        [Paragraph("<b>Version:</b> 9.0 (Mobil-Optimiert) • <b>Datum:</b> 20. Juni 2026 • <b>Entwickler:</b> Benedikt S.", ParagraphStyle('MetaLine', parent=body_style, fontSize=8, textColor=text_muted))]
+        [Paragraph("<b>Version:</b> 9.0 (Mobil-Optimiert) • <b>Datum:</b> 1. Juni 2026 • <b>Entwickler:</b> Benedikt S.", ParagraphStyle('MetaLine', parent=body_style, fontSize=8, textColor=text_muted))]
     ]
     t_header = Table(t_header_data, colWidths=[505])
     t_header.setStyle(TableStyle([
