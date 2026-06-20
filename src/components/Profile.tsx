@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronLeft, ChevronRight, Trash2, Share2, Share, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3, Trophy, History, Sun, Moon, LogOut } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronLeft, ChevronRight, Trash2, Share2, Share, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3, Trophy, History, Sun, Moon, LogOut, FileText } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -1502,29 +1502,55 @@ export default function Profile({
               { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
               { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
               { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
+              { id: 'docs', label: 'Systemdokumentation (PDF)', icon: FileText, download: true, href: '/Bisou_App_Systemdokumentation.pdf' },
               { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
               { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => window.open('https://benelabs.de', '_blank') },
               { id: 'logout', label: 'Abmelden', icon: LogOut, action: onLogout },
               { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } }
-            ].map(item => (
-              <button 
-                key={item.id} 
-                onClick={item.action}
-                className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
-                  item.isDanger ? 'border-red-50 hover:border-red-200' : 'border-purple-50 hover:border-purple-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl ${item.isDanger ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-[var(--secondary)]'}`}>
-                    <item.icon className="w-4 h-4" />
+            ].map(item => {
+              const className = `w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
+                item.isDanger ? 'border-red-50 hover:border-red-200' : 'border-purple-50 hover:border-purple-200'
+              }`;
+
+              if (item.download) {
+                return (
+                  <a 
+                    key={item.id} 
+                    href={item.href}
+                    download="Bisou_App_Systemdokumentation.pdf"
+                    className={className}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                        <item.icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="text-[11px] font-black uppercase tracking-wide text-[#1F1939]">{item.label}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-[var(--secondary)]" />
+                  </a>
+                );
+              }
+
+              return (
+                <button 
+                  key={item.id} 
+                  onClick={item.action}
+                  className={className}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${item.isDanger ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-[var(--secondary)]'}`}>
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className={`text-[11px] font-black uppercase tracking-wide ${item.isDanger ? 'text-red-500' : 'text-[#1F1939]'}`}>{item.label}</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col items-start">
-                    <span className={`text-[11px] font-black uppercase tracking-wide ${item.isDanger ? 'text-red-500' : 'text-[#1F1939]'}`}>{item.label}</span>
-                  </div>
-                </div>
-                <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-400' : 'text-[var(--secondary)]'}`} />
-              </button>
-            ))}
+                  <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-400' : 'text-[var(--secondary)]'}`} />
+                </button>
+              );
+            })}
           </div>
         );
 
