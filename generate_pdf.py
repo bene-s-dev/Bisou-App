@@ -184,19 +184,19 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph("Inhaltsverzeichnis", ParagraphStyle('H1_Compact2', parent=h1_style, fontSize=11, spaceBefore=4, spaceAfter=5)))
     toc_data = [
         [Paragraph("<b>Teil I: Benutzerhandbuch & Anwender-Dokumentation</b>", table_text_bold), Paragraph("", table_text), Paragraph("<b>Seite</b>", table_text_bold)],
-        [Paragraph("1. Benutzerhandbuch", table_text_bold), Paragraph("Ausführliche Anwender-Dokumentation (Ritual, Fragentypen, Streak-Freeze, Score, Erfolge, Tagebuch, Themenauswahl).", table_text), Paragraph("3", table_text)],
+        [Paragraph("1. Benutzerhandbuch", table_text_bold), Paragraph("Ausführliche Anwender-Dokumentation (Ritual, Fragentypen, Streak-Freeze, Score, Erfolge, Tagebuch, Themenauswahl, Kopplung, Stupsen, Reset).", table_text), Paragraph("3", table_text)],
         
         [Paragraph("<b>Teil II: Technische Systemdokumentation</b>", table_text_bold), Paragraph("", table_text), Paragraph("<b>Seite</b>", table_text_bold)],
-        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("JSONB-Struktur, Gemini-Prompting, Failbacks, failed_generations retry-queue.", table_text), Paragraph("6", table_text)],
-        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Ablauf, LocalStorage quiz_progress, Serialisierungsformat und Signaturvalidierung.", table_text), Paragraph("7", table_text)],
-        [Paragraph("4. Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangkorrelation, WWE & normalisierter Bisou-Score.", table_text), Paragraph("8", table_text)],
-        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("Automatisches Einfrieren, check_and_freeze_streak, update_streak & history-Erhalt.", table_text), Paragraph("9", table_text)],
-        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Holiday-Trigger, und clientseitige local_seen-Deduplizierung.", table_text), Paragraph("10", table_text)],
-        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("announcements-Tabelle, gelesene Views, dynamic renderAnnouncementContent Bullet-Parser.", table_text), Paragraph("11", table_text)],
-        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS-Geräte.", table_text), Paragraph("12", table_text)],
-        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Themes (Hell/Dunkel), Fraunces/Jakarta-Typografie, float/float-in & flame wobble Keyframes.", table_text), Paragraph("13", table_text)],
-        [Paragraph("10. Datenbank-Schema & RLS Policies", table_text_bold), Paragraph("SQL DDL-Matrix der Tabellen (profiles, answers, streaks, failed_generations, milestones).", table_text), Paragraph("14", table_text)],
-        [Paragraph("11. PL/pgSQL RPC-Funktionen & Trigger", table_text_bold), Paragraph("Verknüpfung link_partners, unlink_partners, Cooldown-Antwort-Reset, Löschung & ntfy.", table_text), Paragraph("16", table_text)],
+        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("JSONB-Struktur, Gemini-Prompting, Failbacks, failed_generations retry-queue.", table_text), Paragraph("7", table_text)],
+        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Ablauf, LocalStorage quiz_progress, Serialisierungsformat und Signaturvalidierung.", table_text), Paragraph("8", table_text)],
+        [Paragraph("4. Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangkorrelation, WWE & normalisierter Bisou-Score.", table_text), Paragraph("9", table_text)],
+        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("Automatisches Einfrieren, check_and_freeze_streak, update_streak & history-Erhalt.", table_text), Paragraph("10", table_text)],
+        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Holiday-Trigger, und clientseitige local_seen-Deduplizierung.", table_text), Paragraph("11", table_text)],
+        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("announcements-Tabelle, gelesene Views, dynamic renderAnnouncementContent Bullet-Parser.", table_text), Paragraph("12", table_text)],
+        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS-Geräte.", table_text), Paragraph("13", table_text)],
+        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Themes (Hell/Dunkel), Fraunces/Jakarta-Typografie, float/float-in & flame wobble Keyframes.", table_text), Paragraph("14", table_text)],
+        [Paragraph("10. Datenbank-Schema & RLS Policies", table_text_bold), Paragraph("SQL DDL-Matrix der Tabellen (profiles, answers, streaks, failed_generations, milestones).", table_text), Paragraph("15", table_text)],
+        [Paragraph("11. PL/pgSQL RPC-Funktionen & Trigger", table_text_bold), Paragraph("Verknüpfung link_partners, unlink_partners, Cooldown-Antwort-Reset, Löschung & ntfy.", table_text), Paragraph("17", table_text)],
         [Paragraph("12. Web-Push Notifications & Edge Functions", table_text_bold), Paragraph("Push-Abonnements, Deno Web Crypto API, ES256 VAPID JWT, ECDH shared secret, AES-128-GCM.", table_text), Paragraph("18", table_text)],
         [Paragraph("13. Systemdatenfluss & Datenarchitektur", table_text_bold), Paragraph("Sequenzdiagramm-Matrix vom Client über Trigger bis hin zur Edge-Function & Web-Push.", table_text), Paragraph("19", table_text)],
     ]
@@ -314,6 +314,40 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "Um das tägliche Ritual abwechslungsreich zu gestalten, greift das System auf eine <b>deterministische 30-Tage-Rotation</b> mit insgesamt 90 völlig isolierten Beziehungsthemen zurück. "
         "Jeden Tag wählt das System vier unterschiedliche Themen für die vier Fragentypen aus (z.B. 'Romantik' für Dies-oder-Das, 'Finanzen' für das Ranking, 'Alltagsmacken' für den Freitext und 'Abenteuer' für Wer-würde-eher). "
         "Diese Themen dienen der Gemini-KI als direkte Leitlinien bei der Generierung der Fragen und sorgen für ein breites Spektrum an Themen über den Monat hinweg.",
+        body_style
+    ))
+    
+    story.append(Paragraph("1.9 Partner-Kopplung & Entkopplung", h2_style))
+    story.append(Paragraph(
+        "Die Bisou App ist für Paare konzipiert. Nach der Registrierung kann ein Benutzer einen einzigartigen, 6-stelligen Kopplungscode generieren und diesen an den Partner senden. "
+        "Durch Eingabe des Codes wird die bidirektionale Verbindung in der Datenbank über eine sichere RPC-Funktion hergestellt. "
+        "Sollte eine Verbindung getrennt werden (Entkopplung in den Einstellungen), werden alle aktiven Streaks und gemeinsamen Daten geschützt zurückgesetzt. "
+        "Eine erneute Kopplung startet den Beziehungszähler wieder bei null.",
+        body_style
+    ))
+
+    story.append(Paragraph("1.10 Das Anstupsen-System (Nudge)", h2_style))
+    story.append(Paragraph(
+        "Hat dein Partner die täglichen Fragen noch nicht beantwortet, kannst du ihn über das Dashboard stumm anstupsen (Nudge). "
+        "Dies sendet eine direkte Push-Benachrichtigung an das Gerät des Partners. "
+        "Um Missbrauch und Spamming zu verhindern, ist die Funktion mit einer automatischen Abkühlzeit (Cooldown) von 12 Stunden belegt, "
+        "die serverseitig über das Profil-Attribut <code>last_nudge_sent</code> erzwungen wird.",
+        body_style
+    ))
+
+    story.append(Paragraph("1.11 Antworten korrigieren (Reset)", h2_style))
+    story.append(Paragraph(
+        "Solltest du dich bei einer Antwort vertan haben, kannst du deine heutigen Antworten über die Funktion 'Antworten zurücksetzen' löschen und neu ausfüllen. "
+        "Da dies die Auswertung und eventuelle Streaks beeinflusst, ist diese Funktion mit einer <b>7-tägigen Sicherheits-Abkühlzeit (Cooldown)</b> versehen. "
+        "Ein Missbrauch zur wiederholten Manipulation von Antworten wird dadurch effektiv verhindert.",
+        body_style
+    ))
+
+    story.append(Paragraph("1.12 Profilbild-Verwaltung & PWA-Installation", h2_style))
+    story.append(Paragraph(
+        "Die Personalisierung umfasst einen integrierten Image Cropper, mit dem hochgeladene Profilbilder direkt in der App auf das kreisförmige Format zugeschnitten und komprimiert werden, bevor sie in den Supabase Storage hochgeladen werden.<br/><br/>"
+        "Als Progressive Web App (PWA) kann Bisou auf iOS und Android direkt als eigenständige App auf dem Startbildschirm installiert werden. "
+        "Sie läuft dadurch im Vollbildmodus ohne störende Browserleisten, lädt dank lokalem Service-Worker-Caching extrem schnell und ermöglicht zuverlässige Web-Push-Benachrichtigungen auch im Hintergrund.",
         body_style
     ))
     story.append(PageBreak())
