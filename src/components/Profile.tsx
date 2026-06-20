@@ -5,6 +5,7 @@ import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
 import StatsModal from './StatsModal';
+import StreakModal from './StreakModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
@@ -305,7 +306,9 @@ export default function Profile({
     createdAt: string | null;
     streak: number;
     partnerSince: string | null;
-  }>({ createdAt: null, streak: 0, partnerSince: null });
+    streakData: any;
+  }>({ createdAt: null, streak: 0, partnerSince: null, streakData: null });
+  const [showStreakModal, setShowStreakModal] = useState(false);
   const [systemStatus, setSystemStatus] = useState<{
     online: boolean | 'checking';
     latency: number | null;
@@ -579,7 +582,7 @@ export default function Profile({
 
           const [partnerRes, streakRes] = await Promise.all([
             supabase.from('profiles').select('created_at').eq('id', profile.partner_id).single(),
-            supabase.from('streaks').select('current_streak, last_answer_date, freeze_history').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
+            supabase.from('streaks').select('current_streak, last_answer_date, freeze_history, longest_streak, streak_history').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
           ]);
 
           if (partnerRes.data) {
@@ -591,7 +594,8 @@ export default function Profile({
             setPartnerDetails({
               createdAt: partnerRes.data.created_at,
               streak: streakVal,
-              partnerSince: null
+              partnerSince: null,
+              streakData: streakRes.data
             });
           }
         } catch (err) {
@@ -1200,56 +1204,61 @@ export default function Profile({
             </h2>
             {profile?.partner_id ? (
               <div className="w-full flex flex-col gap-2 relative z-10">
-                <div className="relative bg-white border-2 border-purple-50 rounded-[1.8rem] p-4 flex flex-col gap-4 shadow-sm">
-                  <button
-                    onClick={handleNudge}
-                    disabled={isNudging}
-                    className="absolute top-4 right-4 bg-purple-50 hover:bg-purple-100 text-[var(--secondary)] active:scale-95 disabled:opacity-50 transition-all rounded-full p-1.5 px-3 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider border border-purple-100/50 shadow-sm"
-                  >
-                    {isNudging && (
-                      <div className="w-3 h-3 border-2 border-[var(--secondary)] border-t-transparent rounded-full animate-spin" />
-                    )}
-                    <span>Anstupsen 👋</span>
-                  </button>
-                  <div className="flex items-center gap-3 pr-24">
-                    <div className="w-14 h-14 rounded-[1.2rem] bg-purple-50 flex items-center justify-center border-2 border-white shadow-md overflow-hidden relative">
-                      {partnerProfile?.avatar_url ? (
-                        <img src={partnerProfile.avatar_url} alt="P" className="w-full h-full object-cover" />
-                      ) : (
-                        <UserIcon className="w-6 h-6 text-[var(--secondary)]" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-black text-[#1F1939] truncate">{partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Dein Partner'}</h3>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
-                        <span className="text-[12px] font-black text-orange-600 leading-none">{partnerDetails.streak}</span>
+                <div className="relative bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col gap-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-[1rem] bg-purple-50 flex items-center justify-center border-2 border-white shadow-md overflow-hidden relative shrink-0">
+                        {partnerProfile?.avatar_url ? (
+                          <img src={partnerProfile.avatar_url} alt="P" className="w-full h-full object-cover" />
+                        ) : (
+                          <UserIcon className="w-5 h-5 text-[var(--secondary)]" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-black text-[#1F1939] truncate leading-tight">
+                          {partnerProfile?.display_name ? capitalizeName(partnerProfile.display_name) : 'Dein Partner'}
+                        </h3>
+                        <p className="text-[10px] font-bold text-[var(--muted)] leading-tight mt-0.5">
+                          Verbunden seit: {getDaysConnected()} {getDaysConnected() === 1 ? 'Tag' : 'Tagen'}
+                        </p>
                       </div>
                     </div>
+                    
+                    <button
+                      onClick={handleNudge}
+                      disabled={isNudging}
+                      className="bg-purple-50 hover:bg-purple-100 text-[var(--secondary)] active:scale-95 disabled:opacity-50 transition-all rounded-full py-1.5 px-3 flex items-center gap-1 text-[9px] font-black uppercase tracking-wider border border-purple-100/50 shadow-sm shrink-0"
+                    >
+                      {isNudging && (
+                        <div className="w-2.5 h-2.5 border-2 border-[var(--secondary)] border-t-transparent rounded-full animate-spin" />
+                      )}
+                      <span>Anstupsen 👋</span>
+                    </button>
                   </div>
                   
-                  <div className="bg-purple-50/50 p-2.5 rounded-2xl border border-purple-100 flex flex-col items-center text-center gap-0.5">
-                    <span className="text-[7px] font-black text-[var(--muted)] uppercase tracking-widest">Auf Bisou verbunden seit:</span>
-                    <span className="text-[11px] font-black text-[var(--secondary)]">
-                      {getDaysConnected()} {getDaysConnected() === 1 ? 'Tag' : 'Tagen'}
-                    </span>
-                  </div>
+                  <div className="grid grid-cols-3 gap-2 mt-1">
+                    <button 
+                      onClick={() => setShowStreakModal(true)}
+                      className="py-2.5 px-2 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-600 rounded-2xl transition-all active:scale-95 shadow-sm"
+                    >
+                      <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                      <span>Streak ({partnerDetails.streak})</span>
+                    </button>
 
-                  <div className="flex items-center justify-center gap-2">
                     <button 
                       onClick={() => setShowStatsModal(true)}
-                      className="py-2.5 px-4 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-[var(--secondary)] hover:bg-[#8179E0] text-white rounded-2xl transition-all active:scale-95 shadow-sm shrink-0"
+                      className="py-2.5 px-2 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-purple-50 border border-purple-200 text-[var(--secondary)] rounded-2xl transition-all active:scale-95 shadow-sm"
                     >
-                      <BarChart3 className="w-3.5 h-3.5 text-white" />
-                      <span className="text-white">Bisou-Score</span>
+                      <BarChart3 className="w-3.5 h-3.5 text-[var(--secondary)] shrink-0" />
+                      <span>Score</span>
                     </button>
                     
                     <button 
                       onClick={() => setShowMilestonesModal(true)}
-                      className="py-2.5 px-4 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-400 to-[var(--secondary)] text-white rounded-2xl transition-all active:scale-95 shadow-sm shrink-0"
+                      className="py-2.5 px-2 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-purple-50 border border-purple-200 text-[var(--secondary)] rounded-2xl transition-all active:scale-95 shadow-sm"
                     >
-                      <Trophy className="w-3.5 h-3.5 text-white" />
-                      <span className="text-white">Erfolge</span>
+                      <Trophy className="w-3.5 h-3.5 text-[var(--secondary)] shrink-0" />
+                      <span>Erfolge</span>
                     </button>
                   </div>
                 </div>
@@ -2132,6 +2141,12 @@ export default function Profile({
         loadingMilestones={loadingMilestones}
         highlightId={highlightedMilestoneId}
         shouldScroll={mustScrollToMilestone}
+      />
+
+      <StreakModal 
+        isOpen={showStreakModal}
+        onClose={() => setShowStreakModal(false)}
+        streakData={partnerDetails.streakData}
       />
 
       <input 
