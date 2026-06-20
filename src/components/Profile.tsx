@@ -107,7 +107,7 @@ function MilestonesModal({
         {/* Achievements Grid */}
         <div 
           ref={containerRef} 
-          className="flex-1 min-h-0 grid grid-cols-1 gap-3 overflow-y-auto px-2 py-2 security-scrollbar pb-4 touch-pan-y overscroll-contain"
+          className="flex-1 min-h-0 grid grid-cols-1 gap-3 overflow-y-auto px-3.5 py-2 security-scrollbar pb-4 touch-pan-y overscroll-contain"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {loadingMilestones && milestones.length === 0 ? (
@@ -132,7 +132,7 @@ function MilestonesModal({
                 <div 
                   key={m.id} 
                   data-milestone-id={m.id}
-                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all duration-700 relative ${
+                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all duration-700 relative mx-0.5 ${
                     isHighlighted 
                       ? 'border-amber-400 bg-amber-50/30 shadow-[0_0_20px_rgba(251,191,36,0.6)] scale-[1.03] z-[50] ring-2 ring-amber-400/40' 
                       : unlocked 
