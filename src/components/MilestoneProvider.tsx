@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
@@ -22,6 +22,9 @@ export const MilestoneProvider: React.FC<{
   const [toastTimeLeft, setToastTimeLeft] = useState(10000);
   const [toastPaused, setToastPaused] = useState(false);
   const navigate = useNavigate();
+
+  const isFirstCheck = useRef(true);
+  const lastUserId = useRef<string | undefined>(undefined);
 
   const currentNewMilestone = newMilestones[0];
 
@@ -76,6 +79,11 @@ export const MilestoneProvider: React.FC<{
   const checkMilestones = useCallback(async () => {
     if (!userId || !partnerId) return;
 
+    if (userId !== lastUserId.current) {
+      lastUserId.current = userId;
+      isFirstCheck.current = true;
+    }
+
     try {
       // Fetch user's unlocked milestones that haven't been seen yet
       const { data: umData, error: umError } = await supabase
@@ -86,10 +94,26 @@ export const MilestoneProvider: React.FC<{
 
       if (umError || !umData) return;
 
+      const wasFirstCheck = isFirstCheck.current;
+      isFirstCheck.current = false;
+
       if (umData.length > 0) {
         // Sort by unlocked_at ascending so we show them in order
         umData.sort((a, b) => new Date(a.unlocked_at).getTime() - new Date(b.unlocked_at).getTime());
         
+        if (wasFirstCheck) {
+          // Silently mark these past milestones as seen in the database so they don't prompt next time
+          const ids = umData.map(m => m.id);
+          const { error: updateError } = await supabase
+            .from('unlocked_milestones')
+            .update({ is_seen: true })
+            .in('id', ids);
+          if (updateError) {
+            console.error("Error marking past milestones as seen:", updateError);
+          }
+          return;
+        }
+
         setNewMilestones(prev => {
           const existingIds = prev.map(m => m.id);
           const filtered = umData.filter(um => !existingIds.includes(um.id));
