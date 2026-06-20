@@ -570,20 +570,22 @@ export default function Profile({
     if (activeTab === 'partner' && profile?.partner_id) {
       const fetchPartnerDetails = async () => {
         try {
+          const dayKey = getDailyKey();
+          try {
+            await supabase.rpc('check_and_freeze_streak', { p_today: dayKey });
+          } catch (rpcErr) {
+            console.error("Failed to run check_and_freeze_streak RPC:", rpcErr);
+          }
+
           const [partnerRes, streakRes] = await Promise.all([
             supabase.from('profiles').select('created_at').eq('id', profile.partner_id).single(),
-            supabase.from('streaks').select('current_streak, last_answer_date').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
+            supabase.from('streaks').select('current_streak, last_answer_date, freeze_history').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
           ]);
 
           if (partnerRes.data) {
-            const dayKey = getDailyKey();
             let streakVal = streakRes.data?.current_streak || 0;
-            if (streakVal > 0 && !isStreakActive(streakRes.data?.last_answer_date, dayKey)) {
+            if (streakVal > 0 && !isStreakActive(streakRes.data?.last_answer_date, dayKey, streakRes.data?.freeze_history)) {
               streakVal = 0;
-              // Reset broken streak in db
-              supabase.from('streaks').update({ current_streak: 0 }).eq('user_id', profile.partner_id).eq('partner_id', profile.id).then(({ error }) => {
-                if (error) console.error("Error resetting broken partner streak in db:", error);
-              });
             }
 
             setPartnerDetails({

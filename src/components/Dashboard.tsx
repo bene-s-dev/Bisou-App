@@ -34,6 +34,7 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
   const monthName = viewDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' });
 
   const history = streakData?.streak_history || [];
+  const freezes = streakData?.freeze_history || [];
   
   const isDateActive = (day: number) => {
     const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
@@ -42,6 +43,15 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
     const date = String(d.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${date}`;
     return history.includes(dateStr);
+  };
+
+  const isDateFrozen = (day: number) => {
+    const d = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${date}`;
+    return freezes.includes(dateStr);
   };
 
   return createPortal(
@@ -77,10 +87,27 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const day = i + 1;
             const active = isDateActive(day);
+            const frozen = isDateFrozen(day);
             return (
-              <div key={day} className={`aspect-square rounded-xl flex items-center justify-center relative transition-all ${active ? 'bg-orange-50 border-2 border-orange-100' : 'bg-gray-50 border-2 border-transparent'}`}>
-                <span className={`text-[10px] font-black ${active ? 'text-orange-500' : 'text-[#8E89AA]'}`}>{day}</span>
-                {active && <Flame className="w-4 h-4 text-orange-500 fill-orange-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />}
+              <div key={day} className={`aspect-square rounded-xl flex items-center justify-center relative transition-all ${
+                frozen 
+                  ? 'bg-blue-50 border-2 border-blue-100' 
+                  : active 
+                    ? 'bg-orange-50 border-2 border-orange-100' 
+                    : 'bg-gray-50 border-2 border-transparent'
+              }`}>
+                <span className={`text-[10px] font-black ${
+                  frozen 
+                    ? 'text-blue-500' 
+                    : active 
+                      ? 'text-orange-500' 
+                      : 'text-[#8E89AA]'
+                }`}>{day}</span>
+                {frozen ? (
+                  <Flame className="w-4 h-4 text-blue-500 fill-blue-500 absolute -top-1.5 -right-1.5 drop-shadow-sm animate-pulse" />
+                ) : active ? (
+                  <Flame className="w-4 h-4 text-orange-500 fill-orange-500 absolute -top-1.5 -right-1.5 drop-shadow-sm" />
+                ) : null}
               </div>
             );
           })}
@@ -92,6 +119,10 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
             {streakData?.longest_streak || 0} {(streakData?.longest_streak || 0) === 1 ? 'TAG' : 'TAGE'}
           </p>
         </div>
+        
+        <p className="text-[9px] font-bold text-[var(--muted)] text-center leading-relaxed mt-4 px-2">
+          ❄️ Deine Serie wird 2x im Monat automatisch eingefroren, wenn du einen Tag vergisst. Gefrorene Tage werden mit einer blauen Flamme markiert.
+        </p>
       </div>
     </div>,
     document.body
@@ -233,6 +264,26 @@ export default function Dashboard({
       partnerTime: other && other.created_at ? new Date(other.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : null
     };
   }, [dashboardData, partnerId]);
+
+  const yesterdayKey = useMemo(() => {
+    const parts = dayKey.split('-');
+    const date = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    date.setDate(date.getDate() - 1);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, [dayKey]);
+
+  const isMyStreakFrozen = useMemo(() => {
+    const freezes = myStreak?.freeze_history || [];
+    return freezes.includes(yesterdayKey) && myStreak?.last_answer_date === yesterdayKey;
+  }, [myStreak, yesterdayKey]);
+
+  const isPartnerStreakFrozen = useMemo(() => {
+    const freezes = partnerStreak?.freeze_history || [];
+    return freezes.includes(yesterdayKey) && partnerStreak?.last_answer_date === yesterdayKey;
+  }, [partnerStreak, yesterdayKey]);
 
   const deleteMyOwn = async () => {
     showConfirm(
@@ -393,10 +444,16 @@ export default function Dashboard({
                 {/* Partner Flame Pill (Bottom Left, slightly overlapping) */}
                 <div 
                   onClick={() => hasPartner && setShowStreakModal('partner')}
-                  className={`absolute bottom-0 right-[80%] z-30 flex items-center gap-[3px] px-1.5 py-[2px] bg-orange-50 border border-orange-200 rounded-full transition-all shadow-sm ${hasPartner ? 'active:scale-95 cursor-pointer hover:bg-orange-100' : 'opacity-40'}`}
+                  className={`absolute bottom-0 right-[80%] z-30 flex items-center gap-[3px] px-1.5 py-[2px] rounded-full transition-all shadow-sm ${
+                    isPartnerStreakFrozen 
+                      ? 'bg-blue-50 border border-blue-200 hover:bg-blue-100' 
+                      : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
+                  } ${hasPartner ? 'active:scale-95 cursor-pointer' : 'opacity-40'}`}
                 >
-                  <span className="text-[11px] font-black text-orange-600 leading-none">{hasPartner ? (partnerStreak?.current_streak || 0) : 0}</span>
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
+                  <span className={`text-[11px] font-black leading-none ${isPartnerStreakFrozen ? 'text-blue-600' : 'text-orange-600'}`}>
+                    {hasPartner ? (partnerStreak?.current_streak || 0) : 0}
+                  </span>
+                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isPartnerStreakFrozen ? 'text-blue-500 fill-blue-500' : 'text-orange-500 fill-orange-500'}`} />
                 </div>
               </div>
 
@@ -411,10 +468,16 @@ export default function Dashboard({
                 {/* User Flame Pill (Bottom Right, slightly overlapping) */}
                 <div 
                   onClick={() => setShowStreakModal('user')}
-                  className="absolute bottom-0 left-[80%] z-30 flex items-center gap-[3px] px-1.5 py-[2px] bg-orange-50 border border-orange-200 rounded-full active:scale-95 cursor-pointer hover:bg-orange-100 transition-all shadow-sm"
+                  className={`absolute bottom-0 left-[80%] z-30 flex items-center gap-[3px] px-1.5 py-[2px] rounded-full active:scale-95 cursor-pointer transition-all shadow-sm ${
+                    isMyStreakFrozen
+                      ? 'bg-blue-50 border border-blue-200 hover:bg-blue-100'
+                      : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
+                  }`}
                 >
-                  <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
-                  <span className="text-[11px] font-black text-orange-600 leading-none">{myStreak?.current_streak || 0}</span>
+                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isMyStreakFrozen ? 'text-blue-500 fill-blue-500' : 'text-orange-500 fill-orange-500'}`} />
+                  <span className={`text-[11px] font-black leading-none ${isMyStreakFrozen ? 'text-blue-600' : 'text-orange-600'}`}>
+                    {myStreak?.current_streak || 0}
+                  </span>
                 </div>
               </div>
             </div>

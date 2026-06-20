@@ -80,7 +80,11 @@ export function getTimeUntilReset(): { hours: number; minutes: number; seconds: 
  * Checks if a streak is active based on the last answer date.
  * A streak is active if the last answer was submitted today or yesterday (relative to CET day reset).
  */
-export function isStreakActive(lastAnswerDate: string | null | undefined, todayKey: string): boolean {
+export function isStreakActive(
+  lastAnswerDate: string | null | undefined, 
+  todayKey: string,
+  freezeHistory?: string[]
+): boolean {
   if (!lastAnswerDate) return false;
   if (lastAnswerDate === todayKey) return true;
   
@@ -92,5 +96,11 @@ export function isStreakActive(lastAnswerDate: string | null | undefined, todayK
   const day = String(date.getDate()).padStart(2, '0');
   const yesterdayKey = `${year}-${month}-${day}`;
   
-  return lastAnswerDate === yesterdayKey;
+  if (lastAnswerDate === yesterdayKey) return true;
+
+  if (freezeHistory && Array.isArray(freezeHistory)) {
+    return freezeHistory.includes(yesterdayKey);
+  }
+
+  return false;
 }
