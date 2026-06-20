@@ -27,6 +27,19 @@ interface DashboardProps {
 function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose: () => void, streakData: any }) {
   const [viewDate, setViewDate] = useState(new Date());
   
+  const freezesUsedThisMonth = useMemo(() => {
+    const freezes = streakData?.freeze_history || [];
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    return freezes.filter((dateStr: string) => {
+      const d = new Date(dateStr);
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
+    }).length;
+  }, [streakData]);
+
+  const freezesRemaining = Math.max(0, 2 - freezesUsedThisMonth);
+
   if (!isOpen) return null;
 
   const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
@@ -113,11 +126,22 @@ function StreakModal({ isOpen, onClose, streakData }: { isOpen: boolean, onClose
           })}
         </div>
 
-        <div className="bg-purple-50 rounded-3xl p-6 text-center border-2 border-purple-100">
-          <p className="text-[10px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Längster Streak</p>
-          <p className="text-2xl font-black text-[var(--secondary)]">
-            {streakData?.longest_streak || 0} {(streakData?.longest_streak || 0) === 1 ? 'TAG' : 'TAGE'}
-          </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-purple-50 rounded-3xl p-5 text-center border-2 border-purple-100 flex flex-col justify-center">
+            <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Längster Streak</p>
+            <p className="text-xl font-black text-[var(--secondary)]">
+              {streakData?.longest_streak || 0} {(streakData?.longest_streak || 0) === 1 ? 'TAG' : 'TAGE'}
+            </p>
+          </div>
+          <div className="bg-blue-50 rounded-3xl p-5 text-center border-2 border-blue-100 flex flex-col justify-center items-center">
+            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1">Streak Freeze</p>
+            <div className="flex items-center gap-1.5 justify-center mt-0.5">
+              <Flame className="w-5 h-5 text-blue-500 fill-blue-500 animate-pulse" />
+              <p className="text-xl font-black text-blue-600">
+                {freezesRemaining} übrig
+              </p>
+            </div>
+          </div>
         </div>
         
         <p className="text-[9px] font-bold text-[var(--muted)] text-center leading-relaxed mt-4 px-2">
