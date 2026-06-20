@@ -247,7 +247,7 @@ body.modal-open #root {
   }
 
   .status-pill { 
-    @apply inline-flex items-center gap-2.5 px-4 py-2 rounded-full font-black text-[10px] uppercase tracking-wider transition-all;
+    @apply inline-flex items-center gap-2.5 px-4 py-2 rounded-full font-black text-[10px] transition-all;
   }
 
   .pill-green { 
