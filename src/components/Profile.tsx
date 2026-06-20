@@ -107,7 +107,7 @@ function MilestonesModal({
         {/* Achievements Grid */}
         <div 
           ref={containerRef} 
-          className="flex-1 min-h-0 grid grid-cols-1 gap-3 overflow-y-auto px-2 py-2 security-scrollbar pb-4 touch-pan-y overscroll-contain"
+          className="flex-1 min-h-0 grid grid-cols-1 gap-3 overflow-y-auto px-4 py-2 security-scrollbar pb-4 touch-pan-y overscroll-contain"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
           {loadingMilestones && milestones.length === 0 ? (
@@ -132,9 +132,9 @@ function MilestonesModal({
                 <div 
                   key={m.id} 
                   data-milestone-id={m.id}
-                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all duration-700 ${
+                  className={`border rounded-2xl p-3 flex items-center gap-3 transition-all duration-700 mx-1.5 ${
                     isHighlighted 
-                      ? 'border-amber-400 bg-amber-50/30 shadow-[0_0_20px_rgba(251,191,36,0.4)] scale-[1.03] z-10 ring-2 ring-amber-400/20' 
+                      ? 'border-amber-400 bg-amber-50/30 shadow-[0_0_20px_rgba(251,191,36,0.55)] scale-[1.03] z-10 ring-2 ring-amber-400/35' 
                       : unlocked 
                         ? 'border-purple-100 bg-purple-50/5' 
                         : 'border-purple-50/20 opacity-40 grayscale-[0.5]'
