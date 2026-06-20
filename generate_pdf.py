@@ -911,14 +911,7 @@ CREATE TABLE public.push_subscriptions (
     story.append(t_flow)
     story.append(Spacer(1, 10))
 
-    story.append(Paragraph("13.1 Fazit", h2_style))
-    story.append(Paragraph(
-        "Dank des Server-Driven UI-Prinzips, der server-seitigen Trigger für geschäftskritische Zustände (Streaks, Koppelungen) "
-        "und der Auslagerung komplexer mathematischer Modelle in isolierte, bedarfsgesteuerte Edge Functions ist die Bisou App "
-        "extrem ausfallsicher, performant und leicht erweiterbar. Alle Kernkomponenten arbeiten autark und greifen über "
-        "sichere RLS-Policing-Mechanismen ineinander.",
-        body_style
-    ))
+
 
     # Dokument generieren
     doc.build(story, canvasmaker=NumberedCanvas)
