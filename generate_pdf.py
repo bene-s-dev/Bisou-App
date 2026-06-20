@@ -33,25 +33,27 @@ class NumberedCanvas(canvas.Canvas):
 
     def draw_page_number(self, page_count):
         if self._pageNumber == 1:
-            return  # Cover-Seite / Seite 1 ohne Kopf-/Fußzeile
+            return  # Seite 1 ohne Kopf-/Fußzeile
         
         self.saveState()
-        self.setFont("Helvetica-Bold", 8)
-        self.setFillColor(colors.HexColor("#4F46E5"))
+        self.setFont("Helvetica-Bold", 9)
+        self.setFillColor(colors.HexColor("#5F27CD"))
         
         # Kopfzeile
-        self.drawString(24, 822, "Bisou App - Handbuch & Technische Systemdokumentation")
-        self.setStrokeColor(colors.HexColor("#DED9FF"))
-        self.setLineWidth(0.5)
-        self.line(24, 816, 366, 816)
+        self.drawString(45, 805, "Bisou App - Handbuch & Technische Systemdokumentation")
+        self.setStrokeColor(colors.HexColor("#5F27CD"))
+        self.setLineWidth(1)
+        self.line(45, 795, 550, 795)
         
         # Fußzeile
-        self.setFont("Helvetica", 7.5)
-        self.setFillColor(colors.HexColor("#3F3A5A"))
+        self.setFont("Helvetica", 9)
+        self.setFillColor(colors.HexColor("#2F3542"))
         page_text = f"Seite {self._pageNumber} von {page_count}"
-        self.drawRightString(366, 16, page_text)
-        self.drawString(24, 16, "Bisou App • Benutzerhandbuch & Spezifikations-Dokument")
-        self.line(24, 24, 366, 24)
+        self.drawRightString(550, 35, page_text)
+        self.drawString(45, 35, "Bisou App • Handbuch & Spezifikations-Dokument")
+        self.setStrokeColor(colors.HexColor("#FF4757"))
+        self.setLineWidth(0.5)
+        self.line(45, 48, 550, 48)
         
         self.restoreState()
 
@@ -62,47 +64,47 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     # Ensure public folder exists
     os.makedirs(os.path.join(current_dir, "public"), exist_ok=True)
     
-    # Mobile-optimized: 390x844 (9:19.5 aspect ratio), margins of 24
-    # Printable area: 342pt width
+    # Printable area: 505pt width (margins reduced to 45pt for better mobile flow and breathing room)
     doc = SimpleDocTemplate(
         public_path,
-        pagesize=(390, 844),
-        rightMargin=24,
-        leftMargin=24,
-        topMargin=36,
-        bottomMargin=36
+        pagesize=A4,
+        rightMargin=45,
+        leftMargin=45,
+        topMargin=60,
+        bottomMargin=60
     )
 
     styles = getSampleStyleSheet()
     
-    # Vibrant Colors (Kräftige Farben)
-    primary = colors.HexColor("#E1306C")      # Vibrant Magenta
-    secondary = colors.HexColor("#4F46E5")    # Vibrant Indigo
-    text_main = colors.HexColor("#0F0C20")    # Deep Dark Violet
-    text_muted = colors.HexColor("#3F3A5A")   # Rich Slate/Purple-Grey
-    bg_light = colors.HexColor("#F3F0FF")     # Light purple tinted background
+    # Strong, vibrant brand colors
+    primary = colors.HexColor("#FF4757")   # Vibrant Red/Rose
+    secondary = colors.HexColor("#5F27CD") # Vibrant Purple/Violet
+    text_main = colors.HexColor("#2F3542") # Dark Slate Gray (for high contrast)
+    text_muted = colors.HexColor("#57606F")# Slate Gray
+    bg_light = colors.HexColor("#F1F2F6")  # Light cool gray
+    accent_box = colors.HexColor("#FFEAEF")# Vibrant Rose light tint
     
-    # Custom styles optimized for mobile readability
+    # Mobile-optimized styles (larger sizes and line spacing)
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=20,
-        leading=24,
-        textColor=text_main,
+        fontSize=24,
+        leading=28,
+        textColor=secondary,
         alignment=TA_LEFT,
-        spaceAfter=5
+        spaceAfter=6
     )
     
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
-        fontName='Helvetica',
+        fontName='Helvetica-Bold',
         fontSize=10,
         leading=13,
-        textColor=secondary,
+        textColor=primary,
         alignment=TA_LEFT,
-        spaceAfter=10
+        spaceAfter=12
     )
     
     h1_style = ParagraphStyle(
@@ -111,8 +113,8 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         fontName='Helvetica-Bold',
         fontSize=13,
         leading=16,
-        textColor=text_main,
-        spaceBefore=14,
+        textColor=secondary,
+        spaceBefore=16,
         spaceAfter=6,
         keepWithNext=True
     )
@@ -121,11 +123,11 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'H2',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=10.5,
-        leading=13,
-        textColor=secondary,
-        spaceBefore=8,
-        spaceAfter=4,
+        fontSize=11,
+        leading=14,
+        textColor=primary,
+        spaceBefore=10,
+        spaceAfter=5,
         keepWithNext=True
     )
     
@@ -133,28 +135,28 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'Body',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=9,
-        leading=12.5,
-        textColor=text_muted,
-        spaceAfter=4
+        fontSize=9.5,
+        leading=13.5,
+        textColor=text_main,
+        spaceAfter=5
     )
 
     code_style = ParagraphStyle(
         'Code',
         parent=styles['Normal'],
-        fontName='Courier',
-        fontSize=6.0,
-        leading=8.0,
-        textColor=colors.HexColor("#2d3748"),
-        spaceAfter=4
+        fontName='Courier-Bold',
+        fontSize=8,
+        leading=10.5,
+        textColor=colors.HexColor("#1e293b"),
+        spaceAfter=5
     )
     
     table_text_bold = ParagraphStyle(
         'TableTextBold',
         parent=styles['Normal'],
         fontName='Helvetica-Bold',
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=8,
+        leading=10,
         textColor=text_main
     )
 
@@ -162,161 +164,86 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         'TableText',
         parent=styles['Normal'],
         fontName='Helvetica',
-        fontSize=7.0,
-        leading=9.0,
+        fontSize=7.5,
+        leading=9.5,
         textColor=text_muted
     )
 
     story = []
 
     # ==========================================
-    # SEITE 1: TITEL & INHALTSVERZEICHNIS
+    # SEITE 1: TITEL & AUSFÜHRLICHES BENUTZERHANDBUCH
     # ==========================================
     
-    # 1. Titel-Header
-    story.append(Paragraph("Bisou App", title_style))
-    story.append(Paragraph("Vollständiges Anwender-Handbuch & Technische Systemarchitektur", subtitle_style))
-    
-    meta_line = "<b>Version:</b> 8.0 (Aktualisiert) • <b>Erstellt am:</b> 1. Juni 2026 • <b>Entwickler:</b> Benedikt S. • <b>Tech-Stack:</b> React, PWA, Supabase, Deno"
-    story.append(Paragraph(meta_line, ParagraphStyle('MetaLine', parent=body_style, fontSize=7.5, textColor=secondary, spaceAfter=15)))
-    
-    # 2. Inhaltsverzeichnis (TOC)
-    story.append(Paragraph("Inhaltsverzeichnis", ParagraphStyle('H1_Compact2', parent=h1_style, fontSize=11, spaceBefore=4, spaceAfter=5)))
-    toc_data = [
-        [Paragraph("<b>Teil I: Benutzerhandbuch & Anwender-Dokumentation</b>", table_text_bold), Paragraph("", table_text), Paragraph("<b>Seite</b>", table_text_bold)],
-        [Paragraph("1. Benutzerhandbuch", table_text_bold), Paragraph("Ausführliche Anwender-Dokumentation (Ritual, Fragentypen, Streak-Freeze, Score, Erfolge, Tagebuch, Themenauswahl).", table_text), Paragraph("2", table_text)],
-        
-        [Paragraph("<b>Teil II: Technische Systemdokumentation</b>", table_text_bold), Paragraph("", table_text), Paragraph("<b>Seite</b>", table_text_bold)],
-        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("JSONB-Struktur, Gemini-Prompting, Failbacks, failed_generations retry-queue.", table_text), Paragraph("5", table_text)],
-        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Ablauf, LocalStorage quiz_progress, Serialisierungsformat und Signaturvalidierung.", table_text), Paragraph("6", table_text)],
-        [Paragraph("4. Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangkorrelation, WWE & normalisierter Bisou-Score.", table_text), Paragraph("7", table_text)],
-        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("Automatisches Einfrieren, check_and_freeze_streak, update_streak & history-Erhalt.", table_text), Paragraph("8", table_text)],
-        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Holiday-Trigger, und clientseitige local_seen-Deduplizierung.", table_text), Paragraph("9", table_text)],
-        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("announcements-Tabelle, gelesene Views, dynamic renderAnnouncementContent Bullet-Parser.", table_text), Paragraph("10", table_text)],
-        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS-Geräte.", table_text), Paragraph("11", table_text)],
-        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Themes (Hell/Dunkel), Fraunces/Jakarta-Typografie, float/float-in & flame wobble Keyframes.", table_text), Paragraph("12", table_text)],
-        [Paragraph("10. Datenbank-Schema & RLS Policies", table_text_bold), Paragraph("SQL DDL-Matrix der Tabellen (profiles, answers, streaks, failed_generations, milestones).", table_text), Paragraph("13", table_text)],
-        [Paragraph("11. PL/pgSQL RPC-Funktionen & Trigger", table_text_bold), Paragraph("Verknüpfung link_partners, unlink_partners, Cooldown-Antwort-Reset, Löschung & ntfy.", table_text), Paragraph("15", table_text)],
-        [Paragraph("12. Web-Push Notifications & Edge Functions", table_text_bold), Paragraph("Push-Abonnements, Deno Web Crypto API, ES256 VAPID JWT, ECDH shared secret, AES-128-GCM.", table_text), Paragraph("17", table_text)],
-        [Paragraph("13. Systemdatenfluss & Datenarchitektur", table_text_bold), Paragraph("Sequenzdiagramm-Matrix vom Client über Trigger bis hin zur Edge-Function & Web-Push.", table_text), Paragraph("18", table_text)],
+    # 1. Titel-Header mit farbigem Akzent-Balken
+    t_header_data = [
+        [Paragraph("Bisou App", title_style)],
+        [Paragraph("Das umfassende Handbuch & Technische Systemdokumentation", subtitle_style)],
+        [Paragraph("<b>Version:</b> 9.0 (Mobil-Optimiert) • <b>Datum:</b> 20. Juni 2026 • <b>Entwickler:</b> Benedikt S.", ParagraphStyle('MetaLine', parent=body_style, fontSize=8, textColor=text_muted))]
     ]
-    t_toc = Table(toc_data, colWidths=[100, 215, 27])
+    t_header = Table(t_header_data, colWidths=[505])
+    t_header.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), bg_light),
+        ('PADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,2), (-1,2), 12),
+        ('LINELEFT', (0,0), (0,-1), 4, secondary),
+    ]))
+    story.append(t_header)
+    story.append(Spacer(1, 10))
+    
+    # Inhaltsverzeichnis (TOC) - Benutzerhandbuch ist nun offizieller Teil des TOC
+    story.append(Paragraph("System-Inhaltsverzeichnis", ParagraphStyle('H1_TOC', parent=h1_style, fontSize=11, spaceBefore=4, spaceAfter=4)))
+    toc_data = [
+        [Paragraph("<b>Abschnitt / Kapitel</b>", table_text_bold), Paragraph("<b>Beschreibung der App-Komponenten</b>", table_text_bold), Paragraph("<b>Seite</b>", table_text_bold)],
+        [Paragraph("1. Ausführliches Benutzerhandbuch (Laien)", table_text_bold), Paragraph("Ausführliche Erklärung aller Alltags-Funktionen (Fragen, Spionschutz, Streaks, Freeze, Score).", table_text), Paragraph("1", table_text)],
+        [Paragraph("2. Das Fragensystem & KI-Generierung", table_text_bold), Paragraph("Struktur der daily_questions, Gemini-Prompts und failed_generations Retry-Queue.", table_text), Paragraph("2", table_text)],
+        [Paragraph("3. Beantwortungsprozess & Serialisierung", table_text_bold), Paragraph("Wizard-Schritte, LocalStorage-Zustandssicherung und Signatur-Vergleich.", table_text), Paragraph("3", table_text)],
+        [Paragraph("4. Der Kompatibilitäts-Algorithmus", table_text_bold), Paragraph("Kosinus-Ähnlichkeit (gte-small), Spearman-Rangabstand und dynamische Gewichtung.", table_text), Paragraph("4", table_text)],
+        [Paragraph("5. Streak- & Freeze-Zustandsmaschine", table_text_bold), Paragraph("check_and_freeze_streak, automatische Freezes und Erhalt der streak_history.", table_text), Paragraph("5", table_text)],
+        [Paragraph("6. Erfolge- & Meilenstein-Zählersystem", table_text_bold), Paragraph("Die 20+ persistenten Zähler, Feiertags-Flags und clientseitige Deduplizierung.", table_text), Paragraph("6", table_text)],
+        [Paragraph("7. Server-Driven UI & Ankündigungen", table_text_bold), Paragraph("Ankündigungen-Parser (renderAnnouncementContent) für Listen und Textzeilen.", table_text), Paragraph("7", table_text)],
+        [Paragraph("8. Frontend-Architektur & Tab-Sync", table_text_bold), Paragraph("Virtual-Canvas responsive Skalierung, SafeAuthChannel (BroadcastChannel) für iOS.", table_text), Paragraph("7", table_text)],
+        [Paragraph("9. Designkonzept & Micro-Animations", table_text_bold), Paragraph("HSL-Farbvariablen, Fraunces/Jakarta Sans, Keyframe-Effekte (flicker, wobble).", table_text), Paragraph("8", table_text)],
+        [Paragraph("10. Datenbankschema & RLS Policies", table_text_bold), Paragraph("PostgreSQL DDL-Matrix (profiles, answers, streaks, failed_generations, announcements).", table_text), Paragraph("9", table_text)],
+        [Paragraph("11. PL/pgSQL Funktionen & RPCs", table_text_bold), Paragraph("Partnerkopplung link_partners, unlink_partners, Account-Löschung, Antwort-Reset.", table_text), Paragraph("10", table_text)],
+        [Paragraph("12. Web-Push & Deno Edge Functions", table_text_bold), Paragraph("Kryptografische PWA Push-Zustellung (ES256 VAPID, ECDH, AES-128-GCM).", table_text), Paragraph("11", table_text)],
+        [Paragraph("13. Systemdatenfluss & Datenarchitektur", table_text_bold), Paragraph("Visuelle Datenmatrix vom Client über Trigger bis zur Edge-Function.", table_text), Paragraph("12", table_text)],
+    ]
+    t_toc = Table(toc_data, colWidths=[145, 325, 35])
     t_toc.setStyle(TableStyle([
-        ('SPAN', (0,0), (1,0)),
-        ('SPAN', (0,2), (1,2)),
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#DED9FF")),
-        ('BACKGROUND', (0,2), (-1,2), colors.HexColor("#DED9FF")),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
-        ('ROWBACKGROUNDS', (0,1), (-1,1), [colors.white]),
-        ('ROWBACKGROUNDS', (0,3), (-1,-1), [colors.white, bg_light]),
-        ('TOPPADDING', (0,0), (-1,-1), 1.0),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 1.0),
+        ('BACKGROUND', (0,0), (-1,0), accent_box),
+        ('GRID', (0,0), (-1,-1), 0.75, colors.HexColor("#CBD5E1")),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
+        ('TOPPADDING', (0,0), (-1,-1), 2),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('ALIGN', (2,0), (2,-1), 'CENTER'),
     ]))
     story.append(t_toc)
-    story.append(PageBreak())
+    story.append(Spacer(1, 8))
 
-    # ==========================================
-    # KAPITEL 1: BENUTZERHANDBUCH (AUSFÜHRLICH)
-    # ==========================================
-    story.append(Paragraph("1. Benutzerhandbuch & Anwender-Dokumentation", h1_style))
+    # Start von Kapitel 1 direkt auf Seite 1 (für mobile Ansicht fließend)
+    story.append(Paragraph("1. Ausführliches Benutzerhandbuch: Funktionsweise der Bisou App (Laien-Erklärung)", h1_style))
     story.append(Paragraph(
-        "Dieses Benutzerhandbuch richtet sich an Endanwender und beschreibt die Funktionsweise, "
-        "den Ablauf und die psychologischen Konzepte der Bisou App.",
+        "Die Bisou App ist eine private PWA (Progressive Web App) für Paare, die ein tägliches Ritual der Nähe "
+        "und des Austauschs pflegen wollen. Die Bedienung ist denkbar einfach und auf Langlebigkeit ausgelegt:<br/><br/>"
+        "• <b>Das tägliche Ritual:</b> Jeden Tag um 12:00 Uhr mittags stellt die App vier neue Fragen bereit. "
+        "Diese decken unterschiedliche emotionale Dimensionen ab: <i>Dies oder Das</i> (Entscheidung), <i>Prioritäten-Ranking</i> (Sortierung), "
+        "<i>Freitext</i> (offene Frage zum Tippen) und <i>Wer würde eher</i> (wwe - spielerischer Partnervergleich).<br/>"
+        "• <b>Der Spionschutz (Abschreibschutz):</b> Damit eure Antworten ehrlich und unbeeinflusst bleiben, "
+        "sind die Antworten des Partners für den heutigen Tag mit einem Schloss gesperrt. Erst wenn du deine eigenen Fragen "
+        "vollständig beantwortet hast, wird die Auswertung freigeschaltet und du siehst die Gedanken deines Partners.<br/>"
+        "• <b>Die Antwortserie (Streak) & Streak-Freeze:</b> Für jeden Tag, an dem ihr beide antwortet, erhöht sich euer Streak (die Flamme). "
+        "Vergesst ihr einmal zu antworten, erlischt der Streak normalerweise. Die App besitzt jedoch ein automatisches <b>Streak-Freeze-System</b>. "
+        "Wenn ihr einen Tag verpasst, wird die Serie eingefroren (maximal zweimal im Monat), sodass eure Flamme beim nächsten Antworten nicht erlischt.<br/>"
+        "• <b>Der Kompatibilitäts-Score (Bisou Score):</b> Eure Antworten der letzten 30 Tage werden miteinander abgeglichen. "
+        "Daraus wird täglich ein Score von 0.0 bis 10.0 berechnet, der eure Ähnlichkeit und Harmonie widerspiegelt. Ein Trendpfeil zeigt an, "
+        "ob euer Score steigt oder sinkt.<br/>"
+        "• <b>Meilensteine & Trophäen:</b> Besondere Ereignisse (z. B. das erste Mal anstupsen, eine 7-Tage-Serie oder das Beantworten "
+        "am Valentinstag oder zu Weihnachten) schalten Meilensteine frei. Das Dashboard feiert dies mit einem großen Konfetti-Regen. "
+        "Alle Erfolge sind in eurem Profil im Popup 'Erfolge' golden markiert.<br/>"
+        "• <b>Tagebuch:</b> Im Tagebuch könnt ihr bis zu 60 Tage zurückblättern, um alte Fragen und eure damaligen Antworten noch einmal zu lesen.",
         body_style
     ))
-    
-    story.append(Paragraph("1.1 Die Philosophie & Das tägliche Ritual", h2_style))
-    story.append(Paragraph(
-        "Die Bisou App wurde entwickelt, um Paaren im hektischen Alltag einen geschützten, privaten digitalen Ort zu schenken, "
-        "der zu bedeutungsvollen Gesprächen, Reflexionen und Momenten der Nähe einlädt.<br/><br/>"
-        "Der Kern der Anwendung ist das tägliche Beantwortungs-Ritual. Neue Fragen werden nachts um <b>3:00 Uhr morgens</b> "
-        "für die Partner freigeschaltet. Die vollautomatische Generierung der Fragen durch die Gemini-KI (über eine Edge Function) "
-        "findet bereits am Vortag um 12:00 Uhr mittags statt, um die Verfügbarkeit abzusichern. "
-        "So entsteht ein lebendiger, abwechslungsreicher Ablauf, der Routine durchbricht und neue Gesprächsanreize bietet.",
-        body_style
-    ))
-    
-    story.append(Paragraph("1.2 Die 4 täglichen Fragentypen im Detail", h2_style))
-    story.append(Paragraph(
-        "Um verschiedene Dimensionen der Kommunikation anzusprechen, besteht die tägliche Fragerunde aus vier festen Formaten:<br/>"
-        "1. <b>Dies oder Das (tot - This or That):</b> Ein binärer Entscheidungszwang. Zwei gegensätzliche Szenarien oder Vorlieben stehen zur Auswahl (z.B. 'Urlaub am Strand oder in den Bergen?'). Dieses Format zielt auf spielerische Abstimmung und das Erkennen von Gemeinsamkeiten ab.<br/>"
-        "2. <b>Prioritäten-Ranking (ranking):</b> Die Partner erhalten vier Begriffe oder Konzepte (z.B. Beziehungsfaktoren wie 'Freiraum', 'Körperliche Nähe', 'Kommunikation', 'Gemeinsame Hobbies') und müssen diese per Drag-and-Drop in eine persönliche Reihenfolge bringen. Es zwingt zur Reflexion über eigene und gemeinsame Prioritäten.<br/>"
-        "3. <b>Freitext-Frage (text):</b> Eine offene Reflexionsfrage (z.B. 'Wofür bist du deinem Partner diese Woche besonders dankbar?'). Hier können Gedanken frei formuliert werden. Dieses Format fördert tiefgründige emotionale Ehrlichkeit.<br/>"
-        "4. <b>Wer würde eher (wwe):</b> Eine spielerische Frage dazu, wer von beiden eine bestimmte Eigenschaft oder Verhaltensweise eher verkörpert (z.B. 'Wer würde eher im Urlaub den Pass verlieren?'). Hier gibt es drei Antwortoptionen: 'Ich', 'Mein Partner' oder 'Keiner von beiden'.",
-        body_style
-    ))
-    
-    story.append(Paragraph("1.3 Der Abschreibschutz (Spionschutz-Prinzip)", h2_style))
-    story.append(Paragraph(
-        "Ein zentrales Prinzip der Bisou App ist die Unvoreingenommenheit. Um gegenseitige Beeinflussung (Priming-Effekt) zu verhindern, "
-        "sind die Antworten des Partners standardmäßig mit einem Schloss-Symbol gesperrt. Erst wenn du deine eigenen Antworten für den heutigen "
-        "Tag vollständig abgegeben hast, wird der Vorhang gelüftet. Du siehst sofort die Antworten deines Partners, und das System schaltet "
-        "die statistische Auswertung sowie das gemeinsame Dashboard frei. Dies garantiert maximale Authentizität der Antworten.",
-        body_style
-    ))
-    
-    story.append(PageBreak())
-
-    story.append(Paragraph("1.4 Das Streak-System & Der automatische Streak-Freeze", h2_style))
-    story.append(Paragraph(
-        "Die tägliche Verbundenheit wird durch ein Streak-System visualisiert. Sobald beide Partner an einem Tag geantwortet haben, "
-        "wird die Beziehungflamme aktiv und der Zähler erhöht sich um eins. Die Flamme besitzt ein dynamisches Kerzen-Wobbel-Layout, das "
-        "die Lebendigkeit eurer Serie widerspiegelt.<br/><br/>"
-        "Da das Leben manchmal dazwischenkommt (Stress, Reisen, Krankheit), schützt ein <b>automatisches Streak-Freeze-System</b> "
-        "eure hart erarbeitete Serie. Jeder Partnerschaft stehen <b>maximal 2 Freezes pro Kalendermonat</b> zur Verfügung. "
-        "Verpasst ein Partner die Beantwortung an einem Tag, greift das System beim ersten Öffnen am Folgetag automatisch ein: "
-        "Der verpasste Tag wird als gefroren markiert, die Flamme erlischt nicht, und der Streak bleibt erhalten. Sind die zwei monatlichen "
-        "Freischaltungen aufgebraucht, erlischt die Flamme und der Streak wird auf null zurückgesetzt.",
-        body_style
-    ))
-    
-    story.append(Paragraph("1.5 Kompatibilität & Der Bisou-Score", h2_style))
-    story.append(Paragraph(
-        "Der Bisou-Score ist ein spielerischer Indikator für eure aktuelle partnerschaftliche Kompatibilität. Er wird täglich auf Basis der "
-        "letzten 30 Tage berechnet und reicht von <b>0.0 (keine Übereinstimmung) bis 10.0 (vollständige Harmonie)</b>.<br/><br/>"
-        "Die Berechnung basiert auf hochentwickelten mathematischen Algorithmen (Kosinus-Ähnlichkeit von KI-Vektoren für Freitexte, "
-        "Spearman-Rangkorrelation für Rankings, binäre Übereinstimmung für Dies-oder-Das, und komplementäre Paare für Wer-würde-eher). "
-        "Ein Trendpfeil neben dem Score signalisiert, ob sich eure Übereinstimmung im Vergleich zum Vortag verbessert oder verschlechtert hat. "
-        "Er dient nicht als Bewertung, sondern als humorvoller Gesprächseinstieg.",
-        body_style
-    ))
-    
-    story.append(Paragraph("1.6 Erfolge & Meilenstein-Zähler (Gamification)", h2_style))
-    story.append(Paragraph(
-        "Um Meilensteine eurer Partnerschaft zu feiern, verfügt die App über ein integriertes Achievement-System. "
-        "Es gibt über 20 verschiedene Auszeichnungen, die beim Erfüllen bestimmter Bedingungen freigeschaltet werden:<br/>"
-        "• <b>Zeitbasierte Auszeichnungen:</b> Z.B. 'Nachteulen' (beide antworten nach 23:00 Uhr) oder 'Sync-Meister' (Antworten innerhalb von 60 Sekunden).<br/>"
-        "• <b>Inhaltsbasierte Auszeichnungen:</b> Z.B. 'Romanautoren' (beide schreiben über 200 Zeichen im Freitext).<br/>"
-        "• <b>Feiertags-Specials:</b> Auszeichnungen für Antworten an Weihnachten, Silvester, Halloween, Valentinstag oder eurem Jahrestag.<br/>"
-        "Wenn ein Meilenstein erreicht wird, erscheint ein animiertes Konfetti-Feuerwerk auf dem Dashboard und das Erfolgs-Banner wird dauerhaft in eurem Profil verankert.",
-        body_style
-    ))
-    
-    story.append(Paragraph("1.7 Das Beziehungstagebuch (Archiv)", h2_style))
-    story.append(Paragraph(
-        "Das Tagebuch (Journal) ist das gemeinsame Gedächtnis eurer Beziehung. Hier könnt ihr bis zu <b>60 Tage in die Vergangenheit</b> reisen, "
-        "um alte Antworten, lustige Übereinstimmungen und emotionale Freitexte eures Partners noch einmal zu lesen. Es lädt dazu ein, in gemeinsamen "
-        "Erinnerungen zu schwelgen und zu sehen, wie sich eure Ansichten und Gefühle über die Zeit entwickelt haben.",
-        body_style
-    ))
-    
-    story.append(Paragraph("1.8 Themenauswahl & Rotation", h2_style))
-    story.append(Paragraph(
-        "Um das tägliche Ritual abwechslungsreich zu gestalten, greift das System auf eine <b>deterministische 30-Tage-Rotation</b> mit insgesamt 90 völlig isolierten Beziehungsthemen zurück. "
-        "Jeden Tag wählt das System vier unterschiedliche Themen für die vier Fragentypen aus (z.B. 'Romantik' für Dies-oder-Das, 'Finanzen' für das Ranking, 'Alltagsmacken' für den Freitext und 'Abenteuer' für Wer-würde-eher). "
-        "Diese Themen dienen der Gemini-KI als direkte Leitlinien bei der Generierung der Fragen und sorgen für ein breites Spektrum an Themen über den Monat hinweg.",
-        body_style
-    ))
-    story.append(PageBreak())
-
-    # ==========================================
-    # SEITE 4: ZWISCHENÜBERSCHRIFT (TRENNUNG)
-    # ==========================================
-    story.append(Spacer(1, 180))
-    story.append(Paragraph("TEIL II: TECHNISCHE SYSTEMDOKUMENTATION", ParagraphStyle('Part2Header', parent=h1_style, fontSize=13, leading=16, textColor=primary, alignment=TA_CENTER, spaceBefore=20, spaceAfter=15)))
-    story.append(Paragraph("Die folgenden Kapitel richten sich an Entwickler und Systemadministratoren.<br/>"
-                           "Sie beschreiben die Systemarchitektur, Datenbankschemata, RLS-Policies, PL/pgSQL-Funktionen und Schnittstellen-Spezifikationen der Bisou App.", 
-                           ParagraphStyle('Part2Sub', parent=body_style, fontSize=9.5, leading=13.5, textColor=text_muted, alignment=TA_CENTER, spaceAfter=20)))
     story.append(PageBreak())
 
     # ==========================================
@@ -324,10 +251,9 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     # ==========================================
     story.append(Paragraph("2. Das Fragensystem & die Gemini-KI-Generierung", h1_style))
     story.append(Paragraph(
-        "Die tägliche Interaktion basiert auf vier verschiedenen Fragentypen, die Paare auf emotionale und spielerische "
-        "Weise einander näherbringen. Die Generierung der Fragen erfolgt vollautomatisch über eine Supabase Edge Function "
+        "Die tägliche Interaktion basiert auf vier verschiedenen Fragentypen. Die Bereitstellung der Fragen erfolgt vollautomatisch über eine Supabase Edge Function "
         "(<code>generate-questions</code>), die über einen täglichen Cron-Job (mittels <code>pg_cron</code> auf der Datenbank) "
-        "um 12:00 Uhr mittags getriggert wird. Die Freischaltung der generierten Fragen für die Nutzer findet am Folgetag um 3:00 Uhr nachts statt.",
+        "um 12:00 Uhr mittags getriggert wird.",
         body_style
     ))
     
@@ -362,10 +288,9 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "einen detaillierten System-Prompt an das Modell <code>gemini-1.5-flash</code>. Der Prompt instruiert die KI wie folgt:<br/>"
         "• Generiere genau 4 Fragen mit den Typen <code>tot</code> (Dies oder Das mit 2 Optionen), <code>ranking</code> (mit exakt 4 Optionen), "
         "<code>text</code> (offene Freitextfrage) und <code>wwe</code> (Wer würde eher).<br/>"
-        "• Die Fragen müssen sich auf die Themen Partnerschaft, Emotionen, Alltag, Träume und gemeinsame Zukunft beziehen. "
-        "Sie müssen abwechslungsreich sein und dürfen sich niemals wiederholen. Plattitüden oder rein materielle Abfragen sind verboten.<br/>"
-        "• Erzwinge die Ausgabe als reines, valides JSON-Dokument ohne Markdown-Formatting (keine Backticks wie ```json), "
-        "damit der Deno-Server die Antwort ohne reguläre Ausdrücke parsen und direkt in die Datenbank schreiben kann.",
+        "• Die Fragen müssen sich auf die Themen Partnerschaft, Alltag, Träume und gemeinsame Zukunft beziehen. "
+        "Erzwinge die Ausgabe als reines, valides JSON-Dokument ohne Markdown-Formatting (keine Backticks wie ```json), "
+        "damit der Deno-Server die Antwort direkt in die Datenbank schreiben kann.",
         body_style
     ))
 
@@ -373,12 +298,11 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph(
         "Um einen Systemausfall bei API-Drosselungen oder Netzwerkstörungen der Google API zu verhindern, implementiert die Funktion "
         "ein mehrstufiges Sicherheitsnetz:<br/>"
-        "1. <b>Lokale Fallback-Datenbank:</b> Im Code der Edge Function ist eine statische Konstante <code>FALLBACK_QUESTIONS</code> mit vordefinierten, "
-        "hochwertigen Beispielfragen hinterlegt. Schlägt der Gemini-Aufruf fehl, greift das System auf diese zurück, sodass der Benutzer "
+        "1. <b>Lokale Fallback-Datenbank:</b> Im Code der Edge Function ist eine statische Konstante <code>FALLBACK_QUESTIONS</code> mit vordefinierten "
+        "Beispielfragen hinterlegt. Schlägt der Gemini-Aufruf fehl, greift das System auf diese zurück, sodass der Benutzer "
         "keine Fehlermeldung sieht.<br/>"
-        "2. <b>Wiederholungs-Warteschlange (Retry-Queue):</b> Schlägt die Generierung fehl, schreibt die Funktion einen Datensatz mit dem "
-        "betroffenen Datum in die Tabelle <code>failed_generations</code>. Ein Datenbank-Cronjob (<code>retry_failed_generations</code>) "
-        "prüft diese Tabelle stündlich und versucht, die fehlenden Fragen asynchron im Hintergrund erneut per KI zu generieren. "
+        "2. <b>Wiederholungs-Warteschlange (Retry-Queue):</b> Schlägt die Generierung fehl, schreibt die Funktion einen Datensatz in die Tabelle <code>failed_generations</code>. "
+        "Ein Datenbank-Cronjob (<code>retry_failed_generations</code>) prüft diese Tabelle stündlich und versucht, die fehlenden Fragen asynchron im Hintergrund erneut per KI zu generieren. "
         "Ist dies erfolgreich, wird der Queue-Eintrag gelöscht.",
         body_style
     ))
@@ -399,7 +323,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "Während der Benutzer die Fragen beantwortet, speichert die Komponente <code>Questions.tsx</code> nach jedem Einzelschritt "
         "den aktuellen Zustand im LocalStorage (Schlüssel: <code>quiz_progress_{dayKey}</code>). Das Objekt speichert den aktuellen "
         "Index des Schritts (0 bis 3) und ein Array mit den bisherigen Antworten. Dadurch wird verhindert, dass der Benutzer bei einem "
-        "Verbindungsabbruch, einem versehentlichen Schließen der App oder dem Neuladen der Seite seinen Fortschritt verliert. "
+        "Verbindungsabbruch seinen Fortschritt verliert. "
         "Sobald der letzte Schritt vollendet und die Antworten erfolgreich an die Supabase-Datenbank übermittelt wurden, "
         "wird dieser LocalStorage-Eintrag bereinigt.",
         body_style
@@ -439,7 +363,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph("4. Der Kompatibilitäts- & Matching-Algorithmus (calculate-stats)", h1_style))
     story.append(Paragraph(
         "Die Berechnung der Übereinstimmungswerte erfolgt in der Deno Edge Function <code>calculate-stats</code>. "
-        "Sie analysesiert die letzten 30 Tage der Beziehung und wendet für jeden Fragentyp spezifische mathematische Verfahren an.",
+        "Sie analysiert die letzten 30 Tage der Beziehung und wendet für jeden Fragentyp spezifische mathematische Verfahren an.",
         body_style
     ))
     
@@ -469,7 +393,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "Um verfälschte Ergebnisse bei unvollständigen Daten zu vermeiden, wendet die Funktion eine <b>dynamische Gewichtungs-Normalisierung</b> an:<br/>"
         "• Es werden nur Kategorien in die Berechnung einbezogen, bei denen für die betrachteten Tage tatsächlich Antworten beider Partner vorliegen.<br/>"
         "• Die Summe der Übereinstimmungsprozente der aktiven Kategorien wird durch die Anzahl der tatsächlich aktiven Kategorien geteilt.<br/>"
-        "• Der resultierende Prozentwert wird durch 10 geteilt und mathematisch auf eine Dezimalstelle gerundet.",
+        "• Der resultierende Prozentwert wird durch 10 geteilt und mathematisch auf eine Dezimalstelle gerundet (z.B. 84.3% Übereinstimmung = Score 8.4).",
         body_style
     ))
 
@@ -544,7 +468,7 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "• <code>both_long_answers_count</code>: Tage, an denen beide Partner eine lange Freitext-Antwort (&gt; 200 Zeichen) abgegeben haben.<br/>"
         "• <code>avatar_change_count</code>: Zählt Profilbild-Aktualisierungen.<br/>"
         "• <code>nudges_sent</code>: Gesamtzahl aller an den Partner übermittelten Anstupser (nudge).<br/>"
-        "• <code>journal_views</code>: Erfasst das Interesse der Partner am Archiv.<br/>"
+        "• <code>journal_views</code>: Erfasst das interest der Partner am Archiv.<br/>"
         "• <code>streaks_rebuilt</code>: Zählt, wie oft ein abgebrochener Streak wieder auf 7 Tage aufgebaut wurde.",
         body_style
     ))
@@ -632,16 +556,16 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
 
     design_colors = [
         [Paragraph("<b>CSS Variable</b>", table_text_bold), Paragraph("<b>Light Theme</b>", table_text_bold), Paragraph("<b>Dark Theme</b>", table_text_bold), Paragraph("<b>Semantischer Nutzen</b>", table_text_bold)],
-        [Paragraph("--primary", table_text_bold), Paragraph("#FF8A8A (Pastell-Rot)", table_text), Paragraph("#FF9B9B (Hell-Rot)", table_text), Paragraph("Streaks, Buttons, Akzente", table_text)],
-        [Paragraph("--secondary", table_text_bold), Paragraph("#A29BFE (Soft-Lila)", table_text), Paragraph("#B4AFFF (Hell-Lila)", table_text), Paragraph("Buttons, Meilensteine", table_text)],
-        [Paragraph("--bg", table_text_bold), Paragraph("#F8F7FF (Pastell-Weiß)", table_text), Paragraph("#0C0A15 (Tief-Schwarz)", table_text), Paragraph("Hintergrundfarbe", table_text)],
-        [Paragraph("--text-main", table_text_bold), Paragraph("#1F1939 (Dunkel-Lila)", table_text), Paragraph("#F5F3FF (Off-White)", table_text), Paragraph("Überschriften und Fließtext", table_text)],
+        [Paragraph("--primary", table_text_bold), Paragraph("#FF4757 (Vibrant Red)", table_text), Paragraph("#FF4757 (Vibrant Red)", table_text), Paragraph("Streaks, Buttons, Akzente", table_text)],
+        [Paragraph("--secondary", table_text_bold), Paragraph("#5F27CD (Vibrant Purple)", table_text), Paragraph("#B4AFFF (Hell-Lila)", table_text), Paragraph("Buttons, Meilensteine", table_text)],
+        [Paragraph("--bg", table_text_bold), Paragraph("#F1F2F6 (Cool-White)", table_text), Paragraph("#0C0A15 (Tief-Schwarz)", table_text), Paragraph("Hintergrundfarbe", table_text)],
+        [Paragraph("--text-main", table_text_bold), Paragraph("#2F3542 (Dark Slate)", table_text), Paragraph("#F5F3FF (Off-White)", table_text), Paragraph("Überschriften und Fließtext", table_text)],
         [Paragraph("--card-border", table_text_bold), Paragraph("#E2DFFF (Hell-Grau-Lila)", table_text), Paragraph("#231E3D (Dunkel-Violett)", table_text), Paragraph("Ränder von Karten & Feldern", table_text)]
     ]
-    t_colors = Table(design_colors, colWidths=[70, 75, 75, 122])
+    t_colors = Table(design_colors, colWidths=[95, 105, 105, 182])
     t_colors.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#DED9FF")),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
+        ('BACKGROUND', (0,0), (-1,0), accent_box),
+        ('GRID', (0,0), (-1,-1), 0.75, colors.HexColor("#CBD5E1")),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
         ('TOPPADDING', (0,0), (-1,-1), 3),
         ('BOTTOMPADDING', (0,0), (-1,-1), 3),
@@ -847,7 +771,7 @@ CREATE TABLE public.push_subscriptions (
     story.append(Paragraph("12.1 Der Push-Notification-Dienst (send-push-notification)", h2_style))
     story.append(Paragraph(
         "Dieser Deno-Dienst empfängt API-Requests vom Client und bereitet das Payload-JSON vor. Die Übertragung "
-        "erfolgt über das standardisierte Web-Push-Protokoll direkt an den Push-Service des Empfänger-Browsers.",
+        "erfolgt über das Web-Push-Protokoll direkt an den Push-Service des Empfänger-Browsers.",
         body_style
     ))
 
@@ -900,13 +824,13 @@ CREATE TABLE public.push_subscriptions (
             Paragraph("Bei Aufruf von StatsModal.tsx berechnet 'calculate-stats' über gte-small Embeddings & Rangabstände die Beziehungsdaten.", table_text)
         ]
     ]
-    t_flow = Table(flow_data, colWidths=[60, 72, 210])
+    t_flow = Table(flow_data, colWidths=[70, 97, 338])
     t_flow.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#DED9FF")),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#CBD5E1")),
+        ('BACKGROUND', (0,0), (-1,0), accent_box),
+        ('GRID', (0,0), (-1,-1), 0.75, colors.HexColor("#CBD5E1")),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, bg_light]),
-        ('TOPPADDING', (0,0), (-1,-1), 3),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
     ]))
     story.append(t_flow)
     story.append(Spacer(1, 10))
@@ -924,21 +848,15 @@ CREATE TABLE public.push_subscriptions (
     doc.build(story, canvasmaker=NumberedCanvas)
     print(f"PDF erfolgreich erstellt unter: {public_path}")
 
-    # Copy to desktop and dist as well for user convenience
+    # Copy to desktop as well for user convenience
     try:
-        import shutil
         desktop_path = os.path.expanduser("~/Desktop")
         desktop_pdf_path = os.path.join(desktop_path, filename)
+        import shutil
         shutil.copy2(public_path, desktop_pdf_path)
         print(f"PDF erfolgreich kopiert nach: {desktop_pdf_path}")
-        
-        dist_dir = os.path.join(current_dir, "dist")
-        if os.path.exists(dist_dir):
-            dist_pdf_path = os.path.join(dist_dir, filename)
-            shutil.copy2(public_path, dist_pdf_path)
-            print(f"PDF erfolgreich kopiert nach: {dist_pdf_path}")
     except Exception as e:
-        print(f"Konnte PDF nicht kopieren: {e}")
+        print(f"Konnte PDF nicht auf Desktop kopieren: {e}")
 
 if __name__ == "__main__":
     build_pdf()
