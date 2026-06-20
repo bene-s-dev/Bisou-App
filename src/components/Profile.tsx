@@ -1502,7 +1502,7 @@ export default function Profile({
               { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
               { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
               { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
-              { id: 'docs', label: 'Systemdokumentation (PDF)', icon: FileText, download: true, href: '/Bisou_App_Systemdokumentation.pdf' },
+              { id: 'docs', label: 'Erklärung der App (PDF)', icon: FileText, download: true, href: '/Bisou_App_Systemdokumentation.pdf' },
               { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
               { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => window.open('https://benelabs.de', '_blank') },
               { id: 'logout', label: 'Abmelden', icon: LogOut, action: onLogout },
