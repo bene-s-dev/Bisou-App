@@ -941,4 +941,4 @@ CREATE TABLE public.push_subscriptions (
         print(f"Konnte PDF nicht kopieren: {e}")
 
 if __name__ == "__main__":
-    build_pdf()
+    build_pdf("Bisou_App_Systemdokumentation_v10.pdf")
