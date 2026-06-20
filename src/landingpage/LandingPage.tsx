@@ -92,10 +92,6 @@ export default function LandingPage() {
               </span>
             </div>
 
-            {/* Background chat bubbles centered as very light outlines */}
-            <MessageCircle className="absolute top-1/2 left-[44%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 text-purple-300/20 dark:text-purple-800/10 -rotate-12 pointer-events-none z-0" fill="none" stroke="currentColor" strokeWidth={1.2} />
-            <MessageCircle className="absolute top-1/2 left-[56%] -translate-x-1/2 -translate-y-1/2 w-20 h-20 text-pink-300/20 dark:text-pink-800/10 rotate-12 pointer-events-none z-0" fill="none" stroke="currentColor" strokeWidth={1.2} />
-            
             <p className="relative z-10 text-[11.5px] sm:text-[13px] font-bold text-[#4A4468] tracking-normal leading-snug text-balance">
               Bisou (frz. Küsschen) ist eine App,<br />
               in der du jeden Tag neue Fragen bekommst, über die du mit einem geliebten Menschen {"sprechen\u00a0kannst."}
@@ -114,16 +110,23 @@ export default function LandingPage() {
               </p>
             </div>
           ))}
-          {userCount !== null && (
-            <div className="flex justify-center mt-0 sm:mt-1">
+          <div className="flex justify-center mt-0 sm:mt-1 min-h-[22px]">
+            {userCount !== null ? (
               <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/80 dark:bg-[#17122A]/80 border border-purple-200/80 dark:border-purple-900/50 shadow-sm backdrop-blur-sm transition-all">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
                 <span className="text-[9.5px] font-bold text-[#4A4468] dark:text-purple-200">
                   Bereits {userCount} glückliche Nutzer
                 </span>
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/40 dark:bg-[#17122A]/40 border border-purple-200/40 dark:border-purple-900/20 shadow-sm backdrop-blur-sm">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />
+                <span className="text-[9.5px] font-bold text-[#4A4468]/50 dark:text-purple-200/50 animate-pulse">
+                  Bereits ... glückliche Nutzer
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* CTA Section */}

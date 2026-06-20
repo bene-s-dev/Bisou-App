@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Camera, Flame, Smartphone, Download, UserCircle2, Share2
+  Camera, Flame, Smartphone, Download, UserCircle2, Share2, Share
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -234,7 +234,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isIOS = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+  const isIOS = localStorage.getItem('mock_ios_mode') === 'true' || ((/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome);
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isPWA = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone || document.referrer.includes('android-app://');
   const [isAlreadyInstalled, setIsAlreadyInstalled] = useState(isPWA);
@@ -413,7 +413,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
         </div>
       );
       case 5: {
-        const secondaryButtonText = isReplay ? "Schließen" : "Im Browser weitermachen";
+        const secondaryButtonText = isReplay ? "Schließen" : "Erstmal im Browser weitermachen";
         return (
           <div className={"flex-1 flex flex-col items-center text-center px-6 min-h-0 " + animationClass}>
             {/* Centered content block */}
@@ -428,7 +428,7 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                 <p className="text-[var(--text)] text-sm font-bold opacity-70 leading-relaxed max-w-[280px] mx-auto">
                   {isAlreadyInstalled 
                     ? "Bisou ist erfolgreich auf deinem Startbildschirm installiert." 
-                    : "Installiere Bisou auf deinem Startbildschirm für schnellen Zugriff – wie eine echte App."}
+                    : (isIOS ? "Installiere Bisou auf deinem iPhone" : "Installiere Bisou auf deinem Startbildschirm für schnellen Zugriff – wie eine echte App.")}
                 </p>
               </div>
             </div>
@@ -451,13 +451,13 @@ export default function Intro({ onComplete, deferredPrompt, onInstall, isIntroOn
                         <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
                           <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                            Tippe in Safari/Chrome auf <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-50 rounded-lg text-[var(--secondary)] font-black"><Share2 className="w-3 h-3" /> Teilen</span>
+                            Tippe in deinem Safari-Browser auf das Teilen-Icon <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-purple-50 rounded-lg text-[var(--secondary)] font-black"><Share className="w-3 h-3" /></span>
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">2</div>
                           <p className="text-[11px] font-bold text-[#1F1939] leading-snug">
-                            Wähle <span className="text-[var(--secondary)] font-black">"Zum Home-Bildschirm"</span>
+                            Suche in den Optionen nach <span className="text-[var(--secondary)] font-black">"Zum Home-Bildschirm"</span>
                           </p>
                         </div>
                       </div>

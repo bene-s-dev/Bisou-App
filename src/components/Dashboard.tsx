@@ -293,13 +293,26 @@ export default function Dashboard({
 
   return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
-      {/* Dev Mode Badge (Visible in local DEV or if user-enabled dev mode in localStorage) */}
       {((import.meta.env.DEV && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) || localStorage.getItem('bisou_dev_mode') === 'true') && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[100] pointer-events-none">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[3000] flex items-center gap-2">
           <div className="bg-orange-500/15 backdrop-blur-md border border-orange-200/50 py-1 px-3 rounded-full flex items-center gap-1.5 shadow-sm">
             <div className="w-1 h-1 rounded-full bg-orange-500 animate-pulse" />
             <span className="text-[7px] font-black text-orange-600 uppercase tracking-[0.2em] whitespace-nowrap">Dev Mode</span>
           </div>
+          <button 
+            onClick={() => {
+              const current = localStorage.getItem('mock_ios_mode') === 'true';
+              localStorage.setItem('mock_ios_mode', (!current).toString());
+              window.location.reload();
+            }}
+            className={`py-1 px-2.5 rounded-full text-[7px] font-black uppercase tracking-[0.1em] shadow-sm border transition-all active:scale-95 ${
+              localStorage.getItem('mock_ios_mode') === 'true'
+                ? 'bg-purple-600 border-purple-400 text-white'
+                : 'bg-white/80 backdrop-blur-sm border-purple-200 text-purple-600 hover:bg-purple-50'
+            }`}
+          >
+            {localStorage.getItem('mock_ios_mode') === 'true' ? 'iOS Mock: AN' : 'iOS Mock: AUS'}
+          </button>
         </div>
       )}
       <div 
@@ -340,7 +353,7 @@ export default function Dashboard({
                 {/* Partner Flame Pill (Bottom Left, slightly overlapping) */}
                 <div 
                   onClick={() => hasPartner && setShowStreakModal('partner')}
-                  className={`absolute bottom-0 right-[80%] z-30 flex items-center gap-[3px] px-1.5 py-[2px] rounded-full transition-all shadow-sm ${
+                  className={`absolute bottom-0 right-[80%] z-30 flex items-center gap-1 px-2.5 py-[3.5px] rounded-full transition-all shadow-sm ${
                     isPartnerStreakFrozen 
                       ? 'bg-blue-50 border border-blue-200 hover:bg-blue-100' 
                       : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
@@ -364,7 +377,7 @@ export default function Dashboard({
                 {/* User Flame Pill (Bottom Right, slightly overlapping) */}
                 <div 
                   onClick={() => setShowStreakModal('user')}
-                  className={`absolute bottom-0 left-[80%] z-30 flex items-center gap-[3px] px-1.5 py-[2px] rounded-full active:scale-95 cursor-pointer transition-all shadow-sm ${
+                  className={`absolute bottom-0 left-[80%] z-30 flex items-center gap-1 px-2.5 py-[3.5px] rounded-full active:scale-95 cursor-pointer transition-all shadow-sm ${
                     isMyStreakFrozen
                       ? 'bg-blue-50 border border-blue-200 hover:bg-blue-100'
                       : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
@@ -489,7 +502,9 @@ export default function Dashboard({
       <StreakModal 
         isOpen={!!showStreakModal} 
         onClose={() => setShowStreakModal(null)} 
-        streakData={showStreakModal === 'user' ? myStreak : partnerStreak}
+        myStreakData={myStreak}
+        partnerStreakData={partnerStreak}
+        initialTab={showStreakModal === 'partner' ? 'partner' : 'user'}
       />
 
       {fullscreenImage && createPortal(

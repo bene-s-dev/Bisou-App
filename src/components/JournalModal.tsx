@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { History, Calendar, X, ChevronLeft, ChevronRight, MessageSquare, Lock, Heart, User } from 'lucide-react';
 
@@ -415,9 +416,9 @@ export default function JournalModal({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div 
-      className="modal-backdrop !p-0 sm:!p-4 z-[4000]"
+      className="modal-backdrop !p-0 z-[4000]"
       onTouchStart={(e) => e.stopPropagation()}
       onTouchMove={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
@@ -454,7 +455,7 @@ export default function JournalModal({
       `}</style>
       <div className="absolute inset-0" onClick={onClose} />
       <div 
-        className="modal-content !bg-[var(--bg)] w-full !max-w-none h-[100dvh] sm:h-[650px] sm:max-h-[650px] sm:!max-w-md !rounded-none sm:!rounded-[2.5rem] !border-0 sm:!border-2 flex flex-col relative overflow-hidden"
+        className="modal-content !bg-[var(--bg)] w-full !max-w-none h-[100dvh] !rounded-none !border-0 flex flex-col relative overflow-hidden"
         style={{
           paddingTop: 'var(--sat, 0px)',
           paddingBottom: 'var(--sab, 0px)',
@@ -467,7 +468,7 @@ export default function JournalModal({
               <History className="w-6 h-6 text-[var(--secondary)]" />
             </div>
             <div>
-              <h3 className="font-black text-[#1F1939] text-base leading-tight">Bisou-Journal</h3>
+              <h3 className="font-black text-[#1F1939] text-base leading-tight">Tagebuch</h3>
               <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">Reise in die Vergangenheit</p>
             </div>
           </div>
@@ -689,6 +690,7 @@ export default function JournalModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronRight, Trash2, Share2, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3, Trophy } from 'lucide-react';
+import { Camera, Pencil, Check, Bell, BellOff, Info, X, User as UserIcon, ChevronLeft, ChevronRight, Trash2, Share2, Share, Copy, Smartphone, Users, Sparkles, Settings, Flame, ShieldCheck, Mail, RefreshCcw, Grid, BarChart3, Trophy, History, Sun, Moon, LogOut } from 'lucide-react';
 import ImageCropper from './ImageCropper';
 import { useDialog } from './DialogProvider';
 import DeleteAccountModal from './DeleteAccountModal';
 import StatsModal from './StatsModal';
 import StreakModal from './StreakModal';
+import JournalModal from './JournalModal';
 import { supabase } from '../lib/supabase';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { translateError } from '../lib/translations';
@@ -189,7 +190,7 @@ export default function Profile({
   const { showAlert, showConfirm } = useDialog();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = (searchParams.get('tab') || 'main') as 'main' | 'partner' | 'notifications' | 'install' | 'app-info';
+  const activeTab = (searchParams.get('tab') || 'main') as 'main' | 'partner' | 'settings' | 'info' | 'install';
   
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab });
@@ -197,6 +198,23 @@ export default function Profile({
   
   const [profile, setProfile] = useState<any>(initialProfile);
   const [user, setUser] = useState<User | null>(initialUser || null);
+  
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
+
+  useEffect(() => {
+    const handleToggle = () => {
+      setIsDarkMode(localStorage.getItem('app_dark_mode') === 'true');
+    };
+    window.addEventListener('dark-mode-toggle', handleToggle);
+    return () => window.removeEventListener('dark-mode-toggle', handleToggle);
+  }, []);
+
+  const toggleDarkMode = () => {
+    const nextMode = !isDarkMode;
+    localStorage.setItem('app_dark_mode', String(nextMode));
+    window.dispatchEvent(new Event('dark-mode-toggle'));
+    showAlert(nextMode ? "Dunkler Modus aktiviert 🌙" : "Heller Modus aktiviert ☀️", "success");
+  };
   
   // Milestones State
   const [milestones, setMilestones] = useState<any[]>(() => {
@@ -309,6 +327,8 @@ export default function Profile({
     streakData: any;
   }>({ createdAt: null, streak: 0, partnerSince: null, streakData: null });
   const [showStreakModal, setShowStreakModal] = useState(false);
+  const [showJournalModal, setShowJournalModal] = useState(false);
+  const [myStreakData, setMyStreakData] = useState<any>(null);
   const [systemStatus, setSystemStatus] = useState<{
     online: boolean | 'checking';
     latency: number | null;
@@ -490,7 +510,7 @@ export default function Profile({
     }
   }, [isPWA]);
 
-  const isIOSLocal = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+  const isIOSLocal = localStorage.getItem('mock_ios_mode') === 'true' || ((/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome);
   const isAndroid = /Android/i.test(navigator.userAgent);
   const isDesktopLocal = !isIOSLocal && !isAndroid;
 
@@ -570,8 +590,8 @@ export default function Profile({
   };
 
   useEffect(() => {
-    if (activeTab === 'partner' && profile?.partner_id) {
-      const fetchPartnerDetails = async () => {
+    if (profile?.id) {
+      const fetchStreaks = async () => {
         try {
           const dayKey = getDailyKey();
           try {
@@ -580,14 +600,30 @@ export default function Profile({
             console.error("Failed to run check_and_freeze_streak RPC:", rpcErr);
           }
 
-          const [partnerRes, streakRes] = await Promise.all([
-            supabase.from('profiles').select('created_at').eq('id', profile.partner_id).single(),
-            supabase.from('streaks').select('current_streak, last_answer_date, freeze_history, longest_streak, streak_history').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
-          ]);
+          const queries = [
+            supabase.from('streaks').select('current_streak, last_answer_date, freeze_history, longest_streak, streak_history').eq('user_id', profile.id).maybeSingle()
+          ];
 
-          if (partnerRes.data) {
-            let streakVal = streakRes.data?.current_streak || 0;
-            if (streakVal > 0 && !isStreakActive(streakRes.data?.last_answer_date, dayKey, streakRes.data?.freeze_history)) {
+          if (profile.partner_id) {
+            queries.push(
+              supabase.from('profiles').select('created_at').eq('id', profile.partner_id).single()
+            );
+            queries.push(
+              supabase.from('streaks').select('current_streak, last_answer_date, freeze_history, longest_streak, streak_history').eq('user_id', profile.partner_id).eq('partner_id', profile.id).maybeSingle()
+            );
+          }
+
+          const results = await Promise.all(queries);
+          
+          if (results[0]?.data) {
+            setMyStreakData(results[0].data);
+          }
+
+          if (profile.partner_id && results[1]?.data) {
+            const partnerRes = results[1];
+            const streakRes = results[2];
+            let streakVal = streakRes?.data?.current_streak || 0;
+            if (streakVal > 0 && !isStreakActive(streakRes?.data?.last_answer_date, dayKey, streakRes?.data?.freeze_history)) {
               streakVal = 0;
             }
 
@@ -595,16 +631,16 @@ export default function Profile({
               createdAt: partnerRes.data.created_at,
               streak: streakVal,
               partnerSince: null,
-              streakData: streakRes.data
+              streakData: streakRes?.data || null
             });
           }
         } catch (err) {
-          console.error("Error fetching partner details:", err);
+          console.error("Error fetching streak and partner details:", err);
         }
       };
-      fetchPartnerDetails();
+      fetchStreaks();
     }
-  }, [activeTab, profile?.partner_id]);
+  }, [profile?.id, profile?.partner_id]);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -642,14 +678,14 @@ export default function Profile({
   }, [profile?.partner_id]);
 
   useEffect(() => {
-    if (activeTab === 'partner' && profile?.partner_id) {
+    if (profile?.partner_id) {
       fetchStats();
     }
-  }, [activeTab, profile?.partner_id, fetchStats]);
+  }, [profile?.partner_id, fetchStats]);
 
   // Load Milestones Effect
   useEffect(() => {
-    if (activeTab === 'partner' && profile?.id && profile?.partner_id) {
+    if (profile?.id && profile?.partner_id) {
       const fetchMilestoneData = async () => {
         // Only show spinner on initial load when there is no cached data yet
         if (milestones.length === 0) {
@@ -676,7 +712,7 @@ export default function Profile({
       };
       fetchMilestoneData();
     }
-  }, [activeTab, profile?.id, profile?.partner_id]);
+  }, [profile?.id, profile?.partner_id]);
 
   const handleVersionClick = () => {
     // Ignore all taps during the 2-second cooldown after activation/deactivation
@@ -785,7 +821,7 @@ export default function Profile({
       }
     };
 
-    if (profile?.id && activeTab === 'notifications') {
+    if (profile?.id && activeTab === 'settings') {
       checkCurrentSubscription();
       
       // Also check when window gets focus (user might have changed settings in browser)
@@ -811,9 +847,11 @@ export default function Profile({
       }
 
       // Wait for registration to be active with a timeout
-      const readyPromise = navigator.serviceWorker.ready;
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Service Worker Zeitüberschreitung")), 10000));
-      registration = await Promise.race([readyPromise, timeoutPromise]) as ServiceWorkerRegistration;
+      if (!registration.active) {
+        const readyPromise = navigator.serviceWorker.ready;
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Service Worker Zeitüberschreitung")), 15000));
+        registration = await Promise.race([readyPromise, timeoutPromise]) as ServiceWorkerRegistration;
+      }
 
       let subscription = await registration.pushManager.getSubscription();
 
@@ -868,7 +906,7 @@ export default function Profile({
       return;
     }
 
-    const isIOS = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+    const isIOS = localStorage.getItem('mock_ios_mode') === 'true' || ((/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     if (isIOS && !isStandalone) {
       showAlert("Auf iOS funktionieren Benachrichtigungen nur in der installierten App.", "info");
@@ -879,11 +917,9 @@ export default function Profile({
     if (currentPermission === 'default') {
       try {
         let handled = false;
-        if (isDevMode) alert("Starte requestPermission...");
         const handlePermission = (p: NotificationPermission) => {
           if (handled) return;
           handled = true;
-          if (isDevMode) alert(`Ergebnis von requestPermission: ${p}`);
           setPushPermission(p);
           if (p === 'granted') {
             executePushToggle(true);
@@ -896,13 +932,11 @@ export default function Profile({
         if (req && typeof req.then === 'function') {
           req.then(handlePermission).catch(err => {
             console.error("Permission request error", err);
-            if (isDevMode) alert(`Promise catch: ${err.message}`);
             showAlert("Fehler bei der Berechtigungsanfrage.", "error");
           });
         }
       } catch (err: any) {
         console.error("Permission request crash:", err);
-        if (isDevMode) alert(`Crash: ${err.message}`);
         showAlert("Dein Browser hat ein Problem mit der Berechtigungsanfrage.", "error");
       }
     } else {
@@ -1200,7 +1234,7 @@ export default function Profile({
           <div className="flex flex-col items-center gap-2 animate-entrance w-full relative" key="partner">
 
             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-center mb-1 relative z-10">
-              {profile?.partner_id ? 'BISOU-PARTNER' : 'BISOU-PARTNER VERBINDEN'}
+              {profile?.partner_id ? 'PARTNER' : 'PARTNER VERBINDEN'}
             </h2>
             {profile?.partner_id ? (
               <div className="w-full flex flex-col gap-2 relative z-10">
@@ -1235,32 +1269,7 @@ export default function Profile({
                       <span>Anstupsen 👋</span>
                     </button>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 mt-1">
-                    <button 
-                      onClick={() => setShowStreakModal(true)}
-                      className="py-2.5 px-2 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-orange-50 border border-orange-200 text-orange-600 rounded-2xl transition-all active:scale-95 shadow-sm"
-                    >
-                      <Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500 shrink-0" />
-                      <span>Streak ({partnerDetails.streak})</span>
-                    </button>
 
-                    <button 
-                      onClick={() => setShowStatsModal(true)}
-                      className="py-2.5 px-2 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-purple-50 border border-purple-200 text-[var(--secondary)] rounded-2xl transition-all active:scale-95 shadow-sm"
-                    >
-                      <BarChart3 className="w-3.5 h-3.5 text-[var(--secondary)] shrink-0" />
-                      <span>Score</span>
-                    </button>
-                    
-                    <button 
-                      onClick={() => setShowMilestonesModal(true)}
-                      className="py-2.5 px-2 text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 bg-purple-50 border border-purple-200 text-[var(--secondary)] rounded-2xl transition-all active:scale-95 shadow-sm"
-                    >
-                      <Trophy className="w-3.5 h-3.5 text-[var(--secondary)] shrink-0" />
-                      <span>Erfolge</span>
-                    </button>
-                  </div>
                 </div>
 
                 <div className="p-1 text-center">
@@ -1324,61 +1333,194 @@ export default function Profile({
             )}
           </div>
         );
-      case 'notifications':
-        return (
-          <div className="flex flex-col items-center gap-2 animate-entrance w-full" key="notifications">
-             <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">Mitteilungen</h2>
-             <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] p-5 flex flex-col items-center text-center gap-4 shadow-sm w-full">
-                <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-[var(--secondary)] border-2 border-white shadow-sm">
-                  {pushPermission === 'granted' && pushEnabled ? <Bell className="w-6 h-6" /> : <BellOff className="w-6 h-6" />}
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-black text-[#1F1939]">Benachrichtigungen</h3>
-                  <p className="text-[10px] font-bold text-[#4A4468] leading-tight opacity-70">
-                    Lass dich benachrichtigen,<br /> wenn dein Bisou-Partner geantwortet hat.
-                  </p>
-                </div>
 
-                {pushPermission === 'granted' ? (
-                  <button 
-                    onClick={() => handleTogglePush()}
-                    className={`w-full flex items-center justify-between p-3 rounded-2xl border-2 cursor-pointer transition-all active:scale-95 shadow-sm outline-none bg-white border-[var(--card-border)] hover:bg-purple-50/30 ${isPushLoading ? 'pointer-events-none' : ''}`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`p-1.5 rounded-xl transition-colors ${pushEnabled ? 'bg-green-50 text-green-500' : 'bg-red-50 text-red-500'}`}>
-                        {pushEnabled ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                      </div>
-                      <span className="text-xs font-black text-[#1F1939] uppercase tracking-wide">{pushEnabled ? 'Aktiviert' : 'Deaktiviert'}</span>
+      case 'settings':
+        return (
+          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="settings">
+            <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">Einstellungen</h2>
+            
+            {/* E-Mail ändern Card */}
+            <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm text-left w-full">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
+                  {!isEditingEmail ? (
+                    <div className="flex flex-col">
+                      <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
+                      {user?.new_email && (
+                        <div className="flex flex-col gap-1 mt-1">
+                          <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
+                            Warte auf Bestätigung: {user.new_email}
+                          </div>
+                          <div className="text-[7px] font-bold text-[var(--muted)] leading-tight italic">
+                            Info: Du musst den Link in der <b>alten</b> und der <b>neuen</b> Mail anklicken.
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className={`w-9 h-5 rounded-full transition-colors relative ${pushEnabled ? 'bg-green-200' : 'bg-red-200'}`}>
-                      <div className={`absolute top-[3px] w-3.5 h-3.5 bg-white rounded-full transition-all ${pushEnabled ? 'left-[19px]' : 'left-[3px]'}`} />
-                    </div>
-                  </button>
-                ) : (
+                  ) : (
+                    <input
+                      type="email"
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleUpdateEmail()}
+                      disabled={isUpdatingEmail}
+                      className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-2.5 py-1 text-xs font-bold text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-colors mt-0.5"
+                      placeholder="neue@email.de"
+                      autoFocus
+                    />
+                  )}
+                </div>
+              </div>
+              {!isEditingEmail ? (
+                <button 
+                  onClick={() => { setEmailInput(userEmail); setIsEditingEmail(true); }}
+                  className="w-7 h-7 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all shrink-0"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button 
-                    onClick={() => handleTogglePush()}
-                    disabled={isPushLoading}
-                    className={`w-full py-3.5 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all text-center shadow-md select-none outline-none ${
-                      pushPermission === 'denied' 
-                        ? 'bg-red-50 border-2 border-red-100 text-red-400 active:scale-100 shadow-none' 
-                        : 'bg-[var(--secondary)] text-white hover:bg-[var(--secondary)]/90'
-                    }`}
+                    onClick={handleUpdateEmail}
+                    disabled={isUpdatingEmail}
+                    className="p-1 bg-green-50 text-green-500 hover:bg-green-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-green-100"
                   >
-                    {isPushLoading ? (
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" />
-                    ) : pushPermission === 'denied' ? (
-                      `In Browsereinstellungen blockiert 🔒 (${Notification.permission})`
+                    {isUpdatingEmail ? (
+                      <div className="w-3.5 h-3.5 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
                     ) : (
-                      'Benachrichtigungen erlauben ✨'
+                      <Check className="w-3.5 h-3.5" />
                     )}
                   </button>
-                )}
+                  <button 
+                    onClick={() => setIsEditingEmail(false)}
+                    disabled={isUpdatingEmail}
+                    className="p-1 bg-red-50 text-red-400 hover:bg-red-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-red-100"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
 
-             </div>
+            {/* Benachrichtigungen toggle card */}
+            <button 
+              onClick={() => handleTogglePush()}
+              disabled={isPushLoading}
+              className="w-full flex items-center justify-between py-3 px-5 bg-white rounded-[1.8rem] border-2 border-purple-50 hover:border-purple-200 shadow-sm transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                  {pushPermission === 'denied' ? <BellOff className="w-4 h-4 text-red-500" /> : <Bell className="w-4 h-4 text-[var(--secondary)]" />}
+                </div>
+                <div className="text-left">
+                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">Mitteilungen</span>
+                  <span className="text-xs font-black text-[#1F1939]">
+                    {isPushLoading 
+                      ? 'Wird aktualisiert...' 
+                      : pushPermission === 'denied' 
+                        ? 'In Browsereinstellungen blockiert 🔒' 
+                        : pushEnabled 
+                          ? 'Benachrichtigungen an' 
+                          : 'Benachrichtigungen aus'}
+                  </span>
+                </div>
+              </div>
+              <div className={`w-9 h-5 rounded-full transition-colors relative ${pushEnabled && pushPermission !== 'denied' ? 'bg-indigo-200' : 'bg-slate-200'}`}>
+                <div className={`absolute top-[3px] w-3.5 h-3.5 bg-white rounded-full transition-all ${pushEnabled && pushPermission !== 'denied' ? 'left-[19px]' : 'left-[3px]'}`} />
+              </div>
+            </button>
+
+            {/* Dark Mode toggle card */}
+            <button 
+              onClick={toggleDarkMode}
+              className="w-full flex items-center justify-between py-3 px-5 bg-white rounded-[1.8rem] border-2 border-purple-50 hover:border-purple-200 shadow-sm transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                  {isDarkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+                </div>
+                <div className="text-left">
+                  <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">Erscheinungsbild</span>
+                  <span className="text-xs font-black text-[#1F1939]">{isDarkMode ? 'Dunkler Modus' : 'Heller Modus'}</span>
+                </div>
+              </div>
+              <div className={`w-9 h-5 rounded-full transition-colors relative ${isDarkMode ? 'bg-indigo-200' : 'bg-slate-200'}`}>
+                <div className={`absolute top-[3px] w-3.5 h-3.5 bg-white rounded-full transition-all ${isDarkMode ? 'left-[19px]' : 'left-[3px]'}`} />
+              </div>
+            </button>
+
+            {/* App installieren */}
+            {!isPWA && !isAlreadyInstalled && (
+              <button 
+                onClick={() => setActiveTab('install')}
+                className="w-full flex items-center justify-between py-3 px-5 bg-white rounded-[1.8rem] border-2 border-purple-50 hover:border-purple-200 shadow-sm transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                    <Smartphone className="w-4 h-4" />
+                  </div>
+                  <span className="text-[11px] font-black uppercase tracking-wide text-[#1F1939]">App installieren</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--secondary)]" />
+              </button>
+            )}
+
+            {/* Link to Info Page */}
+            <button 
+              onClick={() => setActiveTab('info')}
+              className="w-full flex items-center justify-between py-3 px-5 bg-white rounded-[1.8rem] border-2 border-purple-50 hover:border-purple-200 shadow-sm transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                  <Info className="w-4 h-4" />
+                </div>
+                <span className="text-[11px] font-black uppercase tracking-wide text-[#1F1939]">Info & Mehr</span>
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-[var(--secondary)]" />
+            </button>
           </div>
         );
+
+      case 'info':
+        return (
+          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="info">
+            <h2 className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-[0.2em] w-full text-center mb-1">Informationen</h2>
+            {[
+              { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
+              { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
+              { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
+              { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
+              { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => window.open('https://benelabs.de', '_blank') },
+              { id: 'logout', label: 'Abmelden', icon: LogOut, action: onLogout },
+              { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } }
+            ].map(item => (
+              <button 
+                key={item.id} 
+                onClick={item.action}
+                className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
+                  item.isDanger ? 'border-red-50 hover:border-red-200' : 'border-purple-50 hover:border-purple-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-xl ${item.isDanger ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-[var(--secondary)]'}`}>
+                    <item.icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className={`text-[11px] font-black uppercase tracking-wide ${item.isDanger ? 'text-red-500' : 'text-[#1F1939]'}`}>{item.label}</span>
+                  </div>
+                </div>
+                <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-400' : 'text-[var(--secondary)]'}`} />
+              </button>
+            ))}
+          </div>
+        );
+
       case 'install':
-        const isIOSLocalInstall = (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome;
+        const isIOSLocalInstall = localStorage.getItem('mock_ios_mode') === 'true' || ((/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !(window as any).chrome);
         const isAndroidLocalInstall = /Android/i.test(navigator.userAgent);
         
         return (
@@ -1399,11 +1541,11 @@ export default function Profile({
                   <div className="space-y-3 w-full text-left">
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">1</div>
-                      <p className="text-[10px] font-bold text-[#1F1939] uppercase tracking-wider">Tippe auf das <span className="inline-block p-1 bg-purple-50 rounded text-[var(--secondary)] mx-1"><Share2 className="w-3 h-3 inline align-middle -mt-0.5" /> Teilen-Icon</span></p>
+                      <p className="text-[10px] font-bold text-[#1F1939] uppercase tracking-wider">Tippe in deinem Safari-Browser auf das Teilen-Icon <span className="inline-block p-1 bg-purple-50 rounded text-[var(--secondary)] mx-1"><Share className="w-3 h-3 inline align-middle -mt-0.5" /></span></p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-[var(--secondary)] text-white text-[10px] font-black flex items-center justify-center shrink-0">2</div>
-                      <p className="text-[10px] font-bold text-[#1F1939] uppercase tracking-wider">Scrolle runter und wähle <span className="text-[var(--secondary)] font-black">"Zum Home-Bildschirm"</span></p>
+                      <p className="text-[10px] font-bold text-[#1F1939] uppercase tracking-wider">Suche in den Optionen nach <span className="text-[var(--secondary)] font-black">"Zum Home-Bildschirm"</span></p>
                     </div>
                   </div>
                 ) : (
@@ -1439,168 +1581,50 @@ export default function Profile({
           </div>
         );
 
-      case 'app-info':
-        return (
-          <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="app-info">
-            {[
-              { id: 'about', label: 'Über die App', icon: Info, action: () => setShowAboutAppModal(true) },
-              { id: 'services', label: 'Verwendete Dienste', icon: Settings, action: () => setShowServices(true) },
-              { id: 'security', label: 'Wie wir deine Daten schützen', icon: ShieldCheck, action: () => setShowSecurityModal(true) },
-              { id: 'intro', label: 'Einführung nochmal ansehen', icon: Sparkles, action: () => navigate('/intro-replay') },
-              { id: 'delete', label: 'Account löschen', icon: Trash2, isDanger: true, action: () => { setShowDeleteModal(true); window.history.pushState({ modal: 'delete' }, ''); } },
-              { id: 'more-apps', label: 'Weitere Apps von benelabs', icon: Grid, action: () => window.open('https://benelabs.de', '_blank') }
-            ].map(item => (
-              <button 
-                key={item.id} 
-                onClick={item.action}
-                className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
-                  item.isDanger ? 'border-red-50 hover:border-red-200' : 'border-purple-50 hover:border-purple-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-xl ${item.isDanger ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-[var(--secondary)]'}`}>
-                    <item.icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col items-start">
-                    <span className={`text-[11px] font-black uppercase tracking-wide ${item.isDanger ? 'text-red-500' : 'text-[#1F1939]'}`}>{item.label}</span>
-                  </div>
-                </div>
-                <ChevronRight className={`w-3.5 h-3.5 ${item.isDanger ? 'text-red-400' : 'text-[var(--secondary)]'}`} />
-              </button>
-            ))}
-          </div>
-        );
       default: {
         const isAdmin = profile?.display_name?.toLowerCase() === 'bene' || profile?.id === '438bce53-5c85-4035-82a1-d6fbd23bc1e8';
 
         return (
           <div className="flex flex-col gap-2 w-full max-w-md mx-auto animate-entrance" key="main">
-                {/* E-Mail ändern Card */}
-                <div className="bg-white border-2 border-purple-50 rounded-[1.8rem] py-2.5 px-5 flex items-center justify-between gap-3 shadow-sm text-left w-full">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)] shrink-0">
-                      <Mail className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider block leading-none mb-0.5">E-Mail-Adresse</span>
-                      {!isEditingEmail ? (
-                        <div className="flex flex-col">
-                          <div className="text-xs font-black text-[#1F1939] truncate pt-0.5">{userEmail || 'Laden...'}</div>
-                          {user?.new_email && (
-                            <div className="flex flex-col gap-1 mt-1">
-                              <div className="text-[8px] font-bold text-amber-500 uppercase tracking-tight animate-pulse">
-                                Warte auf Bestätigung: {user.new_email}
-                              </div>
-                              <div className="text-[7px] font-bold text-[var(--muted)] leading-tight italic">
-                                Info: Du musst den Link in der <b>alten</b> und der <b>neuen</b> Mail anklicken.
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <input
-                          type="email"
-                          value={emailInput}
-                          onChange={(e) => setEmailInput(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleUpdateEmail()}
-                          disabled={isUpdatingEmail}
-                          className="w-full bg-purple-50/50 border-2 border-purple-100 rounded-xl px-2.5 py-1 text-xs font-bold text-[#1F1939] outline-none focus:border-[var(--secondary)] transition-colors mt-0.5"
-                          placeholder="neue@email.de"
-                          autoFocus
-                        />
-                      )}
-                    </div>
+            {[
+              { id: 'partner', label: profile?.partner_id ? 'Partner' : 'Partner verbinden', icon: Users, action: () => setActiveTab('partner') },
+              { id: 'journal', label: 'Tagebuch', icon: History, action: () => setShowJournalModal(true) },
+              { id: 'streak', label: 'Serie', icon: Flame, action: () => setShowStreakModal(true) },
+              { id: 'score', label: 'Übereinstimmung', icon: BarChart3, action: () => setShowStatsModal(true) },
+              { id: 'milestones', label: 'Meilensteine', icon: Trophy, action: () => setShowMilestonesModal(true) },
+              { id: 'settings', label: 'Einstellungen', icon: Settings, action: () => setActiveTab('settings') }
+            ].filter((item): item is any => !!item).map(item => (
+              <button 
+                key={item.id} 
+                onClick={item.action} 
+                className="w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 border-purple-50 hover:border-purple-200 shadow-sm transition-all cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                    <item.icon className="w-4 h-4" />
                   </div>
-                  {!isEditingEmail ? (
-                    <button 
-                      onClick={() => { setEmailInput(userEmail); setIsEditingEmail(true); }}
-                      className="w-7 h-7 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] flex items-center justify-center shadow-sm active:scale-90 transition-all shrink-0"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <button 
-                        onClick={handleUpdateEmail}
-                        disabled={isUpdatingEmail}
-                        className="p-1 bg-green-50 text-green-500 hover:bg-green-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-green-100"
-                      >
-                        {isUpdatingEmail ? (
-                          <div className="w-3.5 h-3.5 border-2 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
-                        ) : (
-                          <Check className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => setIsEditingEmail(false)}
-                        disabled={isUpdatingEmail}
-                        className="p-1 bg-red-50 text-red-400 hover:bg-red-100 rounded-xl transition-all active:scale-90 flex items-center justify-center border border-red-100"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  )}
+                  <span className="text-[11px] font-black uppercase tracking-wide text-[#1F1939]">
+                    {item.label}
+                  </span>
                 </div>
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--secondary)]" />
+              </button>
+            ))}
 
-                {[
-                  { id: 'partner', label: profile?.partner_id ? 'Bisou-Partner' : 'Bisou-Partner verbinden', icon: Users },
-                  { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
-                  !isPWA && { id: 'install', label: isAlreadyInstalled ? 'App bereits installiert' : 'App installieren', icon: Smartphone },
-                  { id: 'app-info', label: 'Info & Mehr', icon: Info },
-                  isAdmin && { id: 'admin', label: 'Admin-Bereich', icon: Settings, action: () => window.location.href = '/admin.html' }
-                ].filter((item): item is any => !!item).map(item => {
-                  const isDisabled = false;
-                  const isPwaInstalled = item.id === 'install' && isAlreadyInstalled;
-                  return (
-                    <button 
-                      key={item.id} 
-                      onClick={() => {
-                        if (item.action) {
-                          item.action();
-                        } else if (isDisabled || isPwaInstalled) {
-                          // Do nothing for normal users or if already installed as PWA
-                        }
-                        else setActiveTab(item.id as any);
-                      }} 
-                  className={`w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 shadow-sm transition-all ${
-                    item.isDanger 
-                      ? 'border-red-50 hover:border-red-200' 
-                      : (isDisabled || isPwaInstalled ? 'border-purple-50/50' : 'border-purple-50 hover:border-purple-200')
-                  } ${isDisabled || isPwaInstalled ? 'cursor-default pointer-events-none' : 'cursor-pointer'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl transition-all ${
-                      item.isDanger 
-                        ? 'bg-red-50 text-red-500' 
-                        : 'bg-purple-50 text-[var(--secondary)]'
-                    } ${isDisabled ? 'opacity-40 grayscale' : ''}`}>
-                      <item.icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-black uppercase tracking-wide transition-all ${
-                        item.isDanger ? 'text-red-500' : 'text-[#1F1939]'
-                      } ${isDisabled ? 'opacity-40' : ''}`}>
-                        {item.label}
-                      </span>
-                      {isDisabled && (
-                        <span className="bg-amber-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-[6px] uppercase tracking-wider shrink-0 border border-amber-600 shadow-sm">
-                          Bald verfügbar
-                        </span>
-                      )}
-                    </div>
+            {isAdmin && (
+              <button 
+                onClick={() => window.location.href = '/admin.html'}
+                className="w-full flex items-center justify-between py-2.5 px-5 bg-white rounded-[1.8rem] border-2 border-purple-50 hover:border-purple-200 shadow-sm transition-all cursor-pointer mt-2"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-purple-50 text-[var(--secondary)]">
+                    <Settings className="w-4 h-4" />
                   </div>
-                  {isPwaInstalled ? (
-                    <Check className="w-3.5 h-3.5 text-green-500" />
-                  ) : (
-                    <ChevronRight className={`w-3.5 h-3.5 transition-all ${
-                      item.isDanger 
-                        ? 'text-red-400' 
-                        : (isDisabled ? 'text-purple-200/30' : 'text-[var(--secondary)]')
-                    }`} />
-                  )}
-                </button>
-              );
-            })}
+                  <span className="text-[11px] font-black uppercase tracking-wide text-[#1F1939]">Admin-Bereich</span>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-[var(--secondary)]" />
+              </button>
+            )}
           </div>
         );
       }
@@ -2146,7 +2170,20 @@ export default function Profile({
       <StreakModal 
         isOpen={showStreakModal}
         onClose={() => setShowStreakModal(false)}
-        streakData={partnerDetails.streakData}
+        myStreakData={myStreakData}
+        partnerStreakData={partnerDetails.streakData}
+        initialTab="user"
+      />
+
+      <JournalModal
+        isOpen={showJournalModal}
+        onClose={() => setShowJournalModal(false)}
+        partnerName={partnerProfile?.display_name || 'Partner'}
+        userId={profile?.id}
+        partnerId={profile?.partner_id}
+        partnerAvatar={partnerProfile?.avatar_url}
+        userAvatar={profile?.avatar_url}
+        dayKey={getDailyKey()}
       />
 
       <input 

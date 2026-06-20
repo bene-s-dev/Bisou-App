@@ -16,7 +16,8 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder',
   {
     auth: {
-      flowType: 'implicit'
+      flowType: 'implicit',
+      lock: async (_name, _acquireTimeout, fn) => fn()
     }
   }
 );

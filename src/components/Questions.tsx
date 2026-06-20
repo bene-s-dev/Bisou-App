@@ -1071,7 +1071,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                 onClick={() => setShowJournalModal(true)}
                 className="pointer-events-auto text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm"
               >
-                Journal <History className="w-4 h-4" />
+                Tagebuch <History className="w-4 h-4" />
               </button>
               
               {/* Right Reset Button */}

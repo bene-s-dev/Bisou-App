@@ -141,44 +141,7 @@ function AppLayout({
                       </h1>
                     </button>
 
-                    {location.pathname === '/profile' && (
-                      <div className="flex items-center gap-3 pointer-events-auto">
-                        {/* Theme Toggle Button */}
-                        <button
-                          onClick={() => {
-                            const nextMode = !isDarkMode;
-                            localStorage.setItem('app_dark_mode', String(nextMode));
-                            window.dispatchEvent(new Event('dark-mode-toggle'));
-                            showAlert(nextMode ? "Dunkler Modus aktiviert 🌙" : "Heller Modus aktiviert ☀️", "success");
-                          }}
-                          className="flex flex-col items-center gap-1 group"
-                          title={isDarkMode ? "Heller Modus" : "Dunkler Modus"}
-                        >
-                          <div className="p-2 rounded-full bg-white border border-[var(--card-border)] text-[var(--secondary)] shadow-sm hover:bg-purple-50/30 transition-all active:scale-90 flex items-center justify-center">
-                            {isDarkMode ? (
-                              <Sun className="w-4 h-4 text-amber-500 animate-in spin-in-12 duration-300" />
-                            ) : (
-                              <Moon className="w-4 h-4 text-indigo-500 animate-in spin-in-12 duration-300" />
-                            )}
-                          </div>
-                          <span className="text-[7px] font-black uppercase tracking-widest text-[var(--muted)] group-hover:text-[var(--secondary)] leading-none">
-                            {isDarkMode ? "Hell" : "Dunkel"}
-                          </span>
-                        </button>
 
-                        {/* Logout Button */}
-                        <button 
-                          onClick={onLogout} 
-                          className="flex flex-col items-center gap-1 group"
-                          title="Abmelden"
-                        >
-                          <div className="p-2 rounded-full bg-white border border-red-100 text-[var(--primary)] shadow-sm hover:bg-red-50 hover:text-red-600 transition-all active:scale-90">
-                              <LogOut className="w-4 h-4" />
-                          </div>
-                          <span className="text-[7px] font-black uppercase tracking-widest text-red-400 group-hover:text-red-600 leading-none">Logout</span>
-                        </button>
-                      </div>
-                    )}
                   </div>
                 </header>
               </>
