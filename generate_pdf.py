@@ -229,9 +229,10 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph(
         "Die Bisou App wurde entwickelt, um Paaren im hektischen Alltag einen geschützten, privaten digitalen Ort zu schenken, "
         "der zu bedeutungsvollen Gesprächen, Reflexionen und Momenten der Nähe einlädt.<br/><br/>"
-        "Der Kern der Anwendung ist das tägliche Beantwortungs-Ritual. Pünktlich um <b>12:00 Uhr mittags</b> werden neue Fragen "
-        "freigeschaltet. Diese Fragen werden für jedes Paar individuell und abwechslungsreich durch eine künstliche Intelligenz (Gemini API) "
-        "generiert. So entsteht ein lebendiger, unvorhersehbarer Ablauf, der Routine durchbricht und neue Gesprächsanreize bietet.",
+        "Der Kern der Anwendung ist das tägliche Beantwortungs-Ritual. Neue Fragen werden nachts um <b>3:00 Uhr morgens</b> "
+        "für die Partner freigeschaltet. Die vollautomatische Generierung der Fragen durch die Gemini-KI (über eine Edge Function) "
+        "findet bereits am Vortag um 12:00 Uhr mittags statt, um die Verfügbarkeit abzusichern. "
+        "So entsteht ein lebendiger, abwechslungsreicher Ablauf, der Routine durchbricht und neue Gesprächsanreize bietet.",
         body_style
     ))
     
@@ -324,9 +325,9 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
     story.append(Paragraph("2. Das Fragensystem & die Gemini-KI-Generierung", h1_style))
     story.append(Paragraph(
         "Die tägliche Interaktion basiert auf vier verschiedenen Fragentypen, die Paare auf emotionale und spielerische "
-        "Weise einander näherbringen. Die Bereitstellung der Fragen erfolgt vollautomatisch über eine Supabase Edge Function "
+        "Weise einander näherbringen. Die Generierung der Fragen erfolgt vollautomatisch über eine Supabase Edge Function "
         "(<code>generate-questions</code>), die über einen täglichen Cron-Job (mittels <code>pg_cron</code> auf der Datenbank) "
-        "um 12:00 Uhr mittags getriggert wird.",
+        "um 12:00 Uhr mittags getriggert wird. Die Freischaltung der generierten Fragen für die Nutzer findet am Folgetag um 3:00 Uhr nachts statt.",
         body_style
     ))
     
