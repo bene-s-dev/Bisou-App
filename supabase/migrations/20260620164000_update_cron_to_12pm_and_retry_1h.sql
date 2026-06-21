@@ -6,6 +6,7 @@
 -- 1. Unschedule the old 3 AM job
 SELECT 
     CASE WHEN EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron')
+              AND EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'generate-questions-at-3am')
     THEN 
         cron.unschedule('generate-questions-at-3am')
     ELSE 
@@ -15,6 +16,7 @@ SELECT
 -- Also unschedule generate-questions-at-12pm if it already exists to avoid duplicate key violations
 SELECT 
     CASE WHEN EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron')
+              AND EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'generate-questions-at-12pm')
     THEN 
         cron.unschedule('generate-questions-at-12pm')
     ELSE 

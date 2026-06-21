@@ -86,13 +86,18 @@ serve(async (req) => {
     }
 
     // ==========================================================
-    // HISTORIE AUS SUPABASE LADEN (Die letzten 60 Tage)
+    // HISTORIE AUS SUPABASE LADEN (Letzte 60 Tage vor dayKey + alle zukünftigen)
     // ==========================================================
+    const targetDate = new Date(dayKey);
+    const pastDateObj = new Date(targetDate);
+    pastDateObj.setUTCDate(pastDateObj.getUTCDate() - 60);
+    const pastDateStr = pastDateObj.toISOString().split('T')[0];
+
     const { data: historie } = await db
       .from('daily_questions')
       .select('questions')
-      .order('day_key', { ascending: false })
-      .limit(60);
+      .neq('day_key', dayKey)
+      .gte('day_key', pastDateStr);
 
     const bisherigeFragen: string[] = [];
     if (historie && Array.isArray(historie)) {
@@ -114,9 +119,10 @@ serve(async (req) => {
     // DETERMINISTISCHE 30-TAGE-ROTATION (90 völlig isolierte Themen)
     // ==========================================================
     const dateObj = new Date(dayKey);
-    const startOfYear = new Date(dateObj.getFullYear(), 0, 0);
-    const diff = dateObj.getTime() - startOfYear.getTime();
-    const dayOfYear = Math.floor(diff / 1000 / 60 / 60 / 24);
+    const year = dateObj.getUTCFullYear();
+    const startOfYear = Date.UTC(year, 0, 0);
+    const diff = dateObj.getTime() - startOfYear;
+    const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     const themeSets = [
       ['Romantik', 'Finanzen', 'Alltagsmacken', 'Abenteuer'], // Tag 1
