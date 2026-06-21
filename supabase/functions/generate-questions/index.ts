@@ -257,12 +257,14 @@ STIMMUNG & TONFALL (SEHR WICHTIG!):
     if (Array.isArray(rawJson)) {
       const transformed: any = {};
       for (const item of rawJson) {
-        const key = item.type; // 'tot', 'ranking', 'text', 'wwe'
-        transformed[key] = {
-          q: item.question || item.q || '',
-          h: item.hint || item.h || '',
-          o: item.options || item.o || []
-        };
+        const key = item.type || item.t; // 'tot', 'ranking', 'text', 'wwe'
+        if (key) {
+          transformed[key] = {
+            q: item.question || item.q || '',
+            h: item.hint || item.h || '',
+            o: item.options || item.o || []
+          };
+        }
       }
       rawJson = transformed;
     }
