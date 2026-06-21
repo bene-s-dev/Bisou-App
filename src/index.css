@@ -1,6 +1,4 @@
-/* Import fonts */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700;800&display=swap');
+/* Import fonts directly via link tag in index.html for parallel pre-fetching */
 
 @tailwind base;
 @tailwind components;

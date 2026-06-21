@@ -9,10 +9,10 @@ import { Session } from '@supabase/supabase-js';
 import PublicLayout from './components/PublicLayout';
 import LoadingSkeleton from './components/LoadingSkeleton';
 import ScalingContainer from './components/ScalingContainer';
+import LandingPage from './landingpage/LandingPage';
+import Login from './components/Login';
 
 // Lazy load modular page components for Code Splitting (saves bandwidth)
-const LandingPage = React.lazy(() => import('./landingpage/LandingPage'));
-const Login = React.lazy(() => import('./components/Login'));
 const Intro = React.lazy(() => import('./components/Intro'));
 const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const Questions = React.lazy(() => import('./components/Questions'));
