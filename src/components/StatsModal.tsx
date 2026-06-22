@@ -114,9 +114,14 @@ export default function StatsModal({
 
   React.useEffect(() => {
     if (isOpen) {
-      supabase.rpc('increment_stats_views').catch((err) => {
-        console.error("Failed to increment stats views:", err);
-      });
+      (async () => {
+        try {
+          const { error } = await supabase.rpc('increment_stats_views');
+          if (error) console.error("Failed to increment stats views:", error);
+        } catch (err) {
+          console.error("Failed to increment stats views:", err);
+        }
+      })();
     }
   }, [isOpen]);
 

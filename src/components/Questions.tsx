@@ -1102,9 +1102,14 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
 
       hideAlert();
 
-      supabase.rpc('increment_shares_count').catch(err => {
-        console.warn('Failed to increment shares count:', err);
-      });
+      (async () => {
+        try {
+          const { error } = await supabase.rpc('increment_shares_count');
+          if (error) console.warn('Failed to increment shares count:', error);
+        } catch (err) {
+          console.warn('Failed to increment shares count:', err);
+        }
+      })();
 
       await timerPromise;
       setIsSharing(false);
