@@ -85,7 +85,7 @@ function MilestonesModal({
               <Trophy className="w-6 h-6 text-[var(--secondary)]" />
             </div>
             <div>
-              <h3 className="font-black text-[#1F1939] text-base leading-tight">Eure Erfolge & Meilensteine</h3>
+              <h3 className="font-black text-[#1F1939] text-base leading-tight">Meilensteine</h3>
               <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">
                 {unlockedMilestones.length} von {milestones.length} freigeschaltet
               </p>
@@ -96,12 +96,56 @@ function MilestonesModal({
           </button>
         </div>
 
-        {/* Progress Bar */}
-        <div className="w-full h-2.5 bg-purple-50 rounded-full overflow-hidden border border-purple-100/50 mb-4 shrink-0">
-          <div 
-            className="h-full bg-gradient-to-r from-purple-400 to-[var(--secondary)] rounded-full transition-all duration-500" 
-            style={{ width: `${milestones.length > 0 ? (unlockedMilestones.length / milestones.length) * 100 : 0}%` }}
-          />
+        {/* Progress Bar (5 Levels) */}
+        <div className="mb-4 shrink-0">
+          <div className="flex gap-1.5 items-center w-full">
+            {[50, 100, 150, 200, 250].map((limit, idx, arr) => {
+              const prevLimit = idx > 0 ? arr[idx - 1] : 0;
+              const range = limit - prevLimit;
+              const filledPercent = Math.min(100, Math.max(0, ((unlockedMilestones.length - prevLimit) / range) * 100));
+              const isCompleted = unlockedMilestones.length >= limit;
+              const isActive = unlockedMilestones.length > prevLimit && unlockedMilestones.length < limit;
+
+              return (
+                <div 
+                  key={limit} 
+                  className={`flex-1 h-2.5 bg-purple-50 dark:bg-slate-800/40 rounded-full overflow-hidden border transition-all duration-300 ${
+                    isCompleted 
+                      ? 'border-purple-200/50 dark:border-purple-900/30' 
+                      : isActive 
+                        ? 'border-purple-300 dark:border-purple-800' 
+                        : 'border-purple-100/20 dark:border-slate-800/20'
+                  }`}
+                >
+                  <div 
+                    className="h-full bg-gradient-to-r from-purple-400 to-[var(--secondary)] rounded-full transition-all duration-500" 
+                    style={{ width: `${filledPercent}%` }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-5 w-full text-[8px] font-black mt-1.5 tracking-wider uppercase">
+            {[50, 100, 150, 200, 250].map((limit, idx, arr) => {
+              const prevLimit = idx > 0 ? arr[idx - 1] : 0;
+              const isCompleted = unlockedMilestones.length >= limit;
+              const isActive = unlockedMilestones.length > prevLimit && unlockedMilestones.length < limit;
+              return (
+                <div 
+                  key={limit} 
+                  className={`text-center transition-colors duration-300 ${
+                    isCompleted 
+                      ? 'text-[var(--secondary)] font-extrabold' 
+                      : isActive 
+                        ? 'text-amber-500 dark:text-amber-400 font-extrabold' 
+                        : 'text-[var(--muted)] opacity-60'
+                  }`}
+                >
+                  {limit}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Achievements Grid */}

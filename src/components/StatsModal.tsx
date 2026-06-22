@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
+import { supabase } from '../lib/supabase';
 
 const getTimeIcon = (hour: number) => {
   if (hour >= 5 && hour < 12) return '🌅';
@@ -110,6 +111,14 @@ export default function StatsModal({
       setScoreTrend(null);
     }
   }, [isOpen, stats?.bisouScore, stats?.prevBisouScore, loading]);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      supabase.rpc('increment_stats_views').catch((err) => {
+        console.error("Failed to increment stats views:", err);
+      });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
