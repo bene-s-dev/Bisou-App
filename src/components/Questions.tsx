@@ -20,7 +20,7 @@ interface QuestionsProps {
 const EncryptionOverlay = () => {
   const [phase, setPhase] = useState(1);
   const [scrambledText, setScrambledText] = useState("Meine Antworten");
-  
+
   const targetScrambled = useMemo(() => {
     const chars = "ABCDEFGHiJKLMNOPQRSTUVWXYZ0123456789$&#@?%";
     return "Meine Antworten".split("").map(() => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -33,7 +33,7 @@ const EncryptionOverlay = () => {
     const t3 = setTimeout(() => setPhase(4), 1450);  // Envelope flap closes
     const t4 = setTimeout(() => setPhase(5), 1800);  // Seal (Lock) appears
     const t5 = setTimeout(() => setPhase(6), 2200);  // Move up, background fades out, disappear
-    
+
     return () => { [t1, t2, t3, t4, t5].forEach(clearTimeout); };
   }, []);
 
@@ -55,11 +55,11 @@ const EncryptionOverlay = () => {
   }, [phase, targetScrambled]);
 
   return createPortal(
-    <div 
+    <div
       className={`fixed inset-0 z-[3000] flex items-center justify-center bg-[#F8F7FF]/90 backdrop-blur-md overflow-hidden transition-opacity duration-300 ease-in-out
         ${phase >= 6 ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
     >
-      <div 
+      <div
         className="relative w-48 h-48 flex items-center justify-center"
         style={{
           transform: phase >= 6 ? 'translate3d(0, -120vh, 0) scale(0.9)' : 'translate3d(0, 0, 0) scale(1)',
@@ -68,20 +68,20 @@ const EncryptionOverlay = () => {
           transformStyle: 'preserve-3d'
         }}
       >
-        
+
         {/* Layer 1: Envelope Back */}
         <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-10">
-          <path 
-            d="M 8 64 L 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z" 
-            fill="#FFFFFF" 
-            stroke="currentColor" 
-            strokeWidth="3.5" 
-            strokeLinejoin="round" 
+          <path
+            d="M 8 64 L 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z"
+            fill="#FFFFFF"
+            stroke="currentColor"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
           />
         </svg>
 
         {/* Layer 1b: Envelope Flap (3D folding flap) */}
-        <div 
+        <div
           className="absolute inset-0 w-full h-full pointer-events-none transition-transform duration-300 ease-in-out"
           style={{
             transformOrigin: '96px 64px',
@@ -95,15 +95,15 @@ const EncryptionOverlay = () => {
               d="M 8 64 Q 96 8 184 64"
               fill="#FFFFFF"
               stroke="currentColor"
-              strokeWidth="3.5" 
-              strokeLinejoin="round" 
+              strokeWidth="3.5"
+              strokeLinejoin="round"
               strokeLinecap="round"
             />
           </svg>
         </div>
 
         {/* Layer 2: The Letter (slides down behind EnvelopeFront pocket) */}
-        <div 
+        <div
           className={`absolute left-4 top-16 w-40 h-32 bg-white rounded-2xl shadow-lg border-2 border-[var(--secondary)] p-4 flex flex-col gap-2 transition-all duration-350 ease-in-out z-20 
             ${phase >= 3 ? 'translate-y-[48px] scale-90 opacity-0' : 'translate-y-[-60px] scale-100 opacity-100'}`}
         >
@@ -120,17 +120,17 @@ const EncryptionOverlay = () => {
 
         {/* Layer 3: Envelope Front Pocket */}
         <svg viewBox="0 0 192 192" className="absolute inset-0 w-full h-full text-[var(--secondary)] pointer-events-none z-30">
-          <path 
-            d="M 8 64 Q 96 118 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z" 
-            fill="#FFFFFF" 
-            stroke="currentColor" 
-            strokeWidth="3.5" 
-            strokeLinejoin="round" 
+          <path
+            d="M 8 64 Q 96 118 184 64 L 184 164 A 16 16 0 0 1 168 180 L 24 180 A 16 16 0 0 1 8 164 Z"
+            fill="#FFFFFF"
+            stroke="currentColor"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
           />
         </svg>
 
         {/* Layer 4: The Lock (bounces onto the envelope seal crease) */}
-        <div 
+        <div
           className="absolute inset-0 flex items-center justify-center z-[60] translate-y-6"
           style={{
             transformOrigin: 'center center',
@@ -145,9 +145,9 @@ const EncryptionOverlay = () => {
         </div>
 
       </div>
-      
+
       {/* Bottom info text */}
-      <div 
+      <div
         className={`absolute bottom-24 left-0 right-0 text-center transition-all duration-500 ease-in-out
           ${phase >= 6 ? 'opacity-0 translate-y-4' : phase >= 5 ? 'opacity-100 translate-y-0 scale-105' : 'opacity-100 translate-y-0'}`}
       >
@@ -215,13 +215,13 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
   }, [dashboardData, partnerId, ACTIVE_QUESTIONS]);
 
   // --- STATE ---
-  const [step, setStep] = useState<number>(initialStep); 
+  const [step, setStep] = useState<number>(initialStep);
   const [dailyQs, setDailyQs] = useState<Question[]>(() => {
     const base = dashboardData?.questions || [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];
     // Use real wwe from DB (index 3) if available, otherwise fall back
     const wwe = dashboardData?.questions?.[3] || FALLBACK_QUESTIONS.wwe;
     if (wwe) {
-      return base.length >= 4 ? base : [...base.slice(0,3), wwe];
+      return base.length >= 4 ? base : [...base.slice(0, 3), wwe];
     }
     return base;
   });
@@ -239,7 +239,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
   const [revealResults, setRevealResults] = useState(initialStep >= ACTIVE_QUESTIONS);
   const [rankingOptions, setRankingOptions] = useState<string[]>([]);
   const [internalError, setInternalError] = useState<string | null>(null);
-  
+
   const [displayState, setDisplayState] = useState<{
     current: number;
     previous: number | null;
@@ -302,12 +302,12 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       else if (step === 1) currentVal = rankingOptions.join(" > ");
       else if (step === 2) currentVal = textVal.trim();
       else if (step === 3) currentVal = selectedWwe || '';
-      
+
       if (currentVal) currentResults[step] = currentVal;
-      
-      localStorage.setItem(`quiz_progress_${dayKey}`, JSON.stringify({ 
-        step, 
-        myResults: currentResults 
+
+      localStorage.setItem(`quiz_progress_${dayKey}`, JSON.stringify({
+        step,
+        myResults: currentResults
       }));
     } else if (step === ACTIVE_QUESTIONS) {
       localStorage.removeItem(`quiz_progress_${dayKey}`);
@@ -318,7 +318,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     if (dashboardData) {
       const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
       const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
-      
+
       if (my.length >= ACTIVE_QUESTIONS) {
         if (step < ACTIVE_QUESTIONS) {
           setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
@@ -337,7 +337,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         setIsSubmitting(false);
         setRevealResults(false);
       }
-      
+
       setPartnerResults(prev => JSON.stringify(prev) === JSON.stringify(partner) ? prev : partner);
       if (dashboardData.questions) {
         setDailyQs(prev => {
@@ -379,7 +379,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const userIds = [session.user.id];
       if (partnerId) userIds.push(partnerId);
       const { data: answers } = await supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey);
-      
+
       if (answers) {
         const myAnsObj = answers.find(a => a.user_id === session.user.id);
         const pAnsObj = partnerId ? answers.find(a => a.user_id === partnerId) : null;
@@ -408,9 +408,9 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     }
   }, [dayKey, partnerId, ACTIVE_QUESTIONS]);
 
-  useEffect(() => { 
+  useEffect(() => {
     if (!dashboardData) {
-      loadData(); 
+      loadData();
     }
   }, [loadData, dashboardData]);
 
@@ -433,7 +433,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       try {
         if (sortableInstance.current) sortableInstance.current.destroy();
         sortableInstance.current = new Sortable(container, {
-          animation: 200, 
+          animation: 200,
           ghostClass: 'sortable-ghost',
           chosenClass: 'sortable-chosen',
           dragClass: 'sortable-drag',
@@ -499,14 +499,14 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
 
     return () => {
       if (sortableInstance.current) {
-        try { sortableInstance.current.destroy(); } catch(e){}
+        try { sortableInstance.current.destroy(); } catch (e) { }
         sortableInstance.current = null;
       }
       if (container) {
         try {
           container.removeEventListener('touchstart', handleTouchStart, { capture: true });
           container.removeEventListener('mousedown', handleMouseDown, { capture: true });
-        } catch(e){}
+        } catch (e) { }
       }
       if (onDragMove) {
         document.removeEventListener('mousemove', onDragMove);
@@ -523,15 +523,15 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const { data } = await supabase.auth.getSession();
       const session = data?.session;
       if (!session) throw new Error("No session");
-      
+
       const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
-      
+
       const { error: deleteError } = await supabase.from('answers').delete().eq('user_id', session.user.id).eq('day_key', dayKey);
       if (deleteError) throw deleteError;
       const { error } = await supabase.from('answers').insert([{ user_id: session.user.id, choice: choiceStr, day_key: dayKey }]);
       if (error && error.code !== '23505') throw error;
-      
+
       if (partnerId) {
         supabase.functions.invoke('send-push-notification', {
           body: { user_id: session.user.id, partner_id: partnerId, type: 'answer_submitted' }
@@ -561,7 +561,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     }
   };
 
-  const touchStartRef = useRef<{x: number, y: number} | null>(null);
+  const touchStartRef = useRef<{ x: number, y: number } | null>(null);
 
   const onSwipeStart = (e: React.TouchEvent) => {
     if (step >= ACTIVE_QUESTIONS || displayState.previous !== null) return;
@@ -575,10 +575,10 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     if (!touchStartRef.current) return;
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
-    
+
     const deltaX = touchStartRef.current.x - touchEndX;
     const deltaY = Math.abs(touchStartRef.current.y - touchEndY);
-    
+
     if (Math.abs(deltaX) > 50 && deltaY < 60) {
       if (deltaX > 0) {
         if (step + 1 <= myResults.length && step + 1 < ACTIVE_QUESTIONS) handleDotClick(step + 1);
@@ -630,14 +630,14 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       else if (step === 2) val = textVal.trim();
       else if (step === 3) val = selectedWwe || '';
       if (!val) return;
-      
+
       const nextResults = [...myResults];
       nextResults[step] = val;
 
       if (step < ACTIVE_QUESTIONS - 1) {
         setMyResults(nextResults);
         setStep(step + 1);
-        
+
         if (nextResults[step + 1]) {
           const saved = nextResults[step + 1];
           if (step + 1 === 1) setRankingOptions(saved.split(" > "));
@@ -788,11 +788,11 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const ansLineH = 13;
       const colWidth = (cardWidth - 32) / 2 - 4;
       // Compute card data
-      const cardData: { 
+      const cardData: {
         originalIndex: number;
-        qLines: string[]; 
-        myLines: string[]; 
-        pLines: string[]; 
+        qLines: string[];
+        myLines: string[];
+        pLines: string[];
         hasPAnswer: boolean;
         pBubbleHeight: number;
         myBubbleHeight: number;
@@ -854,11 +854,11 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         const cardHeight = qHeight + 22 + maxAnswerHeight + 16;
         totalCardsHeight += cardHeight + 12; // +12 gap between cards
 
-        cardData.push({ 
+        cardData.push({
           originalIndex: i,
-          qLines: qWrapped, 
-          myLines: myWrapped, 
-          pLines: pWrapped, 
+          qLines: qWrapped,
+          myLines: myWrapped,
+          pLines: pWrapped,
           hasPAnswer: !!pAnswer,
           pBubbleHeight,
           myBubbleHeight,
@@ -1189,13 +1189,13 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     const q1 = dailyQs[1] || FALLBACK_QUESTIONS.ranking;
     const q2 = dailyQs[2] || FALLBACK_QUESTIONS.text;
     const q3 = dailyQs[3] || FALLBACK_QUESTIONS.wwe;
-    
+
     const renderQuestionSlide = (s: number, isOutgoing = false) => {
       const isForward = displayState.direction === 'left';
       const animationClass = displayState.previous !== null
         ? (isOutgoing
-            ? (isForward ? 'animate-slide-out-left' : 'animate-slide-out-right')
-            : (isForward ? 'animate-slide-in-right' : 'animate-slide-in-left'))
+          ? (isForward ? 'animate-slide-out-left' : 'animate-slide-out-right')
+          : (isForward ? 'animate-slide-in-right' : 'animate-slide-in-left'))
         : '';
 
       switch (s) {
@@ -1239,11 +1239,11 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q2.q}</h2>
               <div className="min-h-0 pb-4">
                 <div className="flex flex-col gap-2">
-                  <textarea 
-                    className="w-full h-[180px] p-6 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
-                    placeholder="Deine Gedanken hier..." 
-                    value={textVal} 
-                    onChange={(e) => setTextVal(e.target.value)} 
+                  <textarea
+                    className="w-full h-[180px] p-6 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all"
+                    placeholder="Deine Gedanken hier..."
+                    value={textVal}
+                    onChange={(e) => setTextVal(e.target.value)}
                     maxLength={MAX_TEXT_LENGTH}
                   />
                   <div className="flex justify-end px-6">
@@ -1264,7 +1264,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q3.q}</h2>
               <div className="min-h-0 pb-4">
                 <div className="grid grid-cols-2 gap-4 h-[240px]">
-                  <button 
+                  <button
                     onClick={() => setSelectedWwe('Partner')}
                     className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Partner' ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
                   >
@@ -1277,7 +1277,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                     </div>
                     <span className="font-black text-sm uppercase tracking-widest">{partnerName.split(' ')[0]}</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setSelectedWwe('Ich')}
                     className={`flex flex-col items-center justify-center gap-4 rounded-[2.5rem] border-2 transition-all shadow-sm ${selectedWwe === 'Ich' ? 'border-[var(--secondary)] bg-purple-50 text-[var(--secondary)]' : 'bg-white border-[var(--card-border)] text-[#4A4468]'}`}
                   >
@@ -1298,13 +1298,13 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
           return null;
       }
     };
-    
+
     const progressIndices = Array.from({ length: ACTIVE_QUESTIONS }, (_, i) => i);
 
     return (
-      <div 
+      <div
         className="animate-entrance flex flex-col flex-1 h-full overflow-hidden pt-0 will-change-transform"
-        onTouchStart={onSwipeStart} 
+        onTouchStart={onSwipeStart}
         onTouchEnd={onSwipeEnd}
       >
         <style>{`
@@ -1345,9 +1345,9 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         `}</style>
         {isEncrypting && <EncryptionOverlay />}
         {step < ACTIVE_QUESTIONS ? (
-          <div 
+          <div
             className="flex flex-col flex-1 h-full overflow-hidden pt-4 quiz-view-container pwa-quiz-view-container"
-            style={{ 
+            style={{
               paddingTop: 'calc(72px + var(--sat, 0px))',
               paddingBottom: 'calc(9.5rem + var(--sab, 0px))'
             }}
@@ -1379,7 +1379,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         ) : (
           <div className={`flex flex-col flex-1 h-full overflow-hidden relative ${revealResults ? 'animate-fade-in' : 'opacity-0'}`}>
             {/* Top opaque background behind header and buttons */}
-            <div 
+            <div
               className="absolute pointer-events-none z-10"
               style={{
                 top: 0,
@@ -1390,7 +1390,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               }}
             />
             {/* Top blur-fade overlay below the solid background */}
-            <div 
+            <div
               className="absolute pointer-events-none z-10"
               style={{
                 top: 'calc(3.5rem + var(--sat, 0px) - 2px)',
@@ -1406,244 +1406,242 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
             />
             <div className="flex-1 relative min-h-0 overflow-x-hidden">
               <div className="h-full overflow-y-auto overflow-x-hidden scroll-smooth show-scrollbar">
-                <div 
+                <div
                   className="space-y-6 pb-72 pt-24 px-2"
-                  style={{ 
+                  style={{
                     paddingTop: 'calc(6.5rem + var(--sat, 0px))',
                     paddingBottom: 'calc(11rem + var(--sab, 0px))'
                   }}
                 >
-                {dailyQs.slice(0, ACTIVE_QUESTIONS).map((question, i) => {
-                  const m = myResults[i] || "—";
-                  const p = partnerResults?.[i];
+                  {dailyQs.slice(0, ACTIVE_QUESTIONS).map((question, i) => {
+                    const m = myResults[i] || "—";
+                    const p = partnerResults?.[i];
 
-                  const formatWwe = (val: string) => {
-                    if (i !== 3 || val === "—") return val;
-                    if (val === 'Ich') return 'Ich';
-                    if (val === 'Partner') return 'Du';
-                    return val;
-                  };
+                    const formatWwe = (val: string) => {
+                      if (i !== 3 || val === "—") return val;
+                      if (val === 'Ich') return 'Ich';
+                      if (val === 'Partner') return 'Du';
+                      return val;
+                    };
 
-                  return (
-                    <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
-                      <div className="flex items-center mb-4 pl-4 pr-2">
-                        <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
-                      </div>
-                      <div className="flex items-stretch gap-2 w-full px-2">
-                        {/* Partner Bubble */}
-                        <div className="flex flex-col gap-1 flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 ml-2">
-                            <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
-                              {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
-                                <img src={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <Heart className="w-3.5 h-3.5 text-purple-200" />
-                              )}
+                    return (
+                      <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
+                        <div className="flex items-center mb-4 pl-4 pr-2">
+                          <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
+                        </div>
+                        <div className="flex items-stretch gap-2 w-full px-2">
+                          {/* Partner Bubble */}
+                          <div className="flex flex-col gap-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 ml-2">
+                              <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-100 bg-purple-50 flex items-center justify-center">
+                                {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
+                                  <img src={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <Heart className="w-3.5 h-3.5 text-purple-200" />
+                                )}
+                              </div>
+                              <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
                             </div>
-                            <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">{partnerName}</span>
+                            <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${!p ? 'bg-gray-50 border-2 border-dashed border-gray-200 opacity-60' : 'bg-purple-50 border border-purple-100'}`}>
+                              {p ? (
+                                <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
+                                  {i === 1 ? safeSplit(p, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(p)}
+                                </p>
+                              ) : <p className="text-[9px] font-black text-gray-300 italic mt-auto">Wartet...</p>}
+                            </div>
                           </div>
-                          <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-bl-none shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''} ${!p ? 'bg-gray-50 border-2 border-dashed border-gray-200 opacity-60' : 'bg-purple-50 border border-purple-100'}`}>
-                            {p ? (
+
+                          {/* Ich Bubble */}
+                          <div className="flex flex-col gap-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 mr-2 self-end">
+                              <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
+                              <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
+                                {profile?.avatar_url ? (
+                                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-3.5 h-3.5 text-purple-300" />
+                                )}
+                              </div>
+                            </div>
+                            <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-br-none bg-purple-50 border border-purple-100 shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''}`}>
                               <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
-                                {i === 1 ? safeSplit(p, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(p)}
+                                {i === 1 ? safeSplit(m, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(m)}
                               </p>
-                            ) : <p className="text-[9px] font-black text-gray-300 italic mt-auto">Wartet...</p>}
-                          </div>
-                        </div>
-
-                        {/* Ich Bubble */}
-                        <div className="flex flex-col gap-1 flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mr-2 self-end">
-                            <span className="text-[10px] font-black text-[var(--secondary)] uppercase tracking-wider">Ich</span>
-                            <div className="w-6 h-6 rounded-full overflow-hidden border border-purple-200 bg-purple-50 flex items-center justify-center">
-                              {profile?.avatar_url ? (
-                                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-                              ) : (
-                                <User className="w-3.5 h-3.5 text-purple-300" />
-                              )}
                             </div>
-                          </div>
-                          <div className={`p-4 min-h-[80px] rounded-[1.5rem] rounded-br-none bg-purple-50 border border-purple-100 shadow-sm flex flex-col flex-1 ${i === 3 ? 'items-center justify-center text-center' : ''}`}>
-                            <p className={`text-[11px] font-bold text-[#2D264B] opacity-90 leading-relaxed break-words ${i === 3 ? 'text-center' : ''}`}>
-                              {i === 1 ? safeSplit(m, " > ").map((it, idx) => (<span key={idx} className="block">{idx + 1}. {it}</span>)) : formatWwe(m)}
-                            </p>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
                 </div>
               </div>
-              <div 
+              <div
                 className="absolute bottom-0 left-0 right-0 h-56 z-20 pointer-events-none bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent"
-                style={{ 
+                style={{
                   maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)',
                   WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 50%, transparent 100%)'
                 }}
               />
-          </div>
-        </div>
-      )}
-
-      {step < ACTIVE_QUESTIONS && (
-        <div 
-          className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90] pwa-quiz-next-btn-container" 
-        >
-          <button 
-            onClick={handleNext} 
-            disabled={isSubmitting || !(
-              (step === 0 && selectedTot) || 
-              (step === 1 && rankingOptions.length > 0) || 
-              (step === 2 && textVal.trim().length > 0) ||
-              (step === 3 && selectedWwe)
-            )} 
-            className="btn-static py-4 text-sm uppercase tracking-[0.15em] shadow-[var(--shadow-soft)] disabled:opacity-40 font-black group"
-          >
-            {isSubmitting ? (
-              'Wird geteilt...'
-            ) : (
-              <>
-                {step === ACTIVE_QUESTIONS - 1 ? (
-                  <>
-                    Antworten senden
-                    <Send className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                  </>
-                ) : (
-                  <>
-                    Weiter
-                    <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
-      {step >= ACTIVE_QUESTIONS && (
-        <>
-          <div 
-            className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]" 
-            style={{ 
-              maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)'
-            }}
-          />
-          <div 
-            className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md z-[100] pointer-events-none pwa-questions-reset-header px-4" 
-            style={{ paddingTop: 'calc(1rem + var(--sat, 0px))' }}
-          >
-            <div className="relative flex items-center justify-end gap-2 h-8 w-full">
-              {/* Share Button */}
-              <button 
-                onClick={() => setShowShareSelection(true)}
-                disabled={isSharing}
-                className="pointer-events-auto h-7 text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm disabled:opacity-50 shrink-0"
-              >
-                Teilen {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
-              </button>
-              
-              {/* Reset Button */}
-              <button 
-                onClick={resetQuiz} 
-                className="pointer-events-auto h-7 text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
-              >
-                Neu starten <RefreshCcw className="w-3.5 h-3.5" />
-              </button>
             </div>
           </div>
+        )}
 
-          {showShareSelection && createPortal(
-            <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
-              <div className="absolute inset-0" onClick={() => setShowShareSelection(false)} />
-              <div className="modal-content p-6 overflow-hidden will-change-transform contain-layout">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
-                      <Share2 className="w-5 h-5 text-[var(--secondary)]" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-[#1F1939] text-base leading-tight">Antworten teilen</h3>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setShowShareSelection(false)} 
-                    className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
+        {step < ACTIVE_QUESTIONS && (
+          <div
+            className="fixed left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-md z-[90] pwa-quiz-next-btn-container"
+          >
+            <button
+              onClick={handleNext}
+              disabled={isSubmitting || !(
+                (step === 0 && selectedTot) ||
+                (step === 1 && rankingOptions.length > 0) ||
+                (step === 2 && textVal.trim().length > 0) ||
+                (step === 3 && selectedWwe)
+              )}
+              className="btn-static py-4 text-sm uppercase tracking-[0.15em] shadow-[var(--shadow-soft)] disabled:opacity-40 font-black group"
+            >
+              {isSubmitting ? (
+                'Wird geteilt...'
+              ) : (
+                <>
+                  {step === ACTIVE_QUESTIONS - 1 ? (
+                    <>
+                      Antworten senden
+                      <Send className="w-4.5 h-4.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                    </>
+                  ) : (
+                    <>
+                      Weiter
+                      <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </>
+              )}
+            </button>
+          </div>
+        )}
 
-                <p className="text-xs font-bold text-[var(--muted)] mb-4 leading-relaxed">
-                  Wähle aus, welche der heutigen Antworten geteilt werden sollen:
-                </p>
+        {step >= ACTIVE_QUESTIONS && (
+          <>
+            <div
+              className="fixed bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#F8F7FF] via-[#F8F7FF]/95 to-transparent pointer-events-none z-[90]"
+              style={{
+                maskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.8) 40%, transparent 100%)'
+              }}
+            />
+            <div
+              className="fixed left-0 right-0 top-0 mx-auto w-full max-w-md z-[100] pointer-events-none pwa-questions-reset-header px-4"
+              style={{ paddingTop: 'calc(1rem + var(--sat, 0px))' }}
+            >
+              <div className="relative flex items-center justify-end gap-2 h-8 w-full">
+                {/* Share Button */}
+                <button
+                  onClick={() => setShowShareSelection(true)}
+                  disabled={isSharing}
+                  className="pointer-events-auto h-7 text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm disabled:opacity-50 shrink-0"
+                >
+                  Teilen {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+                </button>
 
-                <div className="flex flex-col gap-2.5 mb-6">
-                  {dailyQs.map((q, idx) => {
-                    const isChecked = selectedQuestions[idx];
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          const next = [...selectedQuestions];
-                          next[idx] = !next[idx];
-                          setSelectedQuestions(next);
-                        }}
-                        className={`flex items-center gap-3.5 p-4 rounded-2xl border text-left transition-all ${
-                          isChecked 
-                            ? 'bg-purple-50/50 border-[var(--secondary)] text-[#1F1939]' 
-                            : 'bg-white border-purple-100/50 text-[#8E89AA]'
-                        }`}
-                      >
-                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${
-                          isChecked 
-                            ? 'bg-[var(--secondary)] border-[var(--secondary)] text-white' 
-                            : 'border-purple-200 bg-white'
-                        }`}>
-                          {isChecked && (
-                            <svg className="w-3.5 h-3.5 stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="block text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider mb-0.5">Frage {idx + 1}</span>
-                          <span className="block text-xs font-bold truncate leading-tight">{q.q}</span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex flex-col gap-2.5">
-                  <button
-                    disabled={!selectedQuestions.some(q => q)}
-                    onClick={() => {
-                      setShowShareSelection(false);
-                      const selectedIndices = selectedQuestions
-                        .map((val, idx) => val ? idx : -1)
-                        .filter(idx => idx !== -1);
-                      handleShareAnswers(selectedIndices);
-                    }}
-                    className="btn-static py-4 text-xs font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Share2 className="w-4 h-4" /> Teilen
-                  </button>
-                  <button
-                    onClick={() => setShowShareSelection(false)}
-                    className="w-full py-2.5 text-[9px] font-black uppercase tracking-[0.15em] transition-colors text-[var(--muted)] hover:text-[var(--text-main)] text-center"
-                  >
-                    Abbrechen
-                  </button>
-                </div>
+                {/* Reset Button */}
+                <button
+                  onClick={resetQuiz}
+                  className="pointer-events-auto h-7 text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
+                >
+                  Neu <RefreshCcw className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </div>,
-            document.body
-          )}
-        </>
-      )}
-    </div>
+            </div>
+
+            {showShareSelection && createPortal(
+              <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
+                <div className="absolute inset-0" onClick={() => setShowShareSelection(false)} />
+                <div className="modal-content p-6 overflow-hidden will-change-transform contain-layout">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+                        <Share2 className="w-5 h-5 text-[var(--secondary)]" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-[#1F1939] text-base leading-tight">Antworten teilen</h3>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowShareSelection(false)}
+                      className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <p className="text-xs font-bold text-[var(--muted)] mb-4 leading-relaxed">
+                    Wähle aus, welche der heutigen Antworten geteilt werden sollen:
+                  </p>
+
+                  <div className="flex flex-col gap-2.5 mb-6">
+                    {dailyQs.map((q, idx) => {
+                      const isChecked = selectedQuestions[idx];
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            const next = [...selectedQuestions];
+                            next[idx] = !next[idx];
+                            setSelectedQuestions(next);
+                          }}
+                          className={`flex items-center gap-3.5 p-4 rounded-2xl border text-left transition-all ${isChecked
+                              ? 'bg-purple-50/50 border-[var(--secondary)] text-[#1F1939]'
+                              : 'bg-white border-purple-100/50 text-[#8E89AA]'
+                            }`}
+                        >
+                          <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${isChecked
+                              ? 'bg-[var(--secondary)] border-[var(--secondary)] text-white'
+                              : 'border-purple-200 bg-white'
+                            }`}>
+                            {isChecked && (
+                              <svg className="w-3.5 h-3.5 stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="block text-[8px] font-black text-[var(--secondary)] uppercase tracking-wider mb-0.5">Frage {idx + 1}</span>
+                            <span className="block text-xs font-bold truncate leading-tight">{q.q}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex flex-col gap-2.5">
+                    <button
+                      disabled={!selectedQuestions.some(q => q)}
+                      onClick={() => {
+                        setShowShareSelection(false);
+                        const selectedIndices = selectedQuestions
+                          .map((val, idx) => val ? idx : -1)
+                          .filter(idx => idx !== -1);
+                        handleShareAnswers(selectedIndices);
+                      }}
+                      className="btn-static py-4 text-xs font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Share2 className="w-4 h-4" /> Teilen
+                    </button>
+                    <button
+                      onClick={() => setShowShareSelection(false)}
+                      className="w-full py-2.5 text-[9px] font-black uppercase tracking-[0.15em] transition-colors text-[var(--muted)] hover:text-[var(--text-main)] text-center"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
+                </div>
+              </div>,
+              document.body
+            )}
+          </>
+        )}
+      </div>
     );
   } catch (e: any) {
     setInternalError(e.message);

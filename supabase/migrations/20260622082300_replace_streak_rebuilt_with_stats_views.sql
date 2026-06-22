@@ -163,11 +163,16 @@ WHERE trigger_type = 'streaks_rebuilt';
 INSERT INTO public.milestones (name, description, icon, trigger_type, trigger_value)
 SELECT m.name, m.description, m.icon, m.trigger_type, m.trigger_value
 FROM (VALUES
-  ('Statistik-Lehrling', 'Schaue dir zum 1. Mal eure Beziehungs-Statistiken an.', '🧪', 'stats_views', 1),
-  ('Daten-Analyst', 'Schaue dir zum 5. Mal eure Beziehungs-Statistiken an.', '📊', 'stats_views', 5),
-  ('Nachwuchs-Forscher', 'Schaue dir zum 15. Mal eure Beziehungs-Statistiken an.', '🔬', 'stats_views', 15),
-  ('Beziehungs-Wissenschaftler', 'Schaue dir zum 30. Mal eure Beziehungs-Statistiken an.', '🧠', 'stats_views', 30),
-  ('Professor der Liebe', 'Schaue dir zum 50. Mal eure Beziehungs-Statistiken an.', '🎓', 'stats_views', 50)
+  ('Statistik-Lehrling', 'Schaue dir zum 10. Mal eure Bisou-Statistik an.', '🧪', 'stats_views', 10),
+  ('Daten-Analyst', 'Schaue dir zum 20. Mal eure Bisou-Statistik an.', '📊', 'stats_views', 20),
+  ('Zahlengenie', 'Schaue dir zum 30. Mal eure Bisou-Statistik an.', '🧮', 'stats_views', 30),
+  ('Muster-Erkenner', 'Schaue dir zum 40. Mal eure Bisou-Statistik an.', '🔍', 'stats_views', 40),
+  ('Nachwuchs-Forscher', 'Schaue dir zum 50. Mal eure Bisou-Statistik an.', '🔬', 'stats_views', 50),
+  ('Liebes-Statistiker', 'Schaue dir zum 60. Mal eure Bisou-Statistik an.', '📈', 'stats_views', 60),
+  ('Daten-Detektiv', 'Schaue dir zum 70. Mal eure Bisou-Statistik an.', '🕵️‍♂️', 'stats_views', 70),
+  ('Beziehungs-Wissenschaftler', 'Schaue dir zum 80. Mal eure Bisou-Statistik an.', '🧠', 'stats_views', 80),
+  ('Zukunfts-Prognostiker', 'Schaue dir zum 90. Mal eure Bisou-Statistik an.', '🔮', 'stats_views', 90),
+  ('Professor der Liebe', 'Schaue dir zum 100. Mal eure Bisou-Statistik an.', '🎓', 'stats_views', 100)
 ) AS m(name, description, icon, trigger_type, trigger_value)
 WHERE NOT EXISTS (
   SELECT 1 FROM public.milestones WHERE milestones.name = m.name
