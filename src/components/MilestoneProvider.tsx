@@ -11,6 +11,8 @@ interface MilestoneContextType {
 
 const MilestoneContext = createContext<MilestoneContextType | undefined>(undefined);
 
+const TOAST_DURATION = 7000; // 30% shorter than the original 10000ms
+
 export const MilestoneProvider: React.FC<{ 
   children: React.ReactNode;
   userId: string | undefined;
@@ -19,7 +21,7 @@ export const MilestoneProvider: React.FC<{
 }> = ({ children, userId, partnerId, dashboardData }) => {
   const [newMilestones, setNewMilestones] = useState<any[]>([]);
   const [availableMilestones, setAvailableMilestones] = useState<any[]>([]);
-  const [toastTimeLeft, setToastTimeLeft] = useState(10000);
+  const [toastTimeLeft, setToastTimeLeft] = useState(TOAST_DURATION);
   const [toastPaused, setToastPaused] = useState(false);
   const navigate = useNavigate();
 
@@ -133,7 +135,7 @@ export const MilestoneProvider: React.FC<{
 
   useEffect(() => {
     if (currentNewMilestone) {
-      setToastTimeLeft(10000);
+      setToastTimeLeft(TOAST_DURATION);
       setToastPaused(false);
     }
   }, [currentNewMilestone?.id]);
@@ -173,8 +175,10 @@ export const MilestoneProvider: React.FC<{
       confetti({
         particleCount: 80,
         spread: 60,
-        origin: { y: 0.8 },
-        colors: ['#A29BFE', '#FF8A8A', '#FFD166', '#06D6A0']
+        angle: 270,
+        origin: { x: 0.5, y: 0 },
+        colors: ['#A29BFE', '#FF8A8A', '#FFD166', '#06D6A0'],
+        zIndex: 99998
       });
     }
   }, [newMilestones.length]);
@@ -213,7 +217,7 @@ export const MilestoneProvider: React.FC<{
                 x="0" y="0" width="100%" height="100%" rx="32" fill="none"
                 stroke="url(#toast-border-gradient)" strokeWidth="1.8"
                 pathLength="100" strokeDasharray="100"
-                strokeDashoffset={100 - (toastTimeLeft / 10000) * 100}
+                strokeDashoffset={100 - (toastTimeLeft / TOAST_DURATION) * 100}
                 strokeLinecap="round"
               />
             </svg>

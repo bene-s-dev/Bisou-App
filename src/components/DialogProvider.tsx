@@ -12,6 +12,7 @@ interface DialogOptions {
 
 interface DialogContextType {
   showAlert: (message: string, type?: DialogType) => void;
+  hideAlert: () => void;
   showConfirm: (message: React.ReactNode, onConfirm: () => void, options?: DialogOptions) => void;
 }
 
@@ -26,6 +27,10 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     if (type !== 'error') {
       setTimeout(() => setAlert(null), 3000);
     }
+  }, []);
+
+  const hideAlert = useCallback(() => {
+    setAlert(null);
   }, []);
 
   const showConfirm = useCallback((message: React.ReactNode, onConfirm: () => void, options?: DialogOptions) => {
@@ -52,7 +57,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
   }, [confirm]);
 
   return (
-    <DialogContext.Provider value={{ showAlert, showConfirm }}>
+    <DialogContext.Provider value={{ showAlert, hideAlert, showConfirm }}>
       {children}
       
       {/* Toast Alert */}
