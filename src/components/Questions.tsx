@@ -702,12 +702,45 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
   // --- SHARE FUNCTIONALITY ---
   const handleShareAnswers = async (selectedIndices: number[] = [0, 1, 2, 3]) => {
     if (isSharing || step < ACTIVE_QUESTIONS) return;
+    if (selectedIndices.length === 0) {
+      showAlert("Bitte wähle mindestens eine Antwort aus.", "warning");
+      return;
+    }
     setIsSharing(true);
     showAlert("Antworten-Übersicht wird erstellt...", "info");
 
     const timerPromise = new Promise(resolve => setTimeout(resolve, 800));
 
     try {
+      // Polyfill for roundRect if not supported by browser (e.g. older iOS Safari)
+      if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (
+          this: CanvasRenderingContext2D,
+          x: number,
+          y: number,
+          w: number,
+          h: number,
+          r: number | number[]
+        ) {
+          const radii = Array.isArray(r) ? r : [r];
+          const rTopLeft = radii[0] || 0;
+          const rTopRight = radii[1] ?? radii[0] ?? 0;
+          const rBottomRight = radii[2] ?? radii[0] ?? 0;
+          const rBottomLeft = radii[3] ?? radii[1] ?? radii[0] ?? 0;
+
+          this.moveTo(x + rTopLeft, y);
+          this.lineTo(x + w - rTopRight, y);
+          this.quadraticCurveTo(x + w, y, x + w, y + rTopRight);
+          this.lineTo(x + w, y + h - rBottomRight);
+          this.quadraticCurveTo(x + w, y + h, x + w - rBottomRight, y + h);
+          this.lineTo(x + rBottomLeft, y + h);
+          this.quadraticCurveTo(x, y + h, x, y + h - rBottomLeft);
+          this.lineTo(x, y + rTopLeft);
+          this.quadraticCurveTo(x, y, x + rTopLeft, y);
+          return this;
+        };
+      }
+
       const fontStack = "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
       // Helper: word-wrap text and return lines
@@ -878,7 +911,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       // 3. "Bisou" app logo in Fraunces serif and Names pill centered together on one line
       const fraunces = "'Fraunces', Georgia, 'Times New Roman', serif";
       const myName = profile?.display_name?.split(' ')[0] || 'Ich';
-      const pName = partnerName.split(' ')[0];
+      const pName = (partnerName || 'Partner').split(' ')[0];
       const namesStr = `${pName} & ${myName}`;
 
       // Measure logo width
@@ -985,7 +1018,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         ctx.font = `800 7px ${fontStack}`;
         if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.1em';
         ctx.textAlign = 'center';
-        ctx.fillText(partnerName.split(' ')[0].toUpperCase(), leftColX + colWidth / 2, answerStartY);
+        ctx.fillText((partnerName || 'Partner').split(' ')[0].toUpperCase(), leftColX + colWidth / 2, answerStartY);
         ctx.textAlign = 'left';
         if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
 
