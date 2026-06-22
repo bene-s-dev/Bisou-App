@@ -794,8 +794,10 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         const partnerFormatted = pAnswer ? formatAns(pAnswer, i) : null;
 
         // Measure question wrapping
+        if ('letterSpacing' in tmpCtx) (tmpCtx as any).letterSpacing = '0.04em';
         tmpCtx.font = `bold 8.5px ${fontStack}`;
         const qWrapped = wrapText(tmpCtx, qText, cardWidth - 32);
+        if ('letterSpacing' in tmpCtx) (tmpCtx as any).letterSpacing = '0px';
 
         // Measure answer wrapping
         const isFreeText = (i === 2);
