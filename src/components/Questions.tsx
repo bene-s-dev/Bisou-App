@@ -3,10 +3,9 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { Heart, RefreshCcw, AlertCircle, ArrowRight, Send, Lock, User, History, Share2, Loader2, X } from 'lucide-react';
+import { Heart, RefreshCcw, AlertCircle, ArrowRight, Send, Lock, User, Share2, Loader2, X } from 'lucide-react';
 import { useDialog } from './DialogProvider';
 import { translateError } from '../lib/translations';
-import JournalModal from './JournalModal';
 
 interface QuestionsProps {
   profile?: any;
@@ -231,7 +230,6 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
   const [loading, setLoading] = useState(!dashboardData);
   const [selectedTot, setSelectedTot] = useState<string | null>(null);
   const [selectedWwe, setSelectedWwe] = useState<string | null>(null);
-  const [showJournalModal, setShowJournalModal] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [showShareSelection, setShowShareSelection] = useState(false);
   const [selectedQuestions, setSelectedQuestions] = useState<boolean[]>([false, false, false, false]);
@@ -1541,17 +1539,9 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               <button 
                 onClick={() => setShowShareSelection(true)}
                 disabled={isSharing}
-                className="pointer-events-auto w-7 h-7 rounded-full bg-purple-50/80 backdrop-blur-sm border border-purple-100 shadow-sm text-[var(--secondary)] hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 shrink-0"
+                className="pointer-events-auto h-7 text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm disabled:opacity-50 shrink-0"
               >
-                {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
-              </button>
-
-              {/* Journal Button */}
-              <button 
-                onClick={() => setShowJournalModal(true)}
-                className="pointer-events-auto h-7 text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm"
-              >
-                Tagebuch <History className="w-4 h-4" />
+                Teilen {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
               </button>
               
               {/* Reset Button */}
@@ -1563,17 +1553,6 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               </button>
             </div>
           </div>
-
-          <JournalModal
-            isOpen={showJournalModal}
-            onClose={() => setShowJournalModal(false)}
-            partnerName={partnerName}
-            userId={profile?.id}
-            partnerId={partnerId as string}
-            partnerAvatar={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url}
-            userAvatar={profile?.avatar_url}
-            dayKey={dayKey}
-          />
 
           {showShareSelection && createPortal(
             <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
