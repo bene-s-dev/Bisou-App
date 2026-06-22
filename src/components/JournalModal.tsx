@@ -199,19 +199,19 @@ export default function JournalModal({
     return {
       questions: [
         { 
-          q: qs.tot.q, 
+          q: qs.tot?.q || 'Wie war dein Tag?', 
           my: parse(myAns?.choice)[0], 
           partner: !isLocked ? parse(partnerAns?.choice)[0] : null,
           isPartnerLocked: isLocked
         },
         { 
-          q: qs.ranking.q, 
+          q: qs.ranking?.q || 'Ranking', 
           my: parse(myAns?.choice)[1], 
           partner: !isLocked ? parse(partnerAns?.choice)[1] : null,
           isPartnerLocked: isLocked
         },
         { 
-          q: qs.text.q, 
+          q: qs.text?.q || 'Dankbarkeit', 
           my: parse(myAns?.choice)[2], 
           partner: !isLocked ? parse(partnerAns?.choice)[2] : null,
           isPartnerLocked: isLocked

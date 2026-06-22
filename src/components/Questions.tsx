@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { FALLBACK_QUESTIONS, Question } from '../constants/questions';
 import Sortable from 'sortablejs';
-import { Heart, RefreshCcw, AlertCircle, ArrowRight, Send, Lock, User, History } from 'lucide-react';
+import { Heart, RefreshCcw, AlertCircle, ArrowRight, Send, Lock, User, History, Share2, Loader2 } from 'lucide-react';
 import { useDialog } from './DialogProvider';
 import { translateError } from '../lib/translations';
 import JournalModal from './JournalModal';
@@ -211,6 +211,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
   const [selectedTot, setSelectedTot] = useState<string | null>(null);
   const [selectedWwe, setSelectedWwe] = useState<string | null>(null);
   const [showJournalModal, setShowJournalModal] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
   const [textVal, setTextVal] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEncrypting, setIsEncrypting] = useState(false);
@@ -696,6 +697,421 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     );
   };
 
+  // --- SHARE FUNCTIONALITY ---
+  const handleShareAnswers = async () => {
+    if (isSharing || step < ACTIVE_QUESTIONS) return;
+    setIsSharing(true);
+    showAlert("Antworten-Übersicht wird erstellt...", "info");
+
+    const timerPromise = new Promise(resolve => setTimeout(resolve, 800));
+
+    try {
+      const fontStack = "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+      // Helper: word-wrap text and return lines
+      const wrapText = (context: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
+        const words = text.split(' ');
+        const lines: string[] = [];
+        let currentLine = '';
+
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i];
+          if (context.measureText(word).width > maxWidth) {
+            // Flush current line first
+            if (currentLine) {
+              lines.push(currentLine);
+              currentLine = '';
+            }
+            // Split the word character-by-character
+            let subLine = '';
+            for (let c = 0; c < word.length; c++) {
+              const testSub = subLine + word[c];
+              if (context.measureText(testSub).width > maxWidth) {
+                if (subLine) lines.push(subLine);
+                subLine = word[c];
+              } else {
+                subLine = testSub;
+              }
+            }
+            currentLine = subLine;
+          } else {
+            const testLine = currentLine ? currentLine + ' ' + word : word;
+            if (context.measureText(testLine).width > maxWidth) {
+              if (currentLine) lines.push(currentLine);
+              currentLine = word;
+            } else {
+              currentLine = testLine;
+            }
+          }
+        }
+        if (currentLine) {
+          lines.push(currentLine);
+        }
+        return lines;
+      };
+
+      // Pre-measure all cards to determine total canvas height
+      // We need a temporary canvas for measuring
+      const tmpCanvas = document.createElement('canvas');
+      tmpCanvas.width = 1; tmpCanvas.height = 1;
+      const tmpCtx = tmpCanvas.getContext('2d')!;
+
+      const cardWidth = 340;
+      const cardX = 40;
+      const qLineH = 12;
+      const ansLineH = 13;
+      const colWidth = (cardWidth - 32) / 2 - 4;
+
+      // Compute card data
+      const cardData: { 
+        qLines: string[]; 
+        myLines: string[]; 
+        pLines: string[]; 
+        hasPAnswer: boolean;
+        pBubbleHeight: number;
+        myBubbleHeight: number;
+        maxAnswerHeight: number;
+        isFreeText: boolean;
+      }[] = [];
+      let totalCardsHeight = 0;
+
+      for (let i = 0; i < ACTIVE_QUESTIONS && i < dailyQs.length; i++) {
+        const question = dailyQs[i];
+        const myAnswer = myResults[i] || '—';
+        const pAnswer = partnerResults?.[i];
+        const qText = question?.q || 'Frage';
+
+        const formatAns = (val: string, qIndex: number): string => {
+          if (qIndex === 1) return val.split(' > ').map((it, idx) => `${idx + 1}. ${it}`).join('\n');
+          if (qIndex === 3) {
+            if (val === 'Ich') return 'Ich';
+            if (val === 'Partner') return 'Du';
+          }
+          return val;
+        };
+
+        const myFormatted = formatAns(myAnswer, i);
+        const partnerFormatted = pAnswer ? formatAns(pAnswer, i) : null;
+
+        // Measure question wrapping
+        tmpCtx.font = `bold 8.5px ${fontStack}`;
+        const qWrapped = wrapText(tmpCtx, qText, cardWidth - 32);
+
+        // Measure answer wrapping
+        const isFreeText = (i === 2);
+        const ansFont = isFreeText ? `500 8.5px ${fontStack}` : `bold 9.5px ${fontStack}`;
+        const currentAnsLineH = isFreeText ? 11.5 : 13;
+
+        tmpCtx.font = ansFont;
+        const myRaw = myFormatted.split('\n');
+        const myWrapped: string[] = [];
+        myRaw.forEach(line => {
+          const wrapped = wrapText(tmpCtx, line, colWidth - 20);
+          myWrapped.push(...wrapped);
+        });
+
+        const pRaw = partnerFormatted ? partnerFormatted.split('\n') : ['Wartet...'];
+        const pWrapped: string[] = [];
+        pRaw.forEach(line => {
+          const wrapped = wrapText(tmpCtx, line, colWidth - 20);
+          pWrapped.push(...wrapped);
+        });
+
+        const pBubbleHeight = Math.max(pWrapped.length * currentAnsLineH + 20, 46);
+        const myBubbleHeight = Math.max(myWrapped.length * currentAnsLineH + 20, 46);
+        const maxAnswerHeight = Math.max(pBubbleHeight, myBubbleHeight);
+
+        const qHeight = qWrapped.length * qLineH + 8;
+        const cardHeight = qHeight + 22 + maxAnswerHeight + 16;
+        totalCardsHeight += cardHeight + 12; // +12 gap between cards
+
+        cardData.push({ 
+          qLines: qWrapped, 
+          myLines: myWrapped, 
+          pLines: pWrapped, 
+          hasPAnswer: !!pAnswer,
+          pBubbleHeight,
+          myBubbleHeight,
+          maxAnswerHeight,
+          isFreeText
+        });
+      }
+
+      // Dynamic canvas height: header (54) + cards + bottom padding (24 for domain text)
+      const headerH = 54;
+      const canvasLogicalH = headerH + totalCardsHeight + 24;
+      const canvas = document.createElement('canvas');
+      canvas.width = 840;
+      canvas.height = Math.ceil(canvasLogicalH) * 2;
+      const ctx = canvas.getContext('2d')!;
+      ctx.scale(2, 2);
+
+      // 1. Background gradient (Bisou lavender)
+      const grad = ctx.createLinearGradient(0, 0, 420, canvasLogicalH);
+      grad.addColorStop(0, '#F8F7FF');
+      grad.addColorStop(0.5, '#F0EEFF');
+      grad.addColorStop(1, '#EBE8FF');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 420, canvasLogicalH);
+
+      // 2. Ambient glows
+      const glowPink = ctx.createRadialGradient(80, 60, 0, 80, 60, 200);
+      glowPink.addColorStop(0, 'rgba(255, 138, 138, 0.18)');
+      glowPink.addColorStop(0.5, 'rgba(255, 138, 138, 0.06)');
+      glowPink.addColorStop(1, 'rgba(255, 138, 138, 0)');
+      ctx.fillStyle = glowPink;
+      ctx.beginPath(); ctx.arc(80, 60, 200, 0, Math.PI * 2); ctx.fill();
+
+      const glowPurple = ctx.createRadialGradient(340, canvasLogicalH - 80, 0, 340, canvasLogicalH - 80, 240);
+      glowPurple.addColorStop(0, 'rgba(162, 155, 254, 0.16)');
+      glowPurple.addColorStop(0.5, 'rgba(162, 155, 254, 0.05)');
+      glowPurple.addColorStop(1, 'rgba(162, 155, 254, 0)');
+      ctx.fillStyle = glowPurple;
+      ctx.beginPath(); ctx.arc(340, canvasLogicalH - 80, 240, 0, Math.PI * 2); ctx.fill();
+
+      // 3. "Bisou" app logo in Fraunces serif and Names pill centered together on one line
+      const fraunces = "'Fraunces', Georgia, 'Times New Roman', serif";
+      const myName = profile?.display_name?.split(' ')[0] || 'Ich';
+      const pName = partnerName.split(' ')[0];
+      const namesStr = `${pName} & ${myName}`;
+
+      // Measure logo width
+      ctx.font = `600 24px ${fraunces}`;
+      const bisouW = ctx.measureText('Bisou').width;
+
+      // Measure names pill width
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.1em';
+      ctx.font = `800 8px ${fontStack}`;
+      const namesW = ctx.measureText(namesStr.toUpperCase()).width;
+      const namesPillW = namesW + 16;
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+      // Center the combined block (logo + gap + pill)
+      const totalHeaderW = bisouW + 12 + namesPillW;
+      const startX = (420 - totalHeaderW) / 2;
+
+      // Vertical alignment anchor (middle of the 54px high header space)
+      const headerCenterY = 27;
+
+      ctx.textBaseline = 'middle';
+
+      // Draw "Bisou" app logo
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '-0.02em';
+      ctx.fillStyle = '#1F1939';
+      ctx.font = `600 24px ${fraunces}`;
+      ctx.fillText('Bisou', startX, headerCenterY);
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+      // Draw Names pill
+      const namesPillX = startX + bisouW + 12;
+      const namesPillY = headerCenterY - 9; // 9 is half of the 18px pill height
+
+      // Gradient pill background
+      const namesPillGrad = ctx.createLinearGradient(namesPillX, namesPillY, namesPillX + namesPillW, namesPillY);
+      namesPillGrad.addColorStop(0, 'rgba(255, 138, 138, 0.12)');
+      namesPillGrad.addColorStop(1, 'rgba(162, 155, 254, 0.12)');
+      ctx.beginPath();
+      ctx.roundRect(namesPillX, namesPillY, namesPillW, 18, 9);
+      ctx.fillStyle = namesPillGrad;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(162, 155, 254, 0.2)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+
+      // Names text
+      ctx.fillStyle = '#A29BFE';
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.1em';
+      ctx.font = `800 8px ${fontStack}`;
+      ctx.fillText(namesStr.toUpperCase(), namesPillX + 8, headerCenterY);
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+      ctx.textBaseline = 'alphabetic'; // Restore baseline to default for the rest of drawing
+
+      // 6. Draw answer cards
+      let cardY = headerH;
+
+      for (let i = 0; i < cardData.length; i++) {
+        const { qLines, myLines, pLines, hasPAnswer, pBubbleHeight, myBubbleHeight, maxAnswerHeight, isFreeText } = cardData[i];
+
+        const qHeight = qLines.length * qLineH + 8;
+        const cardHeight = qHeight + 22 + maxAnswerHeight + 16;
+
+        // Card background (glass)
+        ctx.save();
+        ctx.shadowColor = 'rgba(162, 155, 254, 0.08)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 6;
+        ctx.beginPath();
+        ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 20);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fill();
+        ctx.restore();
+
+        // Card border
+        const borderGrad = ctx.createLinearGradient(cardX, cardY, cardX + cardWidth, cardY + cardHeight);
+        borderGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+        borderGrad.addColorStop(0.5, 'rgba(226, 223, 255, 0.35)');
+        borderGrad.addColorStop(1, 'rgba(255, 255, 255, 0.5)');
+        ctx.strokeStyle = borderGrad;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Question text (wrapped)
+        if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.04em';
+        ctx.fillStyle = '#2D264B';
+        ctx.font = `bold 8.5px ${fontStack}`;
+        qLines.forEach((line, lineIdx) => {
+          ctx.fillText(line, cardX + 16, cardY + 18 + lineIdx * qLineH);
+        });
+        if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+        // Two columns for answers
+        const leftColX = cardX + 16;
+        const rightColX = cardX + cardWidth / 2 + 2;
+        const answerStartY = cardY + qHeight + 22;
+
+        const currentAnsLineH = isFreeText ? 11.5 : 13;
+        const textTopOffset = isFreeText ? 20 : 21;
+        const ansFont = isFreeText ? `500 8.5px ${fontStack}` : `bold 9.5px ${fontStack}`;
+
+        // Partner answer (left)
+        ctx.fillStyle = '#A29BFE';
+        ctx.font = `800 7px ${fontStack}`;
+        if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.1em';
+        ctx.textAlign = 'center';
+        ctx.fillText(partnerName.split(' ')[0].toUpperCase(), leftColX + colWidth / 2, answerStartY);
+        ctx.textAlign = 'left';
+        if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+        ctx.beginPath();
+        ctx.roundRect(leftColX, answerStartY + 8, colWidth, pBubbleHeight - 8, 12);
+        ctx.fillStyle = hasPAnswer ? 'rgba(162, 155, 254, 0.08)' : 'rgba(0, 0, 0, 0.02)';
+        ctx.fill();
+        ctx.strokeStyle = hasPAnswer ? 'rgba(162, 155, 254, 0.15)' : 'rgba(0, 0, 0, 0.06)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = hasPAnswer ? '#2D264B' : '#B0ADBE';
+        ctx.font = ansFont;
+        if (i === 3) {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const bubbleY = answerStartY + 8;
+          const bubbleH = pBubbleHeight - 8;
+          const totalLinesH = pLines.length * currentAnsLineH;
+          const startY = bubbleY + (bubbleH - totalLinesH) / 2 + (currentAnsLineH / 2);
+          pLines.forEach((line, lineIdx) => {
+            ctx.fillText(line, leftColX + colWidth / 2, startY + lineIdx * currentAnsLineH);
+          });
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+        } else {
+          pLines.forEach((line, lineIdx) => {
+            ctx.fillText(line, leftColX + 10, answerStartY + textTopOffset + lineIdx * currentAnsLineH, colWidth - 20);
+          });
+        }
+
+        // My answer (right)
+        ctx.fillStyle = '#A29BFE';
+        ctx.font = `800 7px ${fontStack}`;
+        if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.1em';
+        ctx.textAlign = 'center';
+        ctx.fillText('ICH', rightColX + colWidth / 2, answerStartY);
+        ctx.textAlign = 'left';
+        if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+        ctx.beginPath();
+        ctx.roundRect(rightColX, answerStartY + 8, colWidth, myBubbleHeight - 8, 12);
+        ctx.fillStyle = 'rgba(162, 155, 254, 0.08)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(162, 155, 254, 0.15)';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+
+        ctx.fillStyle = '#2D264B';
+        ctx.font = ansFont;
+        if (i === 3) {
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const bubbleY = answerStartY + 8;
+          const bubbleH = myBubbleHeight - 8;
+          const totalLinesH = myLines.length * currentAnsLineH;
+          const startY = bubbleY + (bubbleH - totalLinesH) / 2 + (currentAnsLineH / 2);
+          myLines.forEach((line, lineIdx) => {
+            ctx.fillText(line, rightColX + colWidth / 2, startY + lineIdx * currentAnsLineH);
+          });
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'alphabetic';
+        } else {
+          myLines.forEach((line, lineIdx) => {
+            ctx.fillText(line, rightColX + 10, answerStartY + textTopOffset + lineIdx * currentAnsLineH, colWidth - 20);
+          });
+        }
+
+        cardY += cardHeight + 12;
+      }
+
+      // 7. Domain at the bottom
+      ctx.fillStyle = '#A29BFE';
+      ctx.font = `bold 8px ${fontStack}`;
+      ctx.textAlign = 'center';
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.08em';
+      ctx.fillText('bisou.benelabs.de', 210, canvasLogicalH - 12);
+      ctx.textAlign = 'left';
+      if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
+
+      // Convert to blob
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/png');
+      });
+
+      if (!blob) throw new Error('Canvas to Blob failed');
+
+      await timerPromise;
+      setIsSharing(false);
+
+      const filename = `Bisou_Antworten_${dayKey}.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+
+      const shareData = {
+        files: [file],
+        title: 'Bisou',
+        text: `Unsere Antworten vom ${new Date(dayKey + 'T12:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })} 💜\n\nBisou-App ausprobieren auf bisou.benelabs.de`
+      };
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        try {
+          await navigator.share(shareData);
+        } catch (e: any) {
+          if (e.name !== 'AbortError') {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('Error creating share image:', err);
+      showAlert('Fehler beim Erstellen des Bildes.', 'error');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   if (internalError) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -768,16 +1184,16 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
             <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
               <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q2.q}</h2>
               <div className="min-h-0 pb-4">
-                <div className="flex flex-col gap-2 relative">
+                <div className="flex flex-col gap-2">
                   <textarea 
-                    className="w-full h-[180px] p-6 pb-12 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
+                    className="w-full h-[180px] p-6 rounded-[2.5rem] border-2 border-[var(--card-border)] bg-white text-base font-bold leading-relaxed resize-none focus:border-[var(--secondary)] outline-none text-[#2D264B] shadow-sm transition-all" 
                     placeholder="Deine Gedanken hier..." 
                     value={textVal} 
                     onChange={(e) => setTextVal(e.target.value)} 
                     maxLength={MAX_TEXT_LENGTH}
                   />
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <div className={`flex items-baseline gap-1 px-3 py-1 rounded-full bg-white/80 backdrop-blur-sm border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
+                  <div className="flex justify-end px-6">
+                    <div className={`flex items-baseline gap-1 px-3 py-1 rounded-full bg-white border border-purple-50 shadow-sm ${textVal.length >= MAX_TEXT_LENGTH ? 'text-red-400' : 'text-[#8E89AA]'}`}>
                       <span className="text-[9px] font-black tracking-[0.2em] uppercase">
                         {textVal.length} / {MAX_TEXT_LENGTH}
                       </span>
@@ -800,7 +1216,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                   >
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center overflow-hidden border-2 ${selectedWwe === 'Partner' ? 'border-purple-200 bg-white shadow-md' : 'border-purple-100 bg-purple-50'}`}>
                       {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
-                        <img src={partnerProfile?.avatar_url || dashboardData.partnerProfile.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
+                        <img src={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url} alt={partnerName} className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-8 h-8 text-purple-300" />
                       )}
@@ -1065,6 +1481,15 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
             style={{ paddingTop: 'calc(1rem + var(--sat, 0px))' }}
           >
             <div className="relative flex items-center justify-end gap-2 h-8 w-full">
+              {/* Share Button */}
+              <button 
+                onClick={handleShareAnswers}
+                disabled={isSharing}
+                className="pointer-events-auto w-8 h-8 rounded-full bg-purple-50/80 backdrop-blur-sm border border-purple-100 shadow-sm text-[var(--secondary)] hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 shrink-0"
+              >
+                {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+              </button>
+
               {/* Journal Button */}
               <button 
                 onClick={() => setShowJournalModal(true)}
@@ -1073,7 +1498,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                 Tagebuch <History className="w-4 h-4" />
               </button>
               
-              {/* Right Reset Button */}
+              {/* Reset Button */}
               <button 
                 onClick={resetQuiz} 
                 className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
