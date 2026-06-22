@@ -145,33 +145,33 @@ export default function StreakModal({
 
         <div className="grid grid-cols-3 gap-2 items-center">
           {/* Links: Rekord */}
-          <div className="bg-purple-50/50 rounded-xl py-1.5 px-2.5 text-center border border-purple-100 flex flex-col justify-center items-center">
+          <div className="bg-purple-50/40 rounded-xl py-1.5 px-2.5 text-center border border-purple-100/70 flex flex-col justify-center items-center">
             <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Rekord</p>
             <div className="flex items-center gap-2 justify-center">
-              <Flame className="w-4 h-4 text-purple-600 fill-purple-600" />
-              <span className="text-sm font-black text-purple-600 leading-none">
+              <Flame className="w-4 h-4 text-[var(--secondary)] fill-[var(--secondary)]" />
+              <span className="text-sm font-black text-[var(--secondary-dark)] leading-none">
                 {activeStreakData?.longest_streak || 0}
               </span>
             </div>
           </div>
           
           {/* Mittig: Aktueller Streak */}
-          <div className="bg-orange-50 rounded-xl py-2 px-3 text-center border border-orange-300 flex flex-col justify-center items-center shadow-sm relative">
-            <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest mb-2">Aktuell</p>
+          <div className="bg-orange-50/40 rounded-xl py-2 px-3 text-center border border-orange-100 flex flex-col justify-center items-center relative">
+            <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Aktuell</p>
             <div className="flex items-center gap-2 justify-center">
-              <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-flicker" />
-              <span className="text-lg font-black text-orange-600 leading-none">
+              <Flame className="w-5 h-5 text-orange-400 fill-orange-400 animate-flicker" />
+              <span className="text-lg font-black text-orange-500 leading-none">
                 {activeStreakData?.current_streak || 0}
               </span>
             </div>
           </div>
 
           {/* Rechts: Streak Freeze */}
-          <div className="bg-blue-50/50 rounded-xl py-1.5 px-2.5 text-center border border-blue-100 flex flex-col justify-center items-center">
+          <div className="bg-blue-50/40 rounded-xl py-1.5 px-2.5 text-center border border-blue-100/70 flex flex-col justify-center items-center">
             <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Freeze</p>
             <div className="flex items-center gap-2 justify-center">
-              <Flame className="w-4 h-4 text-blue-500 fill-blue-500" />
-              <span className="text-sm font-black text-blue-600 leading-none">
+              <Flame className="w-4 h-4 text-blue-400 fill-blue-400" />
+              <span className="text-sm font-black text-blue-500 leading-none">
                 {freezesUsedThisMonth}
               </span>
             </div>

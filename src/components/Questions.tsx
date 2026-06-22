@@ -1485,7 +1485,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               <button 
                 onClick={handleShareAnswers}
                 disabled={isSharing}
-                className="pointer-events-auto w-8 h-8 rounded-full bg-purple-50/80 backdrop-blur-sm border border-purple-100 shadow-sm text-[var(--secondary)] hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 shrink-0"
+                className="pointer-events-auto w-7 h-7 rounded-full bg-purple-50/80 backdrop-blur-sm border border-purple-100 shadow-sm text-[var(--secondary)] hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center justify-center disabled:opacity-50 shrink-0"
               >
                 {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
               </button>
@@ -1493,7 +1493,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               {/* Journal Button */}
               <button 
                 onClick={() => setShowJournalModal(true)}
-                className="pointer-events-auto text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm"
+                className="pointer-events-auto h-7 text-[8.5px] font-black text-[var(--secondary)] uppercase tracking-wider hover:text-[var(--secondary-dark)] active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-purple-50/80 backdrop-blur-sm rounded-full border border-purple-100 shadow-sm"
               >
                 Tagebuch <History className="w-4 h-4" />
               </button>
@@ -1501,7 +1501,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               {/* Reset Button */}
               <button 
                 onClick={resetQuiz} 
-                className="pointer-events-auto text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 py-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
+                className="pointer-events-auto h-7 text-[8.5px] font-black text-red-400 uppercase tracking-wider hover:text-red-600 active:scale-95 transition-all flex items-center gap-1.5 px-3 bg-red-50/80 backdrop-blur-sm rounded-full border border-red-100 shadow-sm"
               >
                 Neu starten <RefreshCcw className="w-3.5 h-3.5" />
               </button>
