@@ -162,6 +162,27 @@ const EncryptionOverlay = () => {
 };
 
 // --- HELPERS ---
+const drawRoundRect = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) => {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+};
+
 const safeSplit = (val: any, delimiter: string) => {
   if (!val) return [];
   try {
@@ -712,35 +733,6 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     const timerPromise = new Promise(resolve => setTimeout(resolve, 800));
 
     try {
-      // Polyfill for roundRect if not supported by browser (e.g. older iOS Safari)
-      if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
-        CanvasRenderingContext2D.prototype.roundRect = function (
-          this: CanvasRenderingContext2D,
-          x: number,
-          y: number,
-          w: number,
-          h: number,
-          r: number | number[]
-        ) {
-          const radii = Array.isArray(r) ? r : [r];
-          const rTopLeft = radii[0] || 0;
-          const rTopRight = radii[1] ?? radii[0] ?? 0;
-          const rBottomRight = radii[2] ?? radii[0] ?? 0;
-          const rBottomLeft = radii[3] ?? radii[1] ?? radii[0] ?? 0;
-
-          this.moveTo(x + rTopLeft, y);
-          this.lineTo(x + w - rTopRight, y);
-          this.quadraticCurveTo(x + w, y, x + w, y + rTopRight);
-          this.lineTo(x + w, y + h - rBottomRight);
-          this.quadraticCurveTo(x + w, y + h, x + w - rBottomRight, y + h);
-          this.lineTo(x + rBottomLeft, y + h);
-          this.quadraticCurveTo(x, y + h, x, y + h - rBottomLeft);
-          this.lineTo(x, y + rTopLeft);
-          this.quadraticCurveTo(x, y, x + rTopLeft, y);
-          return this;
-        };
-      }
-
       const fontStack = "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
       // Helper: word-wrap text and return lines
@@ -789,7 +781,8 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       // We need a temporary canvas for measuring
       const tmpCanvas = document.createElement('canvas');
       tmpCanvas.width = 1; tmpCanvas.height = 1;
-      const tmpCtx = tmpCanvas.getContext('2d')!;
+      const tmpCtx = tmpCanvas.getContext('2d');
+      if (!tmpCtx) throw new Error('Fehler beim Abrufen des 2D-Contexts für die Messung.');
 
       const cardWidth = 340;
       const cardX = 40;
@@ -882,7 +875,8 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const canvas = document.createElement('canvas');
       canvas.width = 840;
       canvas.height = Math.ceil(canvasLogicalH) * 2;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Fehler beim Abrufen des 2D-Contexts.');
       ctx.scale(2, 2);
 
       // 1. Background gradient (Bisou lavender)
@@ -949,12 +943,12 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const namesPillGrad = ctx.createLinearGradient(namesPillX, namesPillY, namesPillX + namesPillW, namesPillY);
       namesPillGrad.addColorStop(0, 'rgba(255, 138, 138, 0.12)');
       namesPillGrad.addColorStop(1, 'rgba(162, 155, 254, 0.12)');
-      ctx.beginPath();
-      ctx.roundRect(namesPillX, namesPillY, namesPillW, 18, 9);
+      drawRoundRect(ctx, namesPillX, namesPillY, namesPillW, 18, 9);
       ctx.fillStyle = namesPillGrad;
       ctx.fill();
       ctx.strokeStyle = 'rgba(162, 155, 254, 0.2)';
       ctx.lineWidth = 0.8;
+      drawRoundRect(ctx, namesPillX, namesPillY, namesPillW, 18, 9);
       ctx.stroke();
 
       // Names text
@@ -980,8 +974,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         ctx.shadowColor = 'rgba(162, 155, 254, 0.08)';
         ctx.shadowBlur = 20;
         ctx.shadowOffsetY = 6;
-        ctx.beginPath();
-        ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 20);
+        drawRoundRect(ctx, cardX, cardY, cardWidth, cardHeight, 20);
         ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
         ctx.fill();
         ctx.restore();
@@ -993,6 +986,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         borderGrad.addColorStop(1, 'rgba(255, 255, 255, 0.5)');
         ctx.strokeStyle = borderGrad;
         ctx.lineWidth = 1.2;
+        drawRoundRect(ctx, cardX, cardY, cardWidth, cardHeight, 20);
         ctx.stroke();
 
         // Question text (wrapped)
@@ -1022,12 +1016,12 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         ctx.textAlign = 'left';
         if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
 
-        ctx.beginPath();
-        ctx.roundRect(leftColX, answerStartY + 8, colWidth, pBubbleHeight - 8, 12);
+        drawRoundRect(ctx, leftColX, answerStartY + 8, colWidth, pBubbleHeight - 8, 12);
         ctx.fillStyle = hasPAnswer ? 'rgba(162, 155, 254, 0.08)' : 'rgba(0, 0, 0, 0.02)';
         ctx.fill();
         ctx.strokeStyle = hasPAnswer ? 'rgba(162, 155, 254, 0.15)' : 'rgba(0, 0, 0, 0.06)';
         ctx.lineWidth = 0.8;
+        drawRoundRect(ctx, leftColX, answerStartY + 8, colWidth, pBubbleHeight - 8, 12);
         ctx.stroke();
 
         ctx.fillStyle = hasPAnswer ? '#2D264B' : '#B0ADBE';
@@ -1059,12 +1053,12 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         ctx.textAlign = 'left';
         if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
 
-        ctx.beginPath();
-        ctx.roundRect(rightColX, answerStartY + 8, colWidth, myBubbleHeight - 8, 12);
+        drawRoundRect(ctx, rightColX, answerStartY + 8, colWidth, myBubbleHeight - 8, 12);
         ctx.fillStyle = 'rgba(162, 155, 254, 0.08)';
         ctx.fill();
         ctx.strokeStyle = 'rgba(162, 155, 254, 0.15)';
         ctx.lineWidth = 0.8;
+        drawRoundRect(ctx, rightColX, answerStartY + 8, colWidth, myBubbleHeight - 8, 12);
         ctx.stroke();
 
         ctx.fillStyle = '#2D264B';
@@ -1104,7 +1098,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         canvas.toBlob((b) => resolve(b), 'image/png');
       });
 
-      if (!blob) throw new Error('Canvas to Blob failed');
+      if (!blob) throw new Error('Erstellung des Bild-Blobs fehlgeschlagen.');
 
       hideAlert();
 
@@ -1118,28 +1112,40 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const filename = `Bisou_Antworten_${dayKey}.png`;
       const file = new File([blob], filename, { type: 'image/png' });
 
+      // Robust date formatting
+      let dateStr = dayKey;
+      try {
+        const d = new Date(dayKey + 'T12:00:00');
+        if (!isNaN(d.getTime())) {
+          dateStr = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+      } catch (dateErr) {
+        console.warn('Failed to parse dayKey:', dateErr);
+      }
+
       const shareData = {
         files: [file],
         title: 'Bisou',
-        text: `Unsere Antworten vom ${new Date(dayKey + 'T12:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })} 💜\n\nBisou-App ausprobieren auf bisou.benelabs.de`
+        text: `Unsere Antworten vom ${dateStr} 💜\n\nBisou-App ausprobieren auf bisou.benelabs.de`
       };
 
-      if (navigator.canShare && navigator.canShare(shareData)) {
+      let sharedNatively = false;
+      if (navigator.canShare) {
         try {
-          await navigator.share(shareData);
-        } catch (e: any) {
-          if (e.name !== 'AbortError') {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            sharedNatively = true;
+          }
+        } catch (shareErr: any) {
+          console.warn('Native share error, falling back to download:', shareErr);
+          // If the user aborted/cancelled the share sheet, treat it as successfully handled/cancelled
+          if (shareErr?.name === 'AbortError') {
+            sharedNatively = true;
           }
         }
-      } else {
+      }
+
+      if (!sharedNatively) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -1149,9 +1155,9 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating share image:', err);
-      showAlert('Fehler beim Erstellen des Bildes.', 'error');
+      showAlert(`Fehler beim Erstellen des Bildes: ${err?.message || err}`, 'error');
     } finally {
       setIsSharing(false);
     }
