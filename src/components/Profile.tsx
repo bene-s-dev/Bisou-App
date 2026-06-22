@@ -137,7 +137,7 @@ function MilestonesModal({
                     isCompleted 
                       ? 'text-[var(--secondary)] font-extrabold' 
                       : isActive 
-                        ? 'text-amber-500 dark:text-amber-400 font-extrabold' 
+                        ? 'text-[var(--secondary)] font-extrabold' 
                         : 'text-[var(--muted)] opacity-60'
                   }`}
                 >
