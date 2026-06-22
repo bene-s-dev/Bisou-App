@@ -1016,7 +1016,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
         ctx.font = `800 7px ${fontStack}`;
         if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0.1em';
         ctx.textAlign = 'center';
-        ctx.fillText('ICH', rightColX + colWidth / 2, answerStartY);
+        ctx.fillText(myName.toUpperCase(), rightColX + colWidth / 2, answerStartY);
         ctx.textAlign = 'left';
         if ('letterSpacing' in ctx) (ctx as any).letterSpacing = '0px';
 
