@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { GoogleGenAI, ThinkingLevel } from "npm:@google/genai"
 import { z } from "npm:zod"
 import { zodToJsonSchema } from "npm:zod-to-json-schema"
+import { themeSets } from "./themeSets.ts"
 
 function cleanJsonString(str: string): string {
   let cleaned = str.trim();
@@ -111,8 +112,10 @@ serve(async (req) => {
       ? bisherigeFragen.join('\n') 
       : 'Keine (das ist einer der ersten Durchläufe)';
 
+    console.log(`Found ${bisherigeFragen.length} historical questions to exclude.`);
+
     // ==========================================================
-    // DETERMINISTISCHE 30-TAGE-ROTATION (90 völlig isolierte Themen)
+    // DETERMINISTISCHE 300-TAGE-ROTATION (1200 völlig isolierte, hochspezifische Themen)
     // ==========================================================
     const dateObj = new Date(dayKey);
     const year = dateObj.getUTCFullYear();
@@ -120,46 +123,20 @@ serve(async (req) => {
     const diff = dateObj.getTime() - startOfYear;
     const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    const themeSets = [
-      ['Romantik', 'Finanzen', 'Alltagsmacken', 'Abenteuer'], // Tag 1
-      ['Streitkultur', 'Popkultur', 'Zukunftsplanung', 'Haushalt'], // Tag 2
-      ['Kindheitserinnerungen', 'Haushaltspflichten', 'Geheimnisse', 'Soziale Kontakte'], // Tag 3
-      ['Intimität', 'Fernreisen', 'Philosophische Fragen', 'Gesundheit'], // Tag 4
-      ['Familie', 'Karrierewege', 'Moralvorstellungen', 'Technologie'], // Tag 5
-      ['Selbsterkenntnis', 'Kochen', 'Persönliche Ängste', 'Natur'], // Tag 6
-      ['Vertrauen', 'Was-wäre-wenn-Szenarien', 'Sehnsüchte', 'Geld'], // Tag 7
-      ['Flirtverhalten', 'Große Investitionen', 'Macken des Partners', 'Sport'], // Tag 8
-      ['Versöhnung', 'Musikgeschmack', 'Wohnen', 'Bildung'], // Tag 9
-      ['Jugendjahre', 'Freizeitgestaltung', 'Tabuthemen', 'Essen'], // Tag 10
-      ['Körperliche Zärtlichkeit', 'Mikro-Abenteuer', 'Gesellschaftstrends', 'Arbeit'], // Tag 11
-      ['Freundeskreis', 'Work-Life-Balance', 'Lebenssinn', 'Kindheit'], // Tag 12
-      ['Mentale Gesundheit', 'Kulinarik', 'Innere Unsicherheiten', 'Zukunft'], // Tag 13
-      ['Emotionale Meilensteine', 'Humor', 'Zukunftswünsche', 'Kommunikation'], // Tag 14
-      ['Erste Verliebtheitsphase', 'Konsumverhalten', 'Morgenroutinen', 'Abendrituale'], // Tag 15
-      ['Konfliktvermeidung', 'Filmgeschmack', 'Rollenverteilung', 'Reisen'], // Tag 16
-      ['Schulerinnerungen', 'Haustiere', 'Peinliche Momente', 'Mode'], // Tag 17
-      ['Körperliche Nähe', 'Wochenendgestaltung', 'Kultur', 'Technik'], // Tag 18
-      ['Schwiegerfamilie', 'Stressbewältigung', 'Gerechtigkeitsempfinden', 'Politik'], // Tag 19
-      ['Charakterzüge', 'Lieblingsgerichte', 'Zukunft der Welt', 'Werte'], // Tag 20
-      ['Bindungsdynamiken', 'Kreative Hobbys', 'Existenzielle Fragen', 'Nostalgie'], // Tag 21
-      ['Liebesbeweise', 'Umgang mit Erbschaften', 'Abendrituale', 'Spontaneität'], // Tag 22
-      ['Missverständnisse', 'Serienvorlieben', 'Raumaufteilung', 'Ordnung'], // Tag 23
-      ['Erziehungsvorstellungen', 'Sport', 'Nostalgie', 'Verantwortung'], // Tag 24
-      ['Romantische Gesten', 'Ausflugsziele', 'Große Lebensentscheidungen', 'Mut'], // Tag 25
-      ['Alte Freundschaften', 'Jobzufriedenheit', 'Glaubensfragen', 'Träume'], // Tag 26
-      ['Achtsamkeit', 'Lieblingssnacks', 'Kindheitsängste', 'Stärken'], // Tag 27
-      ['Eifersucht', 'Gaming', 'Das perfekte Zuhause', 'Ruhe'], // Tag 28
-      ['Liebeserklärungen', 'Versicherungen', 'Social-Media-Konsum', 'Fokus'], // Tag 29
-      ['Kompromissbereitschaft', 'Konzerte', 'Lebenslanges Lernen', 'Leidenschaft'] // Tag 30
-    ];
-
     const todaysThemes = themeSets[dayOfYear % themeSets.length];
     const [themaTot, themaRanking, themaText, themaWwe] = todaysThemes;
 
     const prompt = `Du bist ein einfühlsamer, kreativer und bodenständiger Fragenautor für eine Pärchen-App. Deine Aufgabe ist es, exakt 4 Fragen für den heutigen Tag zu schreiben.
 
-WICHTIG: Folgende Fragen wurden den Nutzern in den letzten 60 Tagen gestellt. Generiere NIEMALS Fragen, die inhaltlich ähnlich, semantisch identisch oder strukturell wiederholend sind. Die neuen Fragen müssen sich frisch und unverbraucht anfühlen:
+WICHTIGSTE STRUKTURELLE REGEL (STRENGER AUSSCHLUSS VON DOPPELUNGEN):
+Die folgenden Fragen wurden den Nutzern in den letzten 60 Tagen bereits gestellt. Es ist absolut verboten, Fragen zu generieren, die inhaltlich ähnlich, semantisch verwandt oder thematisch überschneidend sind:
+--- BEREITS GESTELLTE FRAGEN ---
 ${ausgeschlosseneFragenText}
+--------------------------------
+
+Prüfe jede deiner 4 neu generierten Fragen einzeln gegen die obige Liste:
+- Falls in der Liste bereits eine Frage zu einem ähnlichen Thema existiert (z.B. Konflikte, Streitverhalten, Versöhnung, Macken des Partners, Geldausgaben, etc.), darfst du KEINE neue Frage stellen, die dasselbe Kernproblem, denselben Auslöser oder dieselbe Dynamik behandelt. Weiche stattdessen auf ein völlig anderes Teilthema oder eine andere Perspektive aus.
+- Die neu generierten Fragen müssen sich komplett frisch, neuartig und unverbraucht anfühlen.
 
 Um maximale Abwechslung zu garantieren, befolge für die 4 heutigen Fragen exakt diese Themen-Vorgaben, Fragentypen und Zeichenlimits:
 
@@ -183,7 +160,35 @@ STIMMUNG & TONFALL (SEHR WICHTIG!):
 - Schreibe alltagsnahe, nahbare, liebevolle und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
 - Jede Frage muss im Kontext einer Liebesbeziehung stehen und einen echten Gesprächsimpuls für die Partner bieten.
 - Vermeide absurde Gedankenexperimente, bizarre hypothetische Szenarien oder allzu abstrakte philosophische Rätsel. Die Fragen müssen bodenständig und realistisch sein.
-- Variiere die Stimmung zwischen den 4 Fragen: Mache eine eher leicht/humorvoll, eine tiefgründig/reflektiert, eine alltäglich/praktisch und eine neugierig/spielerisch.`;
+- Variiere die Stimmung zwischen den 4 Fragen: Mache eine eher leicht/humorvoll, eine tiefgründig/reflektiert, eine alltäglich/praktisch und eine neugierig/spielerisch.
+
+METHODE FÜR MULTIPERSPEKTIVISCHE FRAGEN (STRENGSTENS BEFOLGEN):
+Wenn ein Thema (wie z. B. "Streitkultur", "Romantik", "Finanzen") breit oder unvollständig definiert ist, darfst du dich NICHT auf die naheliegendste Standardfrage verlassen. Beleuchte stattdessen gezielt verschiedene Dimensionen des Themas:
+- **Die emotionale Dimension**: Gefühle, Unsicherheiten, Hoffnungen, Werte.
+- **Die Verhaltens-Dimension**: Typische Alltagsreaktionen, kleine Angewohnheiten, Macken.
+- **Die biografische Dimension**: Prägungen aus der Kindheit, Verhaltensmuster der eigenen Eltern.
+- **Die zukunftsorientierte Dimension**: Pläne, Wünsche, Träume, hypothetische Weiterentwicklungen.
+
+Beispiel für ein Thema wie "Finanzen":
+*Schlecht (generisch)*: "Wer von euch gibt mehr Geld aus?"
+*Gut (spezifisch/mehrdimensional)*:
+  - "Welche Spar-Angewohnheit deiner Eltern irritiert dich bis heute?" (Biografisch)
+  - "Bei welchem Spontankauf für unter 50 Euro fühlst du dich sofort schuldig?" (Emotional)
+  - "Welcher finanzielle Traum fühlt sich für dich nach purer Freiheit an?" (Zukunftsorientiert)
+
+Beispiel für ein Thema wie "Streitkultur":
+*Schlecht (generisch)*: "Wer verträgt sich nach einem Streit schneller?"
+*Gut (spezifisch/mehrdimensional)*:
+  - "Gibt es ein bestimmtes Wort oder eine Geste deines Partners, die eine hitzige Diskussion sofort abkühlen kann?" (Verhalten/Praktisch)
+  - "Wie wurde in deiner Familie gestritten, als du ein Kind warst – eher laut oder schweigend?" (Biografisch)
+  - "Welcher Gedanke hilft dir am meisten, wenn wir uns mal nicht einig werden?" (Emotional)
+
+WICHTIGE VERTEILUNGS-REGELN (GEGEN MONOTONIE):
+- **Keine Wiederholung von Dimensionen an einem Tag**: Die 4 heutigen Fragen müssen sich auf völlig unterschiedliche Dimensionen beziehen (z.B. 1x emotional, 1x biografisch, 1x spielerisch/Alltag, 1x Zukunft). Erzeuge niemals am selben Tag mehrere biografische Fragen (wie Kindheit/Familie) oder mehrere schwere emotionale Fragen.
+- **Biografische Fragen sparsam einsetzen**: Fragen zu Kindheit, Eltern oder früheren Beziehungen sind spannend, sollten aber maximal 1 der 4 täglichen Fragen ausmachen und nicht an jedem Tag vorkommen. Die Mehrheit der Fragen (ca. 70-80%) soll im Hier und Jetzt der Partnerschaft, der gemeinsamen Zukunft oder auf einer humorvollen/spielerischen Ebene stattfinden.
+- **Natürliche Variation**: Wechsle die Perspektive von Tag zu Tag. Wenn gestern über die Kindheit gesprochen wurde, soll heute der Fokus auf einer witzigen Alltagsgewohnheit oder einem Zukunftstraum liegen.
+
+Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jedes Thema an, um tiefe, aber ausgewogene und abwechslungsreiche Einblicke zu schaffen!`;
 
     // ==========================================
     // API CALL ZU GEMINI ODER GEMMA MIT THINKING & ZOD
