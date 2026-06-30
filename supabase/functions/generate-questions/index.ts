@@ -19,22 +19,18 @@ function cleanJsonString(str: string): string {
 const dailyQuestionsSchema = z.object({
   tot: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 50 bis 130 Zeichen"),
-    h: z.string().describe("Ein kurzer, passender Hilfstext"),
     o: z.array(z.string()).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage, Länge jeweils ca. 10 bis 70 Zeichen")
   }),
   ranking: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    h: z.string().describe("Ein kurzer, passender Hilfstext"),
     o: z.array(z.string()).length(4).describe("Exakt 4 Optionen, Länge jeweils ca. 10 bis 60 Zeichen")
   }),
   text: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    h: z.string().describe("Ein kurzer, passender Hilfstext"),
     o: z.array(z.string()).length(0).describe("Muss ein leeres Array sein")
   }),
   wwe: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    h: z.string().describe("Ein kurzer, passender Hilfstext"),
     o: z.array(z.string()).length(2).describe("Exakt 2 Optionen: ['Ich', 'Partner']")
   })
 });
@@ -204,22 +200,18 @@ STIMMUNG & TONFALL (SEHR WICHTIG!):
 {
   "tot": {
     "q": "Eine Frage...",
-    "h": "Ein kurzer Hilfstext",
     "o": ["Option 1", "Option 2"]
   },
   "ranking": {
     "q": "Eine Frage...",
-    "h": "Ein kurzer Hilfstext",
     "o": ["Option 1", "Option 2", "Option 3", "Option 4"]
   },
   "text": {
     "q": "Eine Frage...",
-    "h": "Ein kurzer Hilfstext",
     "o": []
   },
   "wwe": {
     "q": "Wer würde eher...",
-    "h": "Ein kurzer Hilfstext",
     "o": ["Ich", "Partner"]
   }
 }`;
@@ -261,7 +253,6 @@ STIMMUNG & TONFALL (SEHR WICHTIG!):
         if (key) {
           transformed[key] = {
             q: item.question || item.q || '',
-            h: item.hint || item.h || '',
             o: item.options || item.o || []
           };
         }
