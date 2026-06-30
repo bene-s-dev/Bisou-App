@@ -329,6 +329,36 @@ export default function Dashboard({
     );
   };
 
+  const handleDevResetTodayAnswers = async () => {
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) throw new Error("Keine aktive Sitzung.");
+
+      const { error } = await supabase
+        .from('answers')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('day_key', dayKey);
+
+      if (error) throw error;
+
+      await supabase
+        .from('profiles')
+        .update({ last_answer_reset_at: null })
+        .eq('id', session.user.id);
+
+      showAlert("Dev Mode: Heutige Antworten wurden direkt gelöscht! Du kannst sie jetzt neu eingeben. 🚀", "success");
+      
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (err: any) {
+      console.error("Dev reset error:", err);
+      showAlert("Fehler beim Löschen: " + err.message, "error");
+    }
+  };
+
   const handleSyncOfflineAnswers = useCallback(async (isManual = false) => {
     if (isSyncing || !offlineAnswers) return;
     setIsSyncing(true);
@@ -560,6 +590,12 @@ export default function Dashboard({
             className="py-1 px-2.5 rounded-full text-[7px] font-black uppercase tracking-[0.1em] shadow-sm border transition-all active:scale-95 bg-white/80 backdrop-blur-sm border-orange-200 text-orange-600 hover:bg-orange-50"
           >
             Mock Offline 🌐
+          </button>
+          <button 
+            onClick={handleDevResetTodayAnswers}
+            className="py-1 px-2.5 rounded-full text-[7px] font-black uppercase tracking-[0.1em] shadow-sm border transition-all active:scale-95 bg-white/80 backdrop-blur-sm border-red-200 text-red-600 hover:bg-red-50"
+          >
+            Lösche heutige Antworten (Dev) 🗑️
           </button>
         </div>
       )}
