@@ -696,6 +696,9 @@ export default function Profile({
   }, [profile?.id, profile?.partner_id]);
 
   const fetchStats = useCallback(async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6-second timeout
+
     try {
       const hasCached = !!localStorage.getItem('cached_bisou_stats_v3');
       if (!hasCached) {
@@ -706,6 +709,7 @@ export default function Profile({
       const partnerId = profile?.partner_id;
       if (!session || !partnerId) {
         if (!hasCached) setLoadingStats(false);
+        clearTimeout(timeoutId);
         return;
       }
 
@@ -714,21 +718,48 @@ export default function Profile({
           userId: session.user.id, 
           partnerId,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        }
+        },
+        headers: {},
+        signal: controller.signal
       });
 
-      if (statsError) throw statsError;
+      if (statsError) {
+        let detailedError = statsError.message;
+        try {
+          if (statsError.context) {
+            // statsError.context is the Response object in Supabase JS SDK
+            const bodyText = await statsError.context.text();
+            const parsed = JSON.parse(bodyText);
+            if (parsed && parsed.error) {
+              detailedError = parsed.error;
+            }
+          }
+        } catch (e) {}
+        throw new Error(detailedError);
+      }
 
       if (statsData) {
         setStats(statsData);
         localStorage.setItem('cached_bisou_stats_v3', JSON.stringify(statsData));
       }
     } catch (err: any) {
-      console.error("Stats error:", err);
-      if (import.meta.env.DEV) {
-        showAlert(`Fehler beim Laden der Statistik: ${err.message || err}`, "error");
+      if (err.name === 'AbortError') {
+        console.warn("Stats fetch timed out");
+        const cached = localStorage.getItem('cached_bisou_stats_v3');
+        if (cached) {
+          setStats(JSON.parse(cached));
+        }
+        if (import.meta.env.DEV) {
+          showAlert("Die Statistik-Anfrage hat zu lange gedauert (Timeout). Die gecachten Daten wurden geladen.", "warning");
+        }
+      } else {
+        console.error("Stats error:", err);
+        if (import.meta.env.DEV) {
+          showAlert(`Fehler beim Laden der Statistik: ${err.message || err}`, "error");
+        }
       }
     } finally {
+      clearTimeout(timeoutId);
       setLoadingStats(false);
     }
   }, [profile?.partner_id]);

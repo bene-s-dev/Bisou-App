@@ -54,14 +54,16 @@ serve(async (req) => {
       )
     }
 
-    const tempClient = createClient(u, Deno.env.get('SUPABASE_ANON_KEY') || '', {
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
+    const tempClient = createClient(u, anonKey, {
       global: { headers: { Authorization: authHeader } }
     })
 
     const { data: { user }, error: userError } = await tempClient.auth.getUser()
     if (userError || !user) {
+      console.error("JWT Verification failed:", userError?.message || "User is null");
       return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
+        JSON.stringify({ error: `Unauthorized: ${userError?.message || "Invalid Session"}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -233,28 +235,33 @@ serve(async (req) => {
 
       if (uniqueTexts.size > 0) {
         try {
-          // @ts-ignore: Supabase is globally available in Edge Functions
-          const session = new Supabase.ai.Session('gte-small');
-          const textList = Array.from(uniqueTexts)
-          
-          await Promise.all(
-            textList.map(async (text) => {
-              try {
-                const embedding = await session.run(text, {
-                  mean_pool: true,
-                  normalize: true,
-                });
-                if (embedding) {
-                  const vector = Array.from(embedding as number[] | Float32Array);
-                  textToVectorMap.set(text, vector);
+          // Check if Supabase.ai is globally available in this Edge Function context
+          if (typeof Supabase !== 'undefined' && Supabase && Supabase.ai && Supabase.ai.Session) {
+            console.log("Initializing Supabase.ai.Session for gte-small embeddings...");
+            const session = new Supabase.ai.Session('gte-small');
+            const textList = Array.from(uniqueTexts);
+            
+            await Promise.all(
+              textList.map(async (text) => {
+                try {
+                  const embedding = await session.run(text, {
+                    mean_pool: true,
+                    normalize: true,
+                  });
+                  if (embedding) {
+                    const vector = Array.from(embedding as number[] | Float32Array);
+                    textToVectorMap.set(text, vector);
+                  }
+                } catch (e: any) {
+                  console.error(`Error generating embedding for "${text}":`, e.message);
                 }
-              } catch (e: any) {
-                console.error(`Error generating embedding for "${text}":`, e.message)
-              }
-            })
-          )
+              })
+            );
+          } else {
+            console.log("Supabase.ai.Session is not supported in this Edge Runtime context. Using Jaccard similarity fallback.");
+          }
         } catch (e: any) {
-          console.error("Failed to initialize Supabase.ai.Session:", e.message)
+          console.error("Failed to initialize Supabase.ai.Session:", e.message);
         }
       }
 
