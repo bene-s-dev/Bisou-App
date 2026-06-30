@@ -80,9 +80,6 @@ export default function Dashboard({
   }, [fullscreenImage]);
 
   const fetchStats = useCallback(async () => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000); // 6-second timeout
-
     try {
       const hasCached = !!localStorage.getItem('cached_bisou_stats_v3');
       if (!hasCached) {
@@ -92,7 +89,6 @@ export default function Dashboard({
       const session = sessionData?.session;
       if (!session || !partnerId) {
         if (!hasCached) setLoadingStats(false);
-        clearTimeout(timeoutId);
         return;
       }
 
@@ -101,57 +97,18 @@ export default function Dashboard({
           userId: session.user.id, 
           partnerId,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        },
-        signal: controller.signal
+        }
       });
 
-      if (statsError) {
-        let detailedError = statsError.message;
-        try {
-          if (statsError.context) {
-            // statsError.context is the Response object in Supabase JS SDK
-            const bodyText = await statsError.context.text();
-            const parsed = JSON.parse(bodyText);
-            if (parsed && parsed.error) {
-              detailedError = parsed.error;
-            }
-          }
-        } catch (e) {}
-        throw new Error(detailedError);
-      }
+      if (statsError) throw statsError;
 
       if (statsData) {
         setStats(statsData);
         localStorage.setItem('cached_bisou_stats_v3', JSON.stringify(statsData));
       }
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.warn("Stats fetch timed out");
-        const cached = localStorage.getItem('cached_bisou_stats_v3');
-        if (cached) {
-          setStats(JSON.parse(cached));
-        }
-        if (import.meta.env.DEV) {
-          showAlert("Die Statistik-Anfrage hat zu lange gedauert (Timeout). Die gecachten Daten wurden geladen.", "warning");
-        }
-      } else {
-        console.error("Stats error:", err);
-        if (import.meta.env.DEV) {
-          // Access session details from the dynamic lookup inside fetchStats scope
-          // We can run getSession again or try to read them safely
-          supabase.auth.getSession().then(({ data: { session } }) => {
-            const tokenLength = session?.access_token?.length || 0;
-            const uid = session?.user?.id || 'none';
-            const pid = partnerId || 'none';
-            showAlert(`Fehler beim Laden der Statistik: ${err.message || err}\n\n[DEBUG]:\nUID = ${uid}\nPID = ${pid}\nToken Length = ${tokenLength}`, "error");
-          });
-        }
-      }
+    } catch (err) {
+      console.error("Stats error:", err);
     } finally {
-      clearTimeout(timeoutId);
       setLoadingStats(false);
     }
   }, [partnerId]);

@@ -24,73 +24,6 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / (mA * mB);
 }
 
-async function verifyJWT(token: string): Promise<any> {
-  const parts = token.split('.');
-  if (parts.length !== 3) return null;
-
-  const [headerB64, payloadB64, signatureB64] = parts;
-  
-  let payload: any = null;
-  try {
-    const rawPayload = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
-    payload = JSON.parse(rawPayload);
-  } catch (e) {
-    console.error("Failed to parse JWT payload:", e);
-    return null;
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp && payload.exp < now) {
-    console.error("JWT is expired");
-    return null;
-  }
-
-  const secret = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_AUTH_JWT_SECRET') || '';
-  if (secret) {
-    try {
-      const encoder = new TextEncoder();
-      const keyData = encoder.encode(secret);
-      const key = await crypto.subtle.importKey(
-        "raw",
-        keyData,
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["verify"]
-      );
-
-      const data = encoder.encode(`${headerB64}.${payloadB64}`);
-      
-      const base64urlToBuf = (b64url: string) => {
-        let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-        while (b64.length % 4) b64 += '=';
-        const binary = atob(b64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        return bytes;
-      };
-
-      const signature = base64urlToBuf(signatureB64);
-      const isValid = await crypto.subtle.verify(
-        "HMAC",
-        key,
-        signature,
-        data
-      );
-
-      if (!isValid) {
-        console.error("JWT signature verification failed");
-        return null;
-      }
-    } catch (e) {
-      console.error("Error verifying JWT signature:", e);
-    }
-  }
-
-  return payload;
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -114,7 +47,6 @@ serve(async (req) => {
 
     // Secure the API endpoint: Validate the caller's JWT token
     const authHeader = req.headers.get('Authorization')
-    console.log("Authorization Header received:", authHeader ? authHeader.substring(0, 25) + "..." : "null");
     if (!authHeader) {
       return new Response(
         JSON.stringify({ error: 'Missing Authorization header' }),
@@ -122,17 +54,20 @@ serve(async (req) => {
       )
     }
 
-    const token = authHeader.replace(/^[Bb]earer\s+/, '')
-    const payload = await verifyJWT(token);
+    const tempClient = createClient(u, Deno.env.get('SUPABASE_ANON_KEY') || '', {
+      global: { headers: { Authorization: authHeader } }
+    })
 
-    if (!payload || !payload.sub) {
+    const { data: { user }, error: userError } = await tempClient.auth.getUser()
+    if (userError || !user) {
+      console.error("JWT Verification failed:", userError?.message || "User is null");
       return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid token or expired session' }),
+        JSON.stringify({ error: `Unauthorized: ${userError?.message || "Invalid Session"}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (payload.sub !== userId) {
+    if (user.id !== userId) {
       return new Response(
         JSON.stringify({ error: 'Forbidden' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -298,35 +233,7 @@ serve(async (req) => {
       const textToVectorMap = new Map<string, number[]>()
 
       if (uniqueTexts.size > 0) {
-        try {
-          // Check if Supabase.ai is globally available in this Edge Function context
-          if (typeof Supabase !== 'undefined' && Supabase && Supabase.ai && Supabase.ai.Session) {
-            console.log("Initializing Supabase.ai.Session for gte-small embeddings...");
-            const session = new Supabase.ai.Session('gte-small');
-            const textList = Array.from(uniqueTexts);
-            
-            await Promise.all(
-              textList.map(async (text) => {
-                try {
-                  const embedding = await session.run(text, {
-                    mean_pool: true,
-                    normalize: true,
-                  });
-                  if (embedding) {
-                    const vector = Array.from(embedding as number[] | Float32Array);
-                    textToVectorMap.set(text, vector);
-                  }
-                } catch (e: any) {
-                  console.error(`Error generating embedding for "${text}":`, e.message);
-                }
-              })
-            );
-          } else {
-            console.log("Supabase.ai.Session is not supported in this Edge Runtime context. Using Jaccard similarity fallback.");
-          }
-        } catch (e: any) {
-          console.error("Failed to initialize Supabase.ai.Session:", e.message);
-        }
+        console.log("Using Jaccard similarity for free text comparison (optimized bypass).");
       }
 
       textPairs.forEach(pair => {
