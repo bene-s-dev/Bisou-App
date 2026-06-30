@@ -59,16 +59,8 @@ export default function Dashboard({
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOfflineDismissed, setIsOfflineDismissed] = useState(false);
 
-  const [stats, setStats] = useState<any>(() => {
-    try {
-      const cached = localStorage.getItem('cached_bisou_stats_v3');
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-
-  const [loadingStats, setLoadingStats] = useState(!stats);
+  const [stats, setStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     if (fullscreenImage) {
@@ -105,6 +97,11 @@ export default function Dashboard({
       }
     } catch (err) {
       console.error("Stats error:", err);
+      // Fallback to cached data on error
+      try {
+        const cached = localStorage.getItem('cached_bisou_stats_v3');
+        if (cached) setStats(JSON.parse(cached));
+      } catch (e) {}
     } finally {
       setLoadingStats(false);
     }

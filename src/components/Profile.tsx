@@ -364,15 +364,8 @@ export default function Profile({
     }
   }, [searchParams, setSearchParams]);
 
-  const [stats, setStats] = useState<any>(() => {
-    try {
-      const cached = localStorage.getItem('cached_bisou_stats_v3');
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) {
-      return null;
-    }
-  });
-  const [loadingStats, setLoadingStats] = useState(!stats);
+  const [stats, setStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
   const [partnerDetails, setPartnerDetails] = useState<{
     createdAt: string | null;
     streak: number;
@@ -722,6 +715,11 @@ export default function Profile({
       }
     } catch (err) {
       console.error("Stats error:", err);
+      // Fallback to cached data on error
+      try {
+        const cached = localStorage.getItem('cached_bisou_stats_v3');
+        if (cached) setStats(JSON.parse(cached));
+      } catch (e) {}
     } finally {
       setLoadingStats(false);
     }
