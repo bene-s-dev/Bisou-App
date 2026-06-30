@@ -571,7 +571,10 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                 registration.showNotification("Du hattest schlechtes Internet 🌐", {
                   body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden.",
                   icon: "/store_icon.png",
-                  badge: "/store_icon.png"
+                  badge: "/store_icon.png",
+                  data: {
+                    url: '/'
+                  }
                 });
               }).catch(() => {
                 try {

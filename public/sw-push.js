@@ -29,7 +29,7 @@ self.addEventListener('push', function(event) {
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   
-  const targetUrl = event.notification.data.url || '/';
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
   const urlToOpen = new URL(targetUrl, self.location.origin).href;
 
   event.waitUntil(
