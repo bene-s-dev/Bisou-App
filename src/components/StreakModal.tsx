@@ -2,6 +2,34 @@ import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Flame, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
+function BottleWine({ className }: { className?: string }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path 
+        d="M10 2h4v5c0 2 3 2.5 3 4v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9c0-1.5 3-2 3-4V2Z" 
+        className="stroke-slate-400 fill-slate-200 dark:fill-slate-700" 
+      />
+      <rect 
+        x="9" 
+        y="12" 
+        width="6" 
+        height="5" 
+        className="fill-red-500 stroke-red-500" 
+        strokeWidth="0" 
+        rx="0.5" 
+      />
+    </svg>
+  );
+}
+
 interface StreakModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -121,20 +149,20 @@ export default function StreakModal({
             return (
               <div key={day} className={`aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all ${
                 frozen 
-                  ? 'bg-blue-50 border border-blue-100' 
+                  ? 'bg-slate-50 border border-slate-200' 
                   : active 
                     ? 'bg-orange-50 border border-orange-100' 
                     : 'bg-gray-50/50 border border-transparent'
               }`}>
                 <span className={`text-[9px] font-black -translate-y-[5px] ${
                   frozen 
-                    ? 'text-blue-500' 
+                    ? 'text-slate-500' 
                     : active 
                       ? 'text-orange-500' 
                       : 'text-[#8E89AA]'
                 }`}>{day}</span>
                 {frozen ? (
-                  <Flame className="w-3 h-3 text-blue-500 fill-blue-500 absolute bottom-1 left-1/2 -translate-x-1/2" />
+                  <BottleWine className="w-3.5 h-3.5 absolute bottom-[2.5px] left-1/2 -translate-x-1/2" />
                 ) : active ? (
                   <Flame className="w-3 h-3 text-orange-500 fill-orange-500 absolute bottom-1 left-1/2 -translate-x-1/2" />
                 ) : null}
@@ -143,11 +171,11 @@ export default function StreakModal({
           })}
         </div>
 
-        <div className="grid grid-cols-3 gap-2 items-center">
+        <div className="grid grid-cols-3 gap-1.5 items-stretch">
           {/* Links: Rekord */}
-          <div className="bg-purple-50/40 rounded-xl py-1.5 px-2.5 text-center border border-purple-100/70 flex flex-col justify-center items-center">
+          <div className="bg-purple-50/40 rounded-xl py-1.5 px-1.5 text-center border border-purple-100/70 flex flex-col justify-center items-center">
             <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Rekord</p>
-            <div className="flex items-center gap-2 justify-center">
+            <div className="flex items-center gap-1.5 justify-center">
               <Flame className="w-4 h-4 text-[var(--secondary)] fill-[var(--secondary)]" />
               <span className="text-sm font-black text-[var(--secondary-dark)] leading-none">
                 {activeStreakData?.longest_streak || 0}
@@ -156,9 +184,9 @@ export default function StreakModal({
           </div>
           
           {/* Mittig: Aktueller Streak */}
-          <div className="bg-orange-50/40 rounded-xl py-2 px-3 text-center border border-orange-100 flex flex-col justify-center items-center relative">
+          <div className="bg-orange-50/40 rounded-xl py-2 px-1.5 text-center border border-orange-100 flex flex-col justify-center items-center relative">
             <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Aktuell</p>
-            <div className="flex items-center gap-2 justify-center">
+            <div className="flex items-center gap-1.5 justify-center">
               <Flame className="w-5 h-5 text-orange-400 fill-orange-400 animate-flicker" />
               <span className="text-lg font-black text-orange-500 leading-none">
                 {activeStreakData?.current_streak || 0}
@@ -167,11 +195,13 @@ export default function StreakModal({
           </div>
 
           {/* Rechts: Streak Freeze */}
-          <div className="bg-blue-50/40 rounded-xl py-1.5 px-2.5 text-center border border-blue-100/70 flex flex-col justify-center items-center">
-            <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Freeze</p>
-            <div className="flex items-center gap-2 justify-center">
-              <Flame className="w-4 h-4 text-blue-400 fill-blue-400" />
-              <span className="text-sm font-black text-blue-500 leading-none">
+          <div className="bg-slate-50/40 rounded-xl py-1.5 px-1 text-center border border-slate-200/50 flex flex-col justify-center items-center">
+            <p className="text-[7.5px] sm:text-[8.5px] font-black text-[var(--muted)] uppercase tracking-tight mb-2 leading-tight">
+              Grill-<span className="block">anzünder</span>
+            </p>
+            <div className="flex items-center gap-1 justify-center">
+              <BottleWine className="w-3.5 h-3.5" />
+              <span className="text-sm font-black text-slate-600 leading-none">
                 {freezesUsedThisMonth}
               </span>
             </div>
@@ -179,7 +209,7 @@ export default function StreakModal({
         </div>
         
         <p className="text-[8.5px] font-bold text-[var(--muted)] text-center leading-relaxed mt-3 px-1">
-          Deine Serie wird 2x im Monat automatisch eingefroren, wenn du einen Tag vergisst. Gefrorene Tage werden mit einer blauen Flamme markiert.
+          Deine Serie wird 2x im Monat automatisch mit einem<br />großzügigen Schuss Grillanzünder gerettet, wenn du einen Tag vergisst.
         </p>
       </div>
     </div>,
