@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 import { supabase } from '../lib/supabase';
 
@@ -35,12 +35,13 @@ export default function StatsModal({
   const [displayTextMatch, setDisplayTextMatch] = useState(0);
   const [displayWweMatch, setDisplayWweMatch] = useState(0);
   const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
+  const isGearsLoading = loading;
 
   const lastTargetsRef = React.useRef<{ score: number; tot: number; ranking: number; text: number; wwe: number } | null>(null);
 
   // Animate Bisou Score and match percentages from 0 to target when modal opens or stats change
   React.useEffect(() => {
-    if (isOpen && stats && !loading) {
+    if (isOpen && stats && !isGearsLoading) {
       const targets = {
         score: stats.bisouScore || 0,
         tot: stats.totMatch || 0,
@@ -96,7 +97,7 @@ export default function StatsModal({
 
       const raf = requestAnimationFrame(animate);
       return () => cancelAnimationFrame(raf);
-    } else if (!isOpen || loading) {
+    } else if (!isOpen || isGearsLoading) {
       lastTargetsRef.current = null;
       setDisplayScore(0);
       setDisplayTotMatch(0);
@@ -104,11 +105,11 @@ export default function StatsModal({
       setDisplayTextMatch(0);
       setDisplayWweMatch(0);
     }
-  }, [isOpen, stats, loading]);
+  }, [isOpen, stats, isGearsLoading]);
 
   // Calculate trend from previous score (now server-side calculated!)
   React.useEffect(() => {
-    if (isOpen && stats?.bisouScore != null && !loading) {
+    if (isOpen && stats?.bisouScore != null && !isGearsLoading) {
       try {
         const prevScore = stats.prevBisouScore;
         
@@ -124,10 +125,10 @@ export default function StatsModal({
       } catch {
         setScoreTrend(null);
       }
-    } else if (!isOpen || loading) {
+    } else if (!isOpen || isGearsLoading) {
       setScoreTrend(null);
     }
-  }, [isOpen, stats?.bisouScore, stats?.prevBisouScore, loading]);
+  }, [isOpen, stats?.bisouScore, stats?.prevBisouScore, isGearsLoading]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -161,56 +162,17 @@ export default function StatsModal({
           <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
-        {loading ? (
-          <div className="space-y-3 animate-in fade-in duration-500">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px] animate-pulse">
-                <div className="w-20 h-2 bg-purple-200/50 rounded-full" />
-                <div className="w-10 h-6 bg-purple-200/50 rounded-full" />
-              </div>
-              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] animate-pulse">
-                <div className="w-16 h-2 bg-rose-200/50 rounded-full" />
-                <div className="w-12 h-6 bg-rose-200/50 rounded-full" />
-              </div>
+        {isGearsLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 px-4 space-y-6 animate-in fade-in duration-300">
+            <div className="relative w-20 h-20 flex items-center justify-center">
+              {/* Large Gear */}
+              <Settings className="w-14 h-14 text-[var(--secondary)] animate-[spin_5s_linear_infinite] absolute top-1 left-1" />
+              {/* Small Gear */}
+              <Settings className="w-9 h-9 text-purple-300 animate-[spin_3s_linear_infinite_reverse] absolute bottom-1 right-1" />
             </div>
-
-            {/* Match Rates Skeleton 2x2 */}
-            <div className="bg-white border-2 border-purple-50 rounded-2xl p-4 animate-pulse">
-              <div className="flex items-center gap-1.5 mb-3">
-                <div className="w-3.5 h-3.5 bg-purple-200/50 rounded-full" />
-                <div className="w-20 h-2 bg-purple-200/50 rounded-full" />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-[56px] rounded-xl bg-purple-50/40 border border-purple-50/50 flex flex-col items-center justify-center gap-1.5">
-                    <div className="w-10 h-1.5 bg-purple-200/50 rounded-full" />
-                    <div className="w-8 h-4 bg-purple-200/50 rounded-full" />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white border-2 border-purple-50 rounded-2xl p-4 animate-pulse">
-              <div className="flex items-center gap-1.5 mb-3">
-                <div className="w-3.5 h-3.5 bg-purple-200/50 rounded-full" />
-                <div className="w-24 h-2 bg-purple-200/50 rounded-full" />
-              </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="h-[74px] rounded-xl bg-purple-50/40 border border-purple-50/50 flex flex-col items-center justify-center gap-1.5">
-                  <div className="w-6 h-6 bg-purple-200/50 rounded-full" />
-                  <div className="w-10 h-3.5 bg-purple-200/50 rounded-full" />
-                  <div className="w-12 h-2 bg-purple-200/50 rounded-full" />
-                </div>
-                <div className="h-[74px] rounded-xl bg-orange-50/40 border border-orange-50/50 flex flex-col items-center justify-center gap-1.5">
-                  <div className="w-6 h-6 bg-orange-200/30 rounded-full" />
-                  <div className="w-10 h-3.5 bg-orange-200/30 rounded-full" />
-                  <div className="w-12 h-2 bg-orange-200/30 rounded-full" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-center mt-3 animate-pulse">
-              <div className="w-48 h-2 bg-purple-200/30 rounded-full" />
+            <div className="text-center space-y-1.5 animate-pulse">
+              <p className="text-xs font-black text-[#1F1939] uppercase tracking-wider">Antworten werden verglichen</p>
+              <p className="text-[10px] font-bold text-[var(--muted)]">Dein HeartPrint™ wird berechnet...</p>
             </div>
           </div>
         ) : stats ? (

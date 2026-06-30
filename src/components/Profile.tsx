@@ -697,15 +697,12 @@ export default function Profile({
 
   const fetchStats = useCallback(async () => {
     try {
-      const hasCached = !!localStorage.getItem('cached_bisou_stats_v3');
-      if (!hasCached) {
-        setLoadingStats(true);
-      }
+      setLoadingStats(true);
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       const partnerId = profile?.partner_id;
       if (!session || !partnerId) {
-        if (!hasCached) setLoadingStats(false);
+        setLoadingStats(false);
         return;
       }
 

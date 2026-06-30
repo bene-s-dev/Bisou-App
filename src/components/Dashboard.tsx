@@ -81,14 +81,11 @@ export default function Dashboard({
 
   const fetchStats = useCallback(async () => {
     try {
-      const hasCached = !!localStorage.getItem('cached_bisou_stats_v3');
-      if (!hasCached) {
-        setLoadingStats(true);
-      }
+      setLoadingStats(true);
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session || !partnerId) {
-        if (!hasCached) setLoadingStats(false);
+        setLoadingStats(false);
         return;
       }
 
