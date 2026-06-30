@@ -102,7 +102,9 @@ export default function Dashboard({
           partnerId,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         },
-        headers: {},
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        },
         signal: controller.signal
       });
 

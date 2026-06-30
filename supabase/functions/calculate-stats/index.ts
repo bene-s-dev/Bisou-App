@@ -55,11 +55,10 @@ serve(async (req) => {
     }
 
     const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    const tempClient = createClient(u, anonKey, {
-      global: { headers: { Authorization: authHeader } }
-    })
+    const tempClient = createClient(u, anonKey)
 
-    const { data: { user }, error: userError } = await tempClient.auth.getUser()
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await tempClient.auth.getUser(token)
     if (userError || !user) {
       console.error("JWT Verification failed:", userError?.message || "User is null");
       return new Response(
