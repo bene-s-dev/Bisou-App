@@ -55,30 +55,13 @@ serve(async (req) => {
       )
     }
 
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-    
-    // Direct fetch to verify the JWT against Supabase Auth to bypass any client library session-merging bugs
-    const authResponse = await fetch(`${u}/auth/v1/user`, {
-      method: 'GET',
-      headers: {
-        'apikey': anonKey,
-        'Authorization': authHeader
-      }
-    })
+    const token = authHeader.replace(/^[Bb]earer\s+/, '')
+    const { data: { user }, error: userError } = await db.auth.getUser(token)
 
-    if (!authResponse.ok) {
-      const errBody = await authResponse.json().catch(() => ({}));
-      console.error("JWT Verification failed via direct fetch:", errBody);
+    if (userError || !user) {
+      console.error("JWT Verification failed via db.auth.getUser:", userError?.message || "User is null");
       return new Response(
-        JSON.stringify({ error: `Unauthorized: ${errBody.msg || errBody.error_description || errBody.message || "Invalid Session"}` }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const user = await authResponse.json()
-    if (!user || !user.id) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid user payload returned' }),
+        JSON.stringify({ error: `Unauthorized: ${userError?.message || "Invalid Session"}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
