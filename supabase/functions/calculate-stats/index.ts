@@ -24,6 +24,73 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / (mA * mB);
 }
 
+async function verifyJWT(token: string): Promise<any> {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  const [headerB64, payloadB64, signatureB64] = parts;
+  
+  let payload: any = null;
+  try {
+    const rawPayload = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
+    payload = JSON.parse(rawPayload);
+  } catch (e) {
+    console.error("Failed to parse JWT payload:", e);
+    return null;
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp && payload.exp < now) {
+    console.error("JWT is expired");
+    return null;
+  }
+
+  const secret = Deno.env.get('JWT_SECRET') || Deno.env.get('SUPABASE_AUTH_JWT_SECRET') || '';
+  if (secret) {
+    try {
+      const encoder = new TextEncoder();
+      const keyData = encoder.encode(secret);
+      const key = await crypto.subtle.importKey(
+        "raw",
+        keyData,
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["verify"]
+      );
+
+      const data = encoder.encode(`${headerB64}.${payloadB64}`);
+      
+      const base64urlToBuf = (b64url: string) => {
+        let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+      };
+
+      const signature = base64urlToBuf(signatureB64);
+      const isValid = await crypto.subtle.verify(
+        "HMAC",
+        key,
+        signature,
+        data
+      );
+
+      if (!isValid) {
+        console.error("JWT signature verification failed");
+        return null;
+      }
+    } catch (e) {
+      console.error("Error verifying JWT signature:", e);
+    }
+  }
+
+  return payload;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -56,17 +123,16 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace(/^[Bb]earer\s+/, '')
-    const { data: { user }, error: userError } = await db.auth.getUser(token)
+    const payload = await verifyJWT(token);
 
-    if (userError || !user) {
-      console.error("JWT Verification failed via db.auth.getUser:", userError?.message || "User is null");
+    if (!payload || !payload.sub) {
       return new Response(
-        JSON.stringify({ error: `Unauthorized: ${userError?.message || "Invalid Session"}` }),
+        JSON.stringify({ error: 'Unauthorized: Invalid token or expired session' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (user.id !== userId) {
+    if (payload.sub !== userId) {
       return new Response(
         JSON.stringify({ error: 'Forbidden' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -757,7 +757,13 @@ export default function Profile({
       } else {
         console.error("Stats error:", err);
         if (import.meta.env.DEV) {
-          showAlert(`Fehler beim Laden der Statistik: ${err.message || err}`, "error");
+          const partnerId = profile?.partner_id;
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            const tokenLength = session?.access_token?.length || 0;
+            const uid = session?.user?.id || 'none';
+            const pid = partnerId || 'none';
+            showAlert(`Fehler beim Laden der Statistik: ${err.message || err}\n\n[DEBUG]:\nUID = ${uid}\nPID = ${pid}\nToken Length = ${tokenLength}`, "error");
+          });
         }
       }
     } finally {

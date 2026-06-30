@@ -140,7 +140,14 @@ export default function Dashboard({
       } else {
         console.error("Stats error:", err);
         if (import.meta.env.DEV) {
-          showAlert(`Fehler beim Laden der Statistik: ${err.message || err}`, "error");
+          // Access session details from the dynamic lookup inside fetchStats scope
+          // We can run getSession again or try to read them safely
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            const tokenLength = session?.access_token?.length || 0;
+            const uid = session?.user?.id || 'none';
+            const pid = partnerId || 'none';
+            showAlert(`Fehler beim Laden der Statistik: ${err.message || err}\n\n[DEBUG]:\nUID = ${uid}\nPID = ${pid}\nToken Length = ${tokenLength}`, "error");
+          });
         }
       }
     } finally {
