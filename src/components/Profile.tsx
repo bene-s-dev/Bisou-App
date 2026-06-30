@@ -723,8 +723,11 @@ export default function Profile({
         setStats(statsData);
         localStorage.setItem('cached_bisou_stats_v3', JSON.stringify(statsData));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Stats error:", err);
+      if (import.meta.env.DEV) {
+        showAlert(`Fehler beim Laden der Statistik: ${err.message || err}`, "error");
+      }
     } finally {
       setLoadingStats(false);
     }
