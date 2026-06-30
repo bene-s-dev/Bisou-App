@@ -36,6 +36,8 @@ export default function StatsModal({
   const [displayWweMatch, setDisplayWweMatch] = useState(0);
   const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
 
+  const lastTargetsRef = React.useRef<{ score: number; tot: number; ranking: number; text: number; wwe: number } | null>(null);
+
   // Animate Bisou Score and match percentages from 0 to target when modal opens or stats change
   React.useEffect(() => {
     if (isOpen && stats && !loading) {
@@ -46,6 +48,20 @@ export default function StatsModal({
         text: stats.textMatch || 0,
         wwe: stats.wweMatch || 0
       }; 
+
+      const isSameTargets = lastTargetsRef.current &&
+        lastTargetsRef.current.score === targets.score &&
+        lastTargetsRef.current.tot === targets.tot &&
+        lastTargetsRef.current.ranking === targets.ranking &&
+        lastTargetsRef.current.text === targets.text &&
+        lastTargetsRef.current.wwe === targets.wwe;
+
+      if (isSameTargets) {
+        return; // Don't restart the animation if targets haven't changed!
+      }
+
+      lastTargetsRef.current = targets;
+      
       const duration = 5300; 
       const delay = 500; 
       let startTime: number | null = null;
@@ -81,6 +97,7 @@ export default function StatsModal({
       const raf = requestAnimationFrame(animate);
       return () => cancelAnimationFrame(raf);
     } else if (!isOpen || loading) {
+      lastTargetsRef.current = null;
       setDisplayScore(0);
       setDisplayTotMatch(0);
       setDisplayRankingMatch(0);
