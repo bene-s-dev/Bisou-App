@@ -59,8 +59,13 @@ export default function Dashboard({
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOfflineDismissed, setIsOfflineDismissed] = useState(false);
 
-  const [stats, setStats] = useState<any>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [stats, setStats] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_bisou_stats_v3');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) { return null; }
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     if (fullscreenImage) {
@@ -108,12 +113,10 @@ export default function Dashboard({
   }, [partnerId]);
 
   useEffect(() => {
-    if (partnerId) {
-      fetchStats();
-    } else {
+    if (!partnerId) {
       setLoadingStats(false);
     }
-  }, [partnerId, dashboardData, fetchStats]);
+  }, [partnerId]);
 
   const navigate = useNavigate();
   const hasPartner = !!partnerId;
@@ -757,7 +760,7 @@ export default function Dashboard({
                 </div>
 
                 <button 
-                  onClick={() => setShowStatsModal(true)} 
+                  onClick={() => { setLoadingStats(true); setShowStatsModal(true); fetchStats(); }} 
                   className="p-3 bg-purple-50 rounded-[18px] text-[var(--secondary)] active:scale-95 transition-all border-2 border-purple-100 shadow-sm stats-icon-pulse shrink-0"
                 >
                   <BarChart3 className="w-5 h-5" />

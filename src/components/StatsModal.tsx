@@ -35,7 +35,54 @@ export default function StatsModal({
   const [displayTextMatch, setDisplayTextMatch] = useState(0);
   const [displayWweMatch, setDisplayWweMatch] = useState(0);
   const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
-  const isGearsLoading = loading;
+  // 'gears' → 'fading' → 'stats'
+  const [phase, setPhase] = useState<'gears' | 'fading' | 'stats'>('gears');
+  const timerDoneRef = React.useRef(false);
+  const dataDoneRef = React.useRef(false);
+
+  const tryStartFade = React.useCallback(() => {
+    if (timerDoneRef.current && dataDoneRef.current) {
+      setPhase(prev => prev === 'gears' ? 'fading' : prev);
+    }
+  }, []);
+
+  // Reset on open
+  React.useEffect(() => {
+    if (isOpen) {
+      setPhase('gears');
+      timerDoneRef.current = false;
+      dataDoneRef.current = false;
+    }
+  }, [isOpen]);
+
+  // Minimum 2s timer
+  React.useEffect(() => {
+    if (isOpen) {
+      const tid = setTimeout(() => {
+        timerDoneRef.current = true;
+        tryStartFade();
+      }, 2000);
+      return () => clearTimeout(tid);
+    }
+  }, [isOpen]);
+
+  // Data ready
+  React.useEffect(() => {
+    if (!loading && stats) {
+      dataDoneRef.current = true;
+      tryStartFade();
+    }
+  }, [loading, stats]);
+
+  // Fading → stats after 400ms
+  React.useEffect(() => {
+    if (phase === 'fading') {
+      const tid = setTimeout(() => setPhase('stats'), 400);
+      return () => clearTimeout(tid);
+    }
+  }, [phase]);
+
+  const isGearsLoading = phase !== 'stats';
 
   const lastTargetsRef = React.useRef<{ score: number; tot: number; ranking: number; text: number; wwe: number } | null>(null);
 
@@ -63,25 +110,15 @@ export default function StatsModal({
 
       lastTargetsRef.current = targets;
       
-      const duration = 5300; 
-      const delay = 500; 
+      const duration = 3000; 
+      const delay = 0; 
       let startTime: number | null = null;
 
       const animate = (currentTime: number) => {
         if (!startTime) startTime = currentTime;
         const elapsed = currentTime - startTime;
-        
-        if (elapsed < delay) {
-          setDisplayScore(0);
-          setDisplayTotMatch(0);
-          setDisplayRankingMatch(0);
-          setDisplayTextMatch(0);
-          setDisplayWweMatch(0);
-          requestAnimationFrame(animate);
-          return;
-        }
 
-        const progress = Math.min((elapsed - delay) / duration, 1);
+        const progress = Math.min(elapsed / duration, 1);
         const easeOut = 1 - Math.pow(1 - progress, 2.5);
         
         setDisplayScore(targets.score * easeOut);
@@ -162,21 +199,26 @@ export default function StatsModal({
           <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
-        {isGearsLoading ? (
-          <div className="flex flex-col items-center justify-center py-12 px-4 space-y-6 animate-in fade-in duration-300">
+        {/* Gears phase */}
+        {phase !== 'stats' && (
+          <div
+            style={{ opacity: phase === 'fading' ? 0 : 1, transition: 'opacity 0.35s ease' }}
+            className="flex flex-col items-center justify-center py-12 px-4 space-y-6"
+          >
             <div className="relative w-20 h-20 flex items-center justify-center">
-              {/* Large Gear */}
               <Settings className="w-14 h-14 text-[var(--secondary)] animate-[spin_5s_linear_infinite] absolute top-1 left-1" />
-              {/* Small Gear */}
               <Settings className="w-9 h-9 text-purple-300 animate-[spin_3s_linear_infinite_reverse] absolute bottom-1 right-1" />
             </div>
             <div className="text-center space-y-1.5 animate-pulse">
               <p className="text-xs font-black text-[#1F1939] uppercase tracking-wider">Antworten werden verglichen</p>
-              <p className="text-[10px] font-bold text-[var(--muted)]">Dein HeartPrint™ wird berechnet...</p>
+              <p className="text-[10px] font-bold text-[var(--muted)]">Bisou-Score wird per HeartPrint™ berechnet</p>
             </div>
           </div>
-        ) : stats ? (
-          <div className="space-y-3">
+        )}
+
+        {/* Stats phase */}
+        {phase === 'stats' && stats && (
+          <div className="space-y-3 animate-fade-in">
             {/* Top Area stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
@@ -295,12 +337,8 @@ export default function StatsModal({
                 <HelpCircle className="w-full h-full" strokeWidth={2.5} />
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <p className="text-xs font-bold text-[#4A4468]">Keine Daten für Statistiken verfügbar.</p>
-          </div>
-        )}
+            </div>
+          )}
       </div>
 
       {heartprintType && (

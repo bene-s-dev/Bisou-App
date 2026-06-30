@@ -364,8 +364,13 @@ export default function Profile({
     }
   }, [searchParams, setSearchParams]);
 
-  const [stats, setStats] = useState<any>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const [stats, setStats] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_bisou_stats_v3');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) { return null; }
+  });
+  const [loadingStats, setLoadingStats] = useState(false);
   const [partnerDetails, setPartnerDetails] = useState<{
     createdAt: string | null;
     streak: number;
@@ -730,6 +735,7 @@ export default function Profile({
       fetchStats();
     }
   }, [profile?.partner_id, fetchStats]);
+
 
   // Load Milestones Effect
   useEffect(() => {
@@ -1664,7 +1670,7 @@ export default function Profile({
               { id: 'partner', label: profile?.partner_id ? 'Partner' : 'Partner verbinden', icon: Users, action: () => setActiveTab('partner') },
               { id: 'journal', label: 'Tagebuch', icon: History, action: () => setShowJournalModal(true) },
               { id: 'streak', label: 'Serie', icon: Flame, action: () => setShowStreakModal(true) },
-              { id: 'score', label: 'Übereinstimmung', icon: BarChart3, action: () => setShowStatsModal(true) },
+              { id: 'score', label: 'Übereinstimmung', icon: BarChart3, action: () => { setLoadingStats(true); setShowStatsModal(true); fetchStats(); } },
               { id: 'milestones', label: 'Meilensteine', icon: Trophy, action: () => setShowMilestonesModal(true) },
               { id: 'settings', label: 'Einstellungen', icon: Settings, action: () => setActiveTab('settings') }
             ].filter((item): item is any => !!item).map(item => (
