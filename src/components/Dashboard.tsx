@@ -359,7 +359,7 @@ export default function Dashboard({
     }
   };
 
-  const handleSyncOfflineAnswers = useCallback(async (isManual = false) => {
+  const handleSyncOfflineAnswers = async () => {
     if (isSyncing || !offlineAnswers) return;
     setIsSyncing(true);
     try {
@@ -399,31 +399,11 @@ export default function Dashboard({
       }
     } catch (err: any) {
       console.error("Sync error:", err);
-      if (isManual) {
-        showAlert("Absenden fehlgeschlagen. Bitte prüfe deine Internetverbindung.", "error");
-      }
+      showAlert("Absenden fehlgeschlagen. Bitte prüfe deine Internetverbindung.", "error");
     } finally {
       setIsSyncing(false);
     }
-  }, [offlineAnswers, isSyncing, partnerId, onRefreshData, showAlert]);
-
-  useEffect(() => {
-    // Automatically try to sync if online
-    if (offlineAnswers && navigator.onLine && !isSyncing) {
-      handleSyncOfflineAnswers(false);
-    }
-
-    const handleOnline = () => {
-      if (offlineAnswers && !isSyncing) {
-        handleSyncOfflineAnswers(false);
-      }
-    };
-
-    window.addEventListener('online', handleOnline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-    };
-  }, [offlineAnswers, isSyncing, handleSyncOfflineAnswers]);
+  };
 
   if (!dashboardData) return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
@@ -716,7 +696,7 @@ export default function Dashboard({
               </p>
             </div>
             <button
-              onClick={() => handleSyncOfflineAnswers(true)}
+              onClick={handleSyncOfflineAnswers}
               disabled={isSyncing}
               className="w-full bg-red-500 hover:bg-red-600 active:scale-[0.98] text-white text-[10px] font-black uppercase tracking-widest py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
             >
