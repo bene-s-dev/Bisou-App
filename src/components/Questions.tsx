@@ -555,7 +555,48 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       setTimeout(() => onComplete(), 50);
     } catch (err: any) {
       console.error("Submit error:", err);
-      showAlert("Speichern fehlgeschlagen.", "error");
+      try {
+        const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
+        const choiceStr = finalResults.join(" | ") + " " + sig;
+        localStorage.setItem('failed_sync_answers', JSON.stringify({
+          dayKey,
+          choiceStr
+        }));
+        
+        // Trigger local Web Notification if supported and granted
+        if ('Notification' in window) {
+          if (Notification.permission === 'granted') {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.ready.then((registration) => {
+                registration.showNotification("Du hattest schlechtes Internet 🌐", {
+                  body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden.",
+                  icon: "/store_icon.png",
+                  badge: "/store_icon.png"
+                });
+              }).catch(() => {
+                try {
+                  new Notification("Du hattest schlechtes Internet 🌐", {
+                    body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden."
+                  });
+                } catch (e) {
+                  console.warn("Local notification construct failed:", e);
+                }
+              });
+            } else {
+              try {
+                new Notification("Du hattest schlechtes Internet 🌐", {
+                  body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden."
+                });
+              } catch (e) {
+                console.warn("Local notification construct failed:", e);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Failed to cache offline answers:", e);
+      }
+      showAlert("Speichern fehlgeschlagen. Deine Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden, wenn du wieder Netz hast.", "error");
     } finally {
       setIsSubmitting(false);
     }

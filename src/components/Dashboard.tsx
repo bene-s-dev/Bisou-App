@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import StatsModal from './StatsModal';
 import { supabase } from '../lib/supabase';
 import { GREETINGS, Question } from '../constants/questions';
-import { User as UserIcon, Clock, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3 } from 'lucide-react';
+import { User as UserIcon, Clock, Flame, X, ChevronLeft, ChevronRight, Link as LinkIcon, BarChart3, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { getTimeUntilReset } from '../lib/dateUtils';
@@ -48,6 +48,16 @@ export default function Dashboard({
   const [isFullscreenPartner, setIsFullscreenPartner] = useState(false);
   const [isNudging, setIsNudging] = useState(false);
   const [isPartnerHovered, setIsPartnerHovered] = useState(false);
+  const [offlineAnswers, setOfflineAnswers] = useState<any>(() => {
+    try {
+      const saved = localStorage.getItem('failed_sync_answers');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isOfflineDismissed, setIsOfflineDismissed] = useState(false);
 
   const [stats, setStats] = useState<any>(() => {
     try {
@@ -319,6 +329,72 @@ export default function Dashboard({
     );
   };
 
+  const handleSyncOfflineAnswers = useCallback(async (isManual = false) => {
+    if (isSyncing || !offlineAnswers) return;
+    setIsSyncing(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) throw new Error("Keine aktive Sitzung.");
+
+      const { error: deleteError } = await supabase
+        .from('answers')
+        .delete()
+        .eq('user_id', session.user.id)
+        .eq('day_key', offlineAnswers.dayKey);
+        
+      if (deleteError) throw deleteError;
+
+      const { error } = await supabase
+        .from('answers')
+        .insert([{ 
+          user_id: session.user.id, 
+          choice: offlineAnswers.choiceStr, 
+          day_key: offlineAnswers.dayKey 
+        }]);
+
+      if (error && error.code !== '23505') throw error;
+
+      if (partnerId) {
+        supabase.functions.invoke('send-push-notification', {
+          body: { user_id: session.user.id, partner_id: partnerId, type: 'answer_submitted' }
+        }).catch(err => console.warn('Push notification failed:', err));
+      }
+
+      localStorage.removeItem('failed_sync_answers');
+      setOfflineAnswers(null);
+      showAlert("Deine Antworten wurden erfolgreich hochgeladen! ✨", "success");
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (err: any) {
+      console.error("Sync error:", err);
+      if (isManual) {
+        showAlert("Absenden fehlgeschlagen. Bitte prüfe deine Internetverbindung.", "error");
+      }
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [offlineAnswers, isSyncing, partnerId, onRefreshData, showAlert]);
+
+  useEffect(() => {
+    // Automatically try to sync if online
+    if (offlineAnswers && navigator.onLine && !isSyncing) {
+      handleSyncOfflineAnswers(false);
+    }
+
+    const handleOnline = () => {
+      if (offlineAnswers && !isSyncing) {
+        handleSyncOfflineAnswers(false);
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [offlineAnswers, isSyncing, handleSyncOfflineAnswers]);
+
   if (!dashboardData) return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
       <div className="flex-1 flex flex-col pt-[72px] pb-20 sm:pb-32 overflow-hidden">
@@ -422,6 +498,69 @@ export default function Dashboard({
           >
             {localStorage.getItem('mock_ios_mode') === 'true' ? 'iOS Mock: AN' : 'iOS Mock: AUS'}
           </button>
+          <button 
+            onClick={() => {
+              const mockData = {
+                dayKey: dayKey,
+                choiceStr: "Antwort 1 | Antwort 2 | Antwort 3 | Antwort 4 [Frage 1][Frage 2][Frage 3][Frage 4]"
+              };
+              localStorage.setItem('failed_sync_answers', JSON.stringify(mockData));
+              setOfflineAnswers(mockData);
+              setIsOfflineDismissed(false);
+
+              // Trigger local Web Notification if supported and permitted
+              if ('Notification' in window) {
+                const showMockNotification = () => {
+                  if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then((registration) => {
+                      registration.showNotification("Du hattest schlechtes Internet 🌐", {
+                        body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden.",
+                        icon: "/store_icon.png",
+                        badge: "/store_icon.png"
+                      });
+                    }).catch(() => {
+                      try {
+                        new Notification("Du hattest schlechtes Internet 🌐", {
+                          body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden."
+                        });
+                      } catch (e) {
+                        console.warn("Local notification construct failed:", e);
+                      }
+                    });
+                  } else {
+                    try {
+                      new Notification("Du hattest schlechtes Internet 🌐", {
+                        body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden."
+                      });
+                    } catch (e) {
+                      console.warn("Local notification construct failed:", e);
+                    }
+                  }
+                };
+
+                if (Notification.permission === 'granted') {
+                  showMockNotification();
+                } else if (Notification.permission !== 'denied') {
+                  Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                      showMockNotification();
+                    } else {
+                      showAlert(`Benachrichtigungs-Erlaubnis verweigert (${permission}). Bitte in den Browsereinstellungen aktivieren!`, "warning");
+                    }
+                  });
+                } else {
+                  showAlert("Benachrichtigungen sind in deinem Browser blockiert. Bitte erlaube sie in den Einstellungen der Website!", "warning");
+                }
+              } else {
+                showAlert("Browser unterstützt keine Push-Benachrichtigungen.", "error");
+              }
+
+              showAlert("Mock-Offline-Antworten erstellt! 🌐", "success");
+            }}
+            className="py-1 px-2.5 rounded-full text-[7px] font-black uppercase tracking-[0.1em] shadow-sm border transition-all active:scale-95 bg-white/80 backdrop-blur-sm border-orange-200 text-orange-600 hover:bg-orange-50"
+          >
+            Mock Offline 🌐
+          </button>
         </div>
       )}
       <div 
@@ -522,6 +661,34 @@ export default function Dashboard({
             <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center mb-3 text-[var(--secondary)] border border-purple-100"><LinkIcon className="w-6 h-6" /></div>
             <p className="font-black text-base mb-1 text-[var(--text-main)]">Der erste Schritt</p>
             <button onClick={() => navigate('/profile?tab=partner')} className="btn-primary py-2.5 px-6 text-[10px] font-black uppercase tracking-widest w-auto shadow-sm">Bisou-Partner verbinden</button>
+          </div>
+        ) : offlineAnswers && !isOfflineDismissed ? (
+          <div className="status-box pt-6 px-5 pb-5 mb-2 bg-red-50 border border-red-200 flex flex-col items-center text-center gap-3 relative shrink-0">
+            <button 
+              onClick={() => setIsOfflineDismissed(true)}
+              className="absolute top-3.5 right-3.5 p-1 text-red-400 hover:text-red-600 hover:bg-red-100/50 rounded-full transition-colors border-none bg-transparent cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <div className="w-10 h-10 bg-red-100/50 rounded-2xl flex items-center justify-center text-red-500 border border-red-200/50">
+              <WifiOff className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-black text-red-800 uppercase tracking-wider mb-1">Du hattest schlechtes Internet</p>
+              <p className="text-[10px] font-bold text-red-600/90 leading-normal">
+                Deine heutigen Antworten konnten vorhin nicht gesendet werden.
+              </p>
+            </div>
+            <button
+              onClick={() => handleSyncOfflineAnswers(true)}
+              disabled={isSyncing}
+              className="w-full bg-red-500 hover:bg-red-600 active:scale-[0.98] text-white text-[10px] font-black uppercase tracking-widest py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 border-none cursor-pointer"
+            >
+              {isSyncing && (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              )}
+              <span>Antworten jetzt abschicken 🚀</span>
+            </button>
           </div>
         ) : (
           <div className="status-box pt-4 px-4 pb-1 mb-2">
