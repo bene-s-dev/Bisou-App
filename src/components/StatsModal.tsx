@@ -322,10 +322,11 @@ export default function StatsModal({
                         {/* Grid lines */}
                         {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
                           const y = 140 - (gridVal / 10) * 120;
+                          const isZero = gridVal === 0;
                           return (
-                            <g key={gridVal} opacity="0.15">
-                              <line x1="0" y1={gridVal === 0 ? y - 0.5 : y} x2="300" y2={gridVal === 0 ? y - 0.5 : y} stroke="#6A6588" strokeWidth="1" strokeDasharray={gridVal === 0 ? "0" : "3 3"} />
-                              <text x="0" y={y - 4} fill="#6A6588" fontSize="8" fontWeight="bold">{gridVal}</text>
+                            <g key={gridVal} opacity={isZero ? "0.7" : "0.45"}>
+                              <line x1="0" y1={isZero ? y - 0.5 : y} x2="300" y2={isZero ? y - 0.5 : y} stroke={isZero ? "#4A4468" : "#8C88A5"} strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
+                              <text x="0" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal}</text>
                             </g>
                           );
                         })}
@@ -375,9 +376,15 @@ export default function StatsModal({
                           );
                         })()}
                       </svg>
-                      <p className="text-center text-[8px] text-[var(--muted)] opacity-60 font-bold uppercase tracking-wider mt-2 select-none">
-                        👈 Halte & wische zum Erkunden 👉
-                      </p>
+
+                      {/* Rough date scale */}
+                      <div className="flex justify-between items-center px-1 mt-2.5 text-[9px] text-[var(--muted)] font-black uppercase tracking-wider select-none">
+                        <span>{formatDate(stats.scoreHistory[0].date)}</span>
+                        {stats.scoreHistory.length > 2 && (
+                          <span>{formatDate(stats.scoreHistory[Math.floor(stats.scoreHistory.length / 2)].date)}</span>
+                        )}
+                        <span>{formatDate(stats.scoreHistory[stats.scoreHistory.length - 1].date)}</span>
+                      </div>
                     </div>
                   ) : (
                     <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
@@ -385,13 +392,6 @@ export default function StatsModal({
                       <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig an mehreren Tagen Fragen, um euren Verlauf zu sehen!</p>
                     </div>
                   )}
-
-                  <div className="bg-purple-50/30 border border-purple-100/50 rounded-2xl p-3.5 text-left w-full text-[10px] leading-relaxed text-[#4A4468]">
-                    <p className="font-black text-[#1F1939] uppercase tracking-wider text-[8px] mb-1.5 text-[var(--secondary)]">Der Bisou-Score</p>
-                    Der Bisou-Score misst eure harmonische Übereinstimmung der letzten 30 Tage. 
-                    Diese Kurve zeigt euren täglichen Beziehungs-Score über die letzten 90 Tage. 
-                    Er wird aus euren Antworten bei Dies-oder-Das, Ranglisten, WWE und Freitexten berechnet.
-                  </div>
                 </div>
               ) : (
                 /* Original stats overview */

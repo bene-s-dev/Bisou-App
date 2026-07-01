@@ -172,10 +172,52 @@ serve(async (req) => {
       }
     });
 
-    // 4. Free Text match (semantic comparison via Jaccard overlap fallback)
+    // 4. Free Text match (semantic comparison via Gemini API or Jaccard fallback)
     const textSimilarities: Record<string, number> = {};
 
     if (textPairs.length > 0) {
+      const k = Deno.env.get('GEMINI_API_KEY') || '';
+      const uniqueTexts = new Set<string>();
+      for (const pair of textPairs) {
+        const t1 = String(pair.text1 || '').trim();
+        const t2 = String(pair.text2 || '').trim();
+        if (t1 && t2 && t1 !== t2) {
+          uniqueTexts.add(t1);
+          uniqueTexts.add(t2);
+        }
+      }
+
+      const textToVectorMap = new Map<string, number[]>();
+
+      if (uniqueTexts.size > 0 && k) {
+        const textList = Array.from(uniqueTexts);
+        await Promise.all(
+          textList.map(async (text) => {
+            try {
+              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${k}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  model: "models/text-embedding-004",
+                  content: { parts: [{ text }] }
+                })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                const vector = data.embedding?.values;
+                if (vector && Array.isArray(vector)) {
+                  textToVectorMap.set(text, vector);
+                }
+              } else {
+                console.error(`Gemini embedding request failed for "${text}": status ${res.status}`);
+              }
+            } catch (e: any) {
+              console.error(`Error generating embedding for "${text}":`, e.message);
+            }
+          })
+        );
+      }
+
       textPairs.forEach(pair => {
         const t1 = String(pair.text1 || '').trim();
         const t2 = String(pair.text2 || '').trim();
@@ -185,22 +227,33 @@ serve(async (req) => {
         } else if (t1 === t2) {
           textSimilarities[pair.day_key] = 100;
         } else {
-          // Local Jaccard overlap fallback (optimized bypass)
-          const clean1 = t1.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-          const clean2 = t2.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-          if (!clean1 || !clean2) {
-            textSimilarities[pair.day_key] = 0;
-          } else {
-            const words1 = clean1.split(/\s+/);
-            const words2 = clean2.split(/\s+/);
-            const set1 = new Set(words1);
-            const set2 = new Set(words2);
-            let intersect = 0;
-            for (const w of set1) {
-              if (set2.has(w)) intersect++;
+          const v1 = textToVectorMap.get(t1);
+          const v2 = textToVectorMap.get(t2);
+
+          if (!v1 || !v2) {
+            // Local Jaccard overlap fallback if embeddings failed
+            const clean1 = t1.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            const clean2 = t2.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+            if (!clean1 || !clean2) {
+              textSimilarities[pair.day_key] = 0;
+            } else {
+              const words1 = clean1.split(/\s+/);
+              const words2 = clean2.split(/\s+/);
+              const set1 = new Set(words1);
+              const set2 = new Set(words2);
+              let intersect = 0;
+              for (const w of set1) {
+                if (set2.has(w)) intersect++;
+              }
+              const union = new Set([...words1, ...words2]).size;
+              textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
             }
-            const union = new Set([...words1, ...words2]).size;
-            textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
+          } else {
+            const rawSimilarity = cosineSimilarity(v1, v2);
+            // Apply generous scaling: map [0.2, 1] to [0, 1] with power curve 0.4 for very high/generous similarity
+            const normalized = Math.max(0, (rawSimilarity - 0.2) / 0.8);
+            const similarityPercent = Math.min(100, Math.max(0, Math.round(Math.pow(normalized, 0.4) * 1000) / 10));
+            textSimilarities[pair.day_key] = similarityPercent;
           }
         }
       });

@@ -7,24 +7,38 @@ function BottleWine({ className }: { className?: string }) {
     <svg 
       viewBox="0 0 24 24" 
       fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
       className={className}
+      xmlns="http://www.w3.org/2000/svg"
     >
+      {/* Dark gray bottle body (original shape path) */}
       <path 
         d="M10 2h4v5c0 2 3 2.5 3 4v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9c0-1.5 3-2 3-4V2Z" 
-        className="stroke-slate-400 fill-slate-200 dark:fill-slate-700" 
+        fill="#27272A" 
+        stroke="#4B5563"
+        strokeWidth="0.8"
       />
+      
+      {/* Red cap at the very top of the neck */}
+      <rect x="9.5" y="1.5" width="5" height="2.5" rx="0.5" fill="#EF4444" />
+      <path d="M11 1.5h2V0.5h-2z" fill="#DC2626" />
+
+      {/* Red Label Background in the middle */}
       <rect 
         x="9" 
         y="12" 
         width="6" 
         height="5" 
-        className="fill-red-500 stroke-red-500" 
-        strokeWidth="0" 
+        fill="#EF4444" 
         rx="0.5" 
+      />
+
+      {/* Yellow warning diamond on the label */}
+      <path d="M12 12.8l2 1.7-2 1.7-2-1.7z" fill="#FBBF24" />
+
+      {/* Small black warning flame symbol */}
+      <path 
+        d="M12 13.5c-.4 0-.6.3-.6.7s.3.7.6.7.6-.3.6-.7c0-.3-.1-.5-.2-.6.1.2.1.3.2.3s0-.2-.6-.4z" 
+        fill="#000" 
       />
     </svg>
   );
