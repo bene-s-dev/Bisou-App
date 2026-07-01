@@ -172,6 +172,8 @@ serve(async (req) => {
       }
     });
 
+    const debugErrors: any[] = [];
+
     // 4. Free Text match (semantic comparison via Gemini API or Jaccard fallback)
     const textSimilarities: Record<string, number> = {};
 
@@ -194,11 +196,11 @@ serve(async (req) => {
         await Promise.all(
           textList.map(async (text) => {
             try {
-              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${k}`, {
+              const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${k}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  model: "models/text-embedding-004",
+                  model: "models/gemini-embedding-001",
                   content: { parts: [{ text }] }
                 })
               });
@@ -207,15 +209,22 @@ serve(async (req) => {
                 const vector = data.embedding?.values;
                 if (vector && Array.isArray(vector)) {
                   textToVectorMap.set(text, vector);
+                } else {
+                  debugErrors.push({ text, error: "No vector in embedding response", data });
                 }
               } else {
+                const errText = await res.text();
+                debugErrors.push({ text, status: res.status, error: errText });
                 console.error(`Gemini embedding request failed for "${text}": status ${res.status}`);
               }
             } catch (e: any) {
+              debugErrors.push({ text, error: e.message });
               console.error(`Error generating embedding for "${text}":`, e.message);
             }
           })
         );
+      } else if (uniqueTexts.size > 0 && !k) {
+        debugErrors.push({ error: "No GEMINI_API_KEY available" });
       }
 
       textPairs.forEach(pair => {
@@ -457,7 +466,9 @@ serve(async (req) => {
       wweMatch: wweMatchAvg,
       bisouScore,
       prevBisouScore,
-      scoreHistory
+      scoreHistory,
+      debugErrors,
+      keyInfo: (Deno.env.get('GEMINI_API_KEY') || '').substring(0, 4) + '...'
     };
 
     return new Response(

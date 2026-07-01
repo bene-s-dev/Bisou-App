@@ -305,8 +305,8 @@ export default function StatsModal({
                           <svg
                             ref={chartRef}
                             className="w-full overflow-visible touch-none cursor-crosshair select-none"
-                            viewBox="0 0 300 160"
-                            height="160"
+                            viewBox="0 0 300 145"
+                            height="145"
                             onTouchStart={handleTouchMove}
                             onTouchMove={handleTouchMove}
                             onTouchEnd={() => setSelectedIndex(null)}
@@ -428,13 +428,13 @@ export default function StatsModal({
 
                       {/* Day milestones display list */}
                       {stats.scoreHistory && stats.scoreHistory.length > 1 && (
-                        <div className="w-full space-y-1.5 select-none h-[92px] flex flex-col justify-start">
+                        <div className="w-full space-y-1.5 select-none min-h-[96px] flex flex-col justify-start">
                           {dayMilestones.length > 0 ? (
                             <>
                               <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1 h-3 shrink-0">
                                 ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
                               </p>
-                              <div className="grid grid-cols-1 gap-1.5 w-full h-[76px] overflow-y-auto pr-1 scroll-smooth">
+                              <div className="grid grid-cols-1 gap-1.5 w-full max-h-[120px] overflow-y-auto pr-1 scroll-smooth">
                                 {dayMilestones.map((m: any) => (
                                   <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out]">
                                     <span className="text-xl shrink-0">{m.icon}</span>
@@ -447,7 +447,7 @@ export default function StatsModal({
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[92px] shrink-0">
+                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[96px] shrink-0">
                               <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
                             </div>
                           )}
