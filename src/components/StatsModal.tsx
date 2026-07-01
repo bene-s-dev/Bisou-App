@@ -35,54 +35,37 @@ export default function StatsModal({
   const [displayTextMatch, setDisplayTextMatch] = useState(0);
   const [displayWweMatch, setDisplayWweMatch] = useState(0);
   const [scoreTrend, setScoreTrend] = useState<{ delta: number; direction: 'up' | 'down' | 'same' } | null>(null);
-  // 'gears' → 'fading' → 'stats'
-  const [phase, setPhase] = useState<'gears' | 'fading' | 'stats'>('gears');
-  const timerDoneRef = React.useRef(false);
-  const dataDoneRef = React.useRef(false);
+  const [minTimerDone, setMinTimerDone] = useState(false);
+  const [fadeGears, setFadeGears] = useState(false);
+  const [renderStats, setRenderStats] = useState(false);
 
-  const tryStartFade = React.useCallback(() => {
-    if (timerDoneRef.current && dataDoneRef.current) {
-      setPhase(prev => prev === 'gears' ? 'fading' : prev);
-    }
-  }, []);
-
-  // Reset on open
+  // Reset when modal opens
   React.useEffect(() => {
     if (isOpen) {
-      setPhase('gears');
-      timerDoneRef.current = false;
-      dataDoneRef.current = false;
+      setMinTimerDone(false);
+      setFadeGears(false);
+      setRenderStats(false);
+      
+      const timer = setTimeout(() => {
+        setMinTimerDone(true);
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
-  // Minimum 2s timer
+  // When loading is false AND timer is done AND stats is available, trigger fade-out
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && minTimerDone && !loading && stats) {
+      setFadeGears(true);
       const tid = setTimeout(() => {
-        timerDoneRef.current = true;
-        tryStartFade();
-      }, 2000);
+        setRenderStats(true);
+      }, 300); // 300ms transition time
       return () => clearTimeout(tid);
     }
-  }, [isOpen]);
+  }, [isOpen, minTimerDone, loading, stats]);
 
-  // Data ready
-  React.useEffect(() => {
-    if (!loading && stats) {
-      dataDoneRef.current = true;
-      tryStartFade();
-    }
-  }, [loading, stats]);
-
-  // Fading → stats after 400ms
-  React.useEffect(() => {
-    if (phase === 'fading') {
-      const tid = setTimeout(() => setPhase('stats'), 400);
-      return () => clearTimeout(tid);
-    }
-  }, [phase]);
-
-  const isGearsLoading = phase !== 'stats';
+  // Start counter animations as soon as gears start to fade out (pointer-events set to none)
+  const isGearsLoading = !fadeGears;
 
   const lastTargetsRef = React.useRef<{ score: number; tot: number; ranking: number; text: number; wwe: number } | null>(null);
 
@@ -199,146 +182,158 @@ export default function StatsModal({
           <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
-        {/* Gears phase */}
-        {phase !== 'stats' && (
-          <div
-            style={{ opacity: phase === 'fading' ? 0 : 1, transition: 'opacity 0.35s ease' }}
-            className="flex flex-col items-center justify-center py-12 px-4 space-y-6"
-          >
-            <div className="relative w-20 h-20 flex items-center justify-center">
-              <Settings className="w-14 h-14 text-[var(--secondary)] animate-[spin_5s_linear_infinite] absolute top-1 left-1" />
-              <Settings className="w-9 h-9 text-purple-300 animate-[spin_3s_linear_infinite_reverse] absolute bottom-1 right-1" />
-            </div>
-            <div className="text-center space-y-1.5 animate-pulse">
-              <p className="text-xs font-black text-[#1F1939] uppercase tracking-wider">Antworten werden verglichen</p>
-              <p className="text-[10px] font-bold text-[var(--muted)]">Bisou-Score wird per HeartPrint™ berechnet</p>
-            </div>
-          </div>
-        )}
-
-        {/* Stats phase */}
-        {phase === 'stats' && stats && (
-          <div className="space-y-3 animate-fade-in">
-            {/* Top Area stats */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
-                <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1.5">Gemeinsam Aktiv</p>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
-                  <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
-                </div>
+        <div className="relative w-full" style={{ minHeight: '430px' }}>
+          {/* Gears overlay */}
+          {(!renderStats || loading) && (
+            <div
+              style={{
+                opacity: fadeGears && !loading ? 0 : 1,
+                transition: 'opacity 0.25s ease',
+              }}
+              className="absolute inset-0 flex flex-col items-center justify-center py-12 px-4 space-y-6 bg-white z-10"
+            >
+              <div className="relative w-20 h-20 flex items-center justify-center">
+                <Settings className="w-14 h-14 text-[var(--secondary)] animate-[spin_5s_linear_infinite] absolute top-1 left-1" />
+                <Settings className="w-9 h-9 text-purple-300 animate-[spin_3s_linear_infinite_reverse] absolute bottom-1 right-1" />
               </div>
-              <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
-                <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
-                <div className="flex items-baseline justify-between">
-                  <div className="flex items-baseline">
-                    <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
-                      {displayScore.toFixed(1)}
-                    </span>
-                    <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
-                  </div>
-                  {scoreTrend && (
-                    <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
-                      scoreTrend.direction === 'up' 
-                        ? 'bg-emerald-50 text-emerald-500' 
-                        : scoreTrend.direction === 'down' 
-                        ? 'bg-red-50 text-red-400' 
-                        : 'bg-gray-50 text-gray-400'
-                    }`}>
-                      {scoreTrend.direction === 'up' && <TrendingUp className="w-2.5 h-2.5" strokeWidth={3} />}
-                      {scoreTrend.direction === 'down' && <TrendingDown className="w-2.5 h-2.5" strokeWidth={3} />}
-                      {scoreTrend.direction === 'same' && <Minus className="w-2.5 h-2.5" strokeWidth={3} />}
-                      <span>{scoreTrend.direction === 'same' ? '±0' : scoreTrend.delta.toFixed(1)}</span>
-                    </div>
-                  )}
-                </div>
+              <div className="text-center space-y-1.5 animate-pulse mt-4">
+                <p className="text-xs font-black text-[#1F1939] uppercase tracking-wider">Antworten werden verglichen</p>
+                <p className="text-[10px] font-bold text-[var(--muted)]">Bisou-Score wird per HeartPrint™ berechnet</p>
               </div>
-            </div>
-
-            {/* Match rates 2x2 Grid */}
-            <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <Sparkles className="w-3.5 h-3.5 text-[var(--secondary)]" />
-                <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2 text-center">
-                {/* TOT Match */}
-                <div 
-                  onClick={() => setHeartprintType('tot')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                >
-                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies oder das</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{displayTotMatch}%</span>
-                </div>
-
-                {/* Ranking Match */}
-                <div 
-                  onClick={() => setHeartprintType('ranking')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                >
-                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{displayRankingMatch}%</span>
-                </div>
-
-                {/* Text Match */}
-                <div 
-                  onClick={() => setHeartprintType('text')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                >
-                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
-                </div>
-
-                {/* WWE Match */}
-                <div 
-                  onClick={() => setHeartprintType('wwe')}
-                  className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                >
-                  <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
-                  <span className="text-sm font-black text-[var(--secondary)]">{displayWweMatch}%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Answer Habits */}
-            <div className="bg-white border-2 border-purple-50 rounded-2xl p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
-                <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
-                  <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.myHabit}:00</span>
-                    <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-100">
-                  <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
-                    <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-center gap-1.5 mt-3">
-              <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
-                Berechnet mit dem HeartPrint™-Algorithmus
-              </p>
-              <button 
-                onClick={() => setHeartprintType('all')}
-                className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0 -mt-[1px] heartprint-info-pulse"
-              >
-                <HelpCircle className="w-full h-full" strokeWidth={2.5} />
-              </button>
-            </div>
             </div>
           )}
+
+          {/* Stats content */}
+          {stats && (
+            <div
+              style={{
+                opacity: fadeGears && !loading ? 1 : 0,
+                transition: 'opacity 0.25s ease',
+                pointerEvents: fadeGears && !loading ? 'auto' : 'none',
+              }}
+              className="space-y-3"
+            >
+              {/* Top Area stats */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
+                  <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1.5">Gemeinsam Aktiv</p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
+                    <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
+                  </div>
+                </div>
+                <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
+                  <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
+                  <div className="flex items-baseline justify-between">
+                    <div className="flex items-baseline">
+                      <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
+                        {displayScore.toFixed(1)}
+                      </span>
+                      <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
+                    </div>
+                    {scoreTrend && (
+                      <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
+                        scoreTrend.direction === 'up' 
+                          ? 'bg-emerald-50 text-emerald-500' 
+                          : scoreTrend.direction === 'down' 
+                          ? 'bg-red-50 text-red-400' 
+                          : 'bg-gray-50 text-gray-400'
+                      }`}>
+                        {scoreTrend.direction === 'up' && <TrendingUp className="w-2.5 h-2.5" strokeWidth={3} />}
+                        {scoreTrend.direction === 'down' && <TrendingDown className="w-2.5 h-2.5" strokeWidth={3} />}
+                        {scoreTrend.direction === 'same' && <Minus className="w-2.5 h-2.5" strokeWidth={3} />}
+                        <span>{scoreTrend.direction === 'same' ? '±0' : scoreTrend.delta.toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Match rates 2x2 Grid */}
+              <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Sparkles className="w-3.5 h-3.5 text-[var(--secondary)]" />
+                  <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  {/* TOT Match */}
+                  <div 
+                    onClick={() => setHeartprintType('tot')}
+                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies oder das</span>
+                    <span className="text-sm font-black text-[var(--secondary)]">{displayTotMatch}%</span>
+                  </div>
+
+                  {/* Ranking Match */}
+                  <div 
+                    onClick={() => setHeartprintType('ranking')}
+                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
+                    <span className="text-sm font-black text-[var(--secondary)]">{displayRankingMatch}%</span>
+                  </div>
+
+                  {/* Text Match */}
+                  <div 
+                    onClick={() => setHeartprintType('text')}
+                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
+                    <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
+                  </div>
+
+                  {/* WWE Match */}
+                  <div 
+                    onClick={() => setHeartprintType('wwe')}
+                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                  >
+                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
+                    <span className="text-sm font-black text-[var(--secondary)]">{displayWweMatch}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Answer Habits */}
+              <div className="bg-white border-2 border-purple-50 rounded-2xl p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
+                  <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
+                    <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.myHabit}:00</span>
+                      <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-100">
+                    <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
+                      <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-1.5 mt-3">
+                <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
+                  Berechnet mit dem HeartPrint™-Algorithmus
+                </p>
+                <button 
+                  onClick={() => setHeartprintType('all')}
+                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0 -mt-[1px] heartprint-info-pulse"
+                >
+                  <HelpCircle className="w-full h-full" strokeWidth={2.5} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {heartprintType && (
