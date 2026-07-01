@@ -178,7 +178,6 @@ serve(async (req) => {
     const textSimilarities: Record<string, number> = {};
 
     if (textPairs.length > 0) {
-      const k = Deno.env.get('GEMINI_API_KEY') || '';
       const uniqueTexts = new Set<string>();
       for (const pair of textPairs) {
         const t1 = String(pair.text1 || '').trim();
@@ -190,6 +189,8 @@ serve(async (req) => {
       }
 
       const textToVectorMap = new Map<string, number[]>();
+
+      const k = Deno.env.get('GEMINI_API_KEY') || '';
 
       if (uniqueTexts.size > 0 && k) {
         const textList = Array.from(uniqueTexts);
@@ -209,22 +210,15 @@ serve(async (req) => {
                 const vector = data.embedding?.values;
                 if (vector && Array.isArray(vector)) {
                   textToVectorMap.set(text, vector);
-                } else {
-                  debugErrors.push({ text, error: "No vector in embedding response", data });
                 }
               } else {
-                const errText = await res.text();
-                debugErrors.push({ text, status: res.status, error: errText });
                 console.error(`Gemini embedding request failed for "${text}": status ${res.status}`);
               }
             } catch (e: any) {
-              debugErrors.push({ text, error: e.message });
               console.error(`Error generating embedding for "${text}":`, e.message);
             }
           })
         );
-      } else if (uniqueTexts.size > 0 && !k) {
-        debugErrors.push({ error: "No GEMINI_API_KEY available" });
       }
 
       textPairs.forEach(pair => {
@@ -466,9 +460,7 @@ serve(async (req) => {
       wweMatch: wweMatchAvg,
       bisouScore,
       prevBisouScore,
-      scoreHistory,
-      debugErrors,
-      keyInfo: (Deno.env.get('GEMINI_API_KEY') || '').substring(0, 4) + '...'
+      scoreHistory
     };
 
     return new Response(
