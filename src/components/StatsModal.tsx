@@ -591,8 +591,9 @@ export default function StatsModal({
                       <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
                       <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-2">
+
+                    {/* Avg answer time chips */}
+                    <div className="grid grid-cols-2 gap-2 mb-2">
                       <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
                         <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
                         <div className="flex flex-col">
@@ -608,7 +609,31 @@ export default function StatsModal({
                         </div>
                       </div>
                     </div>
+
+                    {/* Who answers first bar */}
+                    {stats.myFirstPercent != null && (
+                      <div className="pt-1.5 border-t border-purple-50">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
+                          <span className="text-[8px] font-black text-[#1F1939]">
+                            {stats.myFirstPercent === 50
+                              ? '⚡ Gleichauf'
+                              : stats.myFirstPercent > 50
+                              ? `Du zuerst · ${stats.myFirstPercent}%`
+                              : `${capitalizeName(partnerName.split(' ')[0])} zuerst · ${100 - stats.myFirstPercent}%`}
+                          </span>
+                          <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
+                        </div>
+                        <div className="w-full h-2 rounded-full overflow-hidden bg-orange-100/60">
+                          <div
+                            className="h-full rounded-full bg-[var(--secondary)] transition-all duration-700"
+                            style={{ width: `${stats.myFirstPercent}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
+
 
                   <div className="flex items-center justify-center gap-1.5 mt-3">
                     <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">

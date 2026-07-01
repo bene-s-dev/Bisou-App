@@ -450,10 +450,29 @@ serve(async (req) => {
       return Math.round(totalHours / ans.length) % 24;
     };
 
+    // Who answers first? Compare created_at timestamps for each shared day (last 30 days)
+    let myFirstCount = 0;
+    let partnerFirstCount = 0;
+    daysWithBoth30.forEach(ma => {
+      const pa = partnerAnswers30.find(p => p.day_key === ma.day_key);
+      if (pa && ma.created_at && pa.created_at) {
+        const myTime = new Date(ma.created_at).getTime();
+        const partnerTime = new Date(pa.created_at).getTime();
+        if (myTime < partnerTime) myFirstCount++;
+        else if (partnerTime < myTime) partnerFirstCount++;
+        // ties are ignored
+      }
+    });
+    const firstAnswerTotal = myFirstCount + partnerFirstCount;
+    const myFirstPercent = firstAnswerTotal > 0
+      ? Math.round((myFirstCount / firstAnswerTotal) * 100)
+      : null;
+
     const finalStats = {
       totalAnswers,
       myHabit: getAvgHour(myAnswers30),
       partnerHabit: getAvgHour(partnerAnswers30),
+      myFirstPercent,
       totMatch: totMatchAvg,
       rankingMatch: rankingMatchAvg,
       textMatch: textMatchAvg,
