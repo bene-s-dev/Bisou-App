@@ -40,14 +40,31 @@ export default function StatsModal({
   const [renderStats, setRenderStats] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [timeRange, setTimeRange] = useState<'1w' | '4w' | 'max'>('max');
   const chartRef = React.useRef<SVGSVGElement>(null);
 
+  const visibleHistory = React.useMemo(() => {
+    if (!stats?.scoreHistory) return [];
+    const sorted = [...stats.scoreHistory].sort((a, b) => a.date.localeCompare(b.date));
+    if (timeRange === 'max') return sorted;
+
+    const now = new Date();
+    let daysToSubtract = 7;
+    if (timeRange === '4w') daysToSubtract = 28;
+
+    const cutoffDate = new Date();
+    cutoffDate.setDate(now.getDate() - daysToSubtract);
+    const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+    return sorted.filter(pt => pt.date >= cutoffStr);
+  }, [stats?.scoreHistory, timeRange]);
+
   const handlePointer = (clientX: number) => {
-    if (!chartRef.current || !stats?.scoreHistory || stats.scoreHistory.length === 0) return;
+    if (!chartRef.current || visibleHistory.length === 0) return;
     const rect = chartRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, x / rect.width));
-    const index = Math.round(percentage * (stats.scoreHistory.length - 1));
+    const index = Math.round(percentage * (visibleHistory.length - 1));
     setSelectedIndex(index);
   };
 
@@ -106,6 +123,7 @@ export default function StatsModal({
       setRenderStats(false);
       setShowHistory(false);
       setSelectedIndex(null);
+      setTimeRange('max');
       
       const timer = setTimeout(() => {
         setMinTimerDone(true);
@@ -281,26 +299,60 @@ export default function StatsModal({
               {showHistory ? (
                 /* History curve view (interactive like a finance/fitness app) */
                 (() => {
-                  const defaultIndex = stats.scoreHistory && stats.scoreHistory.length > 0 ? stats.scoreHistory.length - 1 : 0;
+                  const defaultIndex = visibleHistory && visibleHistory.length > 0 ? visibleHistory.length - 1 : 0;
                   const currentIndex = selectedIndex !== null ? selectedIndex : defaultIndex;
-                  const activeDay = stats.scoreHistory && stats.scoreHistory[currentIndex] ? stats.scoreHistory[currentIndex] : null;
+                  const activeDay = visibleHistory && visibleHistory[currentIndex] ? visibleHistory[currentIndex] : null;
                   const dayMilestones = activeDay?.milestones || [];
+
+                  // Subtle dynamic colors based on active score (reaction to even 0.1 changes)
+                  const activeScore = activeDay ? activeDay.score : stats.bisouScore;
+                  const hue = 356; // Red/rose theme
+                  const sat = Math.round(70 + activeScore * 2.5); // 70% to 95%
+                  const light = Math.round(85 - activeScore * 3); // 85% to 55%
+                  const gradientColor = `hsl(${hue}, ${sat}%, ${light}%)`;
+                  const gradientOpacity = (0.22 + (activeScore / 10) * 0.18).toFixed(2);
+                  const strokeColor = `hsl(${hue}, ${sat}%, ${Math.round(77 - activeScore * 2.2)}%)`;
 
                   return (
                     <div className="space-y-4 animate-fade-in flex flex-col items-center">
-                      <div className="text-center py-2 w-full">
-                        <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
-                          {activeDay ? formatDate(activeDay.date) : "Aktueller Wert"}
-                        </p>
-                        <div className="flex items-baseline justify-center gap-1">
-                          <span className="text-4xl font-black text-[var(--primary)] tabular-nums transition-all">
-                            {(activeDay ? activeDay.score : stats.bisouScore).toFixed(1)}
-                          </span>
-                          <span className="text-xs font-bold text-rose-400">/ 10</span>
+                      <div className="text-center py-2 w-full flex flex-col items-center space-y-3">
+                        <div className="text-center">
+                          <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
+                            {activeDay ? formatDate(activeDay.date) : "Aktueller Wert"}
+                          </p>
+                          <div className="flex items-baseline justify-center gap-1">
+                            <span 
+                              className="text-4xl font-black tabular-nums transition-all duration-300"
+                              style={{ color: strokeColor }}
+                            >
+                              {(activeDay ? activeDay.score : stats.bisouScore).toFixed(1)}
+                            </span>
+                            <span className="text-xs font-bold text-rose-400">/ 10</span>
+                          </div>
+                        </div>
+
+                        {/* Sleek Segmented Control for Time Range */}
+                        <div className="flex bg-purple-50/50 dark:bg-purple-950/30 p-0.5 rounded-full border border-purple-100/30 dark:border-purple-900/10 w-[200px] h-7 items-center justify-between select-none">
+                          {(['1w', '4w', 'max'] as const).map((r) => (
+                            <button
+                              key={r}
+                              onClick={() => {
+                                setTimeRange(r);
+                                setSelectedIndex(null);
+                              }}
+                              className={`flex-1 h-full text-[9px] font-black uppercase tracking-wider rounded-full transition-all ${
+                                timeRange === r
+                                  ? 'bg-white dark:bg-[#1E1B2E] text-[var(--primary)] shadow-sm'
+                                  : 'text-[var(--muted)] hover:text-[#1F1939] dark:hover:text-white'
+                              }`}
+                            >
+                              {r === '1w' ? '1 Woche' : r === '4w' ? '4 Wochen' : 'Max'}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
-                      {stats.scoreHistory && stats.scoreHistory.length > 1 ? (
+                      {visibleHistory && visibleHistory.length > 1 ? (
                         <div className="relative w-full bg-purple-50/20 rounded-3xl p-4 border border-purple-100/50">
                           <svg
                             ref={chartRef}
@@ -309,20 +361,18 @@ export default function StatsModal({
                             height="145"
                             onTouchStart={handleTouchMove}
                             onTouchMove={handleTouchMove}
-                            onTouchEnd={() => setSelectedIndex(null)}
                             onMouseMove={handleMouseMove}
-                            onMouseLeave={() => setSelectedIndex(null)}
                             onMouseDown={(e) => {
                               handlePointer(e.clientX);
                             }}
                           >
                             <defs>
                               <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
-                                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+                                <stop offset="0%" stopColor={gradientColor} stopOpacity={gradientOpacity} />
+                                <stop offset="100%" stopColor={gradientColor} stopOpacity="0.0" />
                               </linearGradient>
                               <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="var(--primary)" floodOpacity="0.3" />
+                                <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor={strokeColor} floodOpacity="0.3" />
                               </filter>
                             </defs>
 
@@ -340,8 +390,8 @@ export default function StatsModal({
 
                             {/* Render line & fill path */}
                             {(() => {
-                              const points = stats.scoreHistory.map((pt: any, i: number) => {
-                                const x = (i / (stats.scoreHistory.length - 1)) * 300;
+                              const points = visibleHistory.map((pt: any, i: number) => {
+                                const x = (i / (visibleHistory.length - 1)) * 300;
                                 const y = 140 - (pt.score / 10) * 120;
                                 return { x, y };
                               });
@@ -356,17 +406,17 @@ export default function StatsModal({
                                   <path
                                     d={pathD}
                                     fill="none"
-                                    stroke="var(--primary)"
+                                    stroke={strokeColor}
                                     strokeWidth="3.5"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                   />
                                   
                                   {/* Milestone stacked dots on the chart timeline */}
-                                  {stats.scoreHistory.map((pt: any, idx: number) => {
+                                  {visibleHistory.map((pt: any, idx: number) => {
                                     const mCount = pt.milestones?.length || 0;
                                     if (mCount === 0) return null;
-                                    const px = (idx / (stats.scoreHistory.length - 1)) * 300;
+                                    const px = (idx / (visibleHistory.length - 1)) * 300;
                                     return (
                                       <g key={`ms-dots-${pt.date}-${idx}`}>
                                         {Array.from({ length: Math.min(5, mCount) }).map((_, dotIdx) => {
@@ -409,32 +459,23 @@ export default function StatsModal({
                               );
                             })()}
                           </svg>
-
-                          {/* Rough date scale */}
-                          <div className="flex justify-between items-center px-1 mt-0.5 text-[9px] text-[var(--muted)] font-black uppercase tracking-wider select-none">
-                            <span>{formatDate(stats.scoreHistory[0].date)}</span>
-                            {stats.scoreHistory.length > 2 && (
-                              <span>{formatDate(stats.scoreHistory[Math.floor(stats.scoreHistory.length / 2)].date)}</span>
-                            )}
-                            <span>{formatDate(stats.scoreHistory[stats.scoreHistory.length - 1].date)}</span>
-                          </div>
                         </div>
                       ) : (
                         <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
-                          <p className="text-xs font-bold text-[#4A4468]">Noch nicht genügend Daten vorhanden.</p>
-                          <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig an mehreren Tagen Fragen, um euren Verlauf zu sehen!</p>
+                          <p className="text-xs font-bold text-[#4A4468]">Keine Daten für diesen Zeitraum.</p>
+                          <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig Fragen, um euren Verlauf zu füllen!</p>
                         </div>
                       )}
 
                       {/* Day milestones display list */}
-                      {stats.scoreHistory && stats.scoreHistory.length > 1 && (
-                        <div className="w-full space-y-1.5 select-none min-h-[96px] flex flex-col justify-start">
+                      {visibleHistory && visibleHistory.length > 1 && (
+                        <div className="w-full space-y-1.5 select-none h-[126px] flex flex-col justify-start shrink-0">
                           {dayMilestones.length > 0 ? (
                             <>
-                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1 h-3 shrink-0">
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1 h-3.5 shrink-0 flex items-center">
                                 ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
                               </p>
-                              <div className="grid grid-cols-1 gap-1.5 w-full max-h-[120px] overflow-y-auto pr-1 scroll-smooth">
+                              <div className="flex-1 overflow-y-auto pr-1 scroll-smooth grid grid-cols-1 gap-1.5 min-h-0">
                                 {dayMilestones.map((m: any) => (
                                   <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out]">
                                     <span className="text-xl shrink-0">{m.icon}</span>
@@ -447,7 +488,7 @@ export default function StatsModal({
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[96px] shrink-0">
+                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[126px] shrink-0">
                               <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
                             </div>
                           )}
