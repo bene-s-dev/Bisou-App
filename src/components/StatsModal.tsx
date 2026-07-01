@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings, ChevronLeft } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 import { supabase } from '../lib/supabase';
 
@@ -38,6 +38,65 @@ export default function StatsModal({
   const [minTimerDone, setMinTimerDone] = useState(false);
   const [fadeGears, setFadeGears] = useState(false);
   const [renderStats, setRenderStats] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const chartRef = React.useRef<SVGSVGElement>(null);
+
+  const handlePointer = (clientX: number) => {
+    if (!chartRef.current || !stats?.scoreHistory || stats.scoreHistory.length === 0) return;
+    const rect = chartRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const index = Math.round(percentage * (stats.scoreHistory.length - 1));
+    setSelectedIndex(index);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      handlePointer(e.touches[0].clientX);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (e.buttons === 1 || e.type === 'mousemove') {
+      handlePointer(e.clientX);
+    }
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
+  };
+
+  // Handle popstate for native back button / gesture
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePopState = (e: PopStateEvent) => {
+      if (showHistory) {
+        setShowHistory(false);
+        setSelectedIndex(null);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isOpen, showHistory]);
+
+  React.useEffect(() => {
+    if (isOpen && showHistory) {
+      window.history.pushState({ statsHistoryOpen: true }, '');
+    }
+  }, [isOpen, showHistory]);
+
+  const handleClose = () => {
+    if (showHistory) {
+      window.history.back();
+    }
+    onClose();
+  };
 
   // Reset when modal opens
   React.useEffect(() => {
@@ -45,6 +104,8 @@ export default function StatsModal({
       setMinTimerDone(false);
       setFadeGears(false);
       setRenderStats(false);
+      setShowHistory(false);
+      setSelectedIndex(null);
       
       const timer = setTimeout(() => {
         setMinTimerDone(true);
@@ -167,7 +228,7 @@ export default function StatsModal({
 
   return createPortal(
     <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute inset-0" onClick={handleClose} />
       <div className="modal-content p-6 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
@@ -175,11 +236,15 @@ export default function StatsModal({
               <BarChart3 className="w-6 h-6 text-[var(--secondary)]" />
             </div>
             <div>
-              <h3 className="font-black text-[#1F1939] text-base leading-tight">Eure Bisou-Statistik</h3>
-              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">der letzten 30 Tage</p>
+              <h3 className="font-black text-[#1F1939] text-base leading-tight">
+                {showHistory ? "Score-Verlauf" : "Eure Bisou-Statistik"}
+              </h3>
+              <p className="text-[9px] text-[var(--muted)] font-bold uppercase tracking-widest">
+                {showHistory ? "Letzte 90 Tage" : "der letzten 30 Tage"}
+              </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
+          <button onClick={handleClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
         </div>
 
         <div className="relative w-full" style={{ minHeight: '430px' }}>
@@ -213,124 +278,247 @@ export default function StatsModal({
               }}
               className="space-y-3"
             >
-              {/* Top Area stats */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
-                  <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1.5">Gemeinsam Aktiv</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
-                    <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
-                  </div>
-                </div>
-                <div className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-transform" onClick={() => setHeartprintType('all')}>
-                  <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
-                  <div className="flex items-baseline justify-between">
-                    <div className="flex items-baseline">
-                      <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
-                        {displayScore.toFixed(1)}
+              {showHistory ? (
+                /* History curve view (interactive like a finance/fitness app) */
+                <div className="space-y-4 animate-fade-in flex flex-col items-center">
+                  <div className="text-center py-2 w-full">
+                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
+                      {selectedIndex !== null ? formatDate(stats.scoreHistory[selectedIndex].date) : "Aktueller Wert"}
+                    </p>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-4xl font-black text-[var(--primary)] tabular-nums transition-all">
+                        {(selectedIndex !== null ? stats.scoreHistory[selectedIndex].score : stats.bisouScore).toFixed(1)}
                       </span>
-                      <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
+                      <span className="text-xs font-bold text-rose-400">/ 10</span>
                     </div>
-                    {scoreTrend && (
-                      <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
-                        scoreTrend.direction === 'up' 
-                          ? 'bg-emerald-50 text-emerald-500' 
-                          : scoreTrend.direction === 'down' 
-                          ? 'bg-red-50 text-red-400' 
-                          : 'bg-gray-50 text-gray-400'
-                      }`}>
-                        {scoreTrend.direction === 'up' && <TrendingUp className="w-2.5 h-2.5" strokeWidth={3} />}
-                        {scoreTrend.direction === 'down' && <TrendingDown className="w-2.5 h-2.5" strokeWidth={3} />}
-                        {scoreTrend.direction === 'same' && <Minus className="w-2.5 h-2.5" strokeWidth={3} />}
-                        <span>{scoreTrend.direction === 'same' ? '±0' : scoreTrend.delta.toFixed(1)}</span>
+                  </div>
+
+                  {stats.scoreHistory && stats.scoreHistory.length > 1 ? (
+                    <div className="relative w-full bg-purple-50/20 rounded-3xl p-4 border border-purple-100/50">
+                      <svg
+                        ref={chartRef}
+                        className="w-full overflow-visible touch-none cursor-crosshair select-none"
+                        viewBox="0 0 300 160"
+                        height="160"
+                        onTouchStart={handleTouchMove}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={() => setSelectedIndex(null)}
+                        onMouseMove={handleMouseMove}
+                        onMouseLeave={() => setSelectedIndex(null)}
+                        onMouseDown={(e) => {
+                          handlePointer(e.clientX);
+                        }}
+                      >
+                        <defs>
+                          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+                          </linearGradient>
+                          <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="var(--primary)" floodOpacity="0.3" />
+                          </filter>
+                        </defs>
+
+                        {/* Grid lines */}
+                        {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
+                          const y = 140 - (gridVal / 10) * 120;
+                          return (
+                            <g key={gridVal} opacity="0.15">
+                              <line x1="0" y1={gridVal === 0 ? y - 0.5 : y} x2="300" y2={gridVal === 0 ? y - 0.5 : y} stroke="#6A6588" strokeWidth="1" strokeDasharray={gridVal === 0 ? "0" : "3 3"} />
+                              <text x="0" y={y - 4} fill="#6A6588" fontSize="8" fontWeight="bold">{gridVal}</text>
+                            </g>
+                          );
+                        })}
+
+                        {/* Render line & fill path */}
+                        {(() => {
+                          const points = stats.scoreHistory.map((pt: any, i: number) => {
+                            const x = (i / (stats.scoreHistory.length - 1)) * 300;
+                            const y = 140 - (pt.score / 10) * 120;
+                            return { x, y };
+                          });
+
+                          const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+                          const areaD = `${pathD} L 300 140 L 0 140 Z`;
+                          const selPt = selectedIndex !== null ? points[selectedIndex] : null;
+
+                          return (
+                            <>
+                              <path d={areaD} fill="url(#chartGradient)" />
+                              <path
+                                d={pathD}
+                                fill="none"
+                                stroke="var(--primary)"
+                                strokeWidth="3.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              {selPt && (
+                                <line
+                                  x1={selPt.x}
+                                  y1="20"
+                                  x2={selPt.x}
+                                  y2="140"
+                                  stroke="var(--secondary)"
+                                  strokeWidth="1.5"
+                                  strokeDasharray="2 2"
+                                  opacity="0.7"
+                                />
+                              )}
+                              {selPt && (
+                                <g filter="url(#dotShadow)">
+                                  <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
+                                  <circle cx={selPt.x} cy={selPt.y} r="5" fill="var(--primary)" />
+                                </g>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </svg>
+                      <p className="text-center text-[8px] text-[var(--muted)] opacity-60 font-bold uppercase tracking-wider mt-2 select-none">
+                        👈 Halte & wische zum Erkunden 👉
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
+                      <p className="text-xs font-bold text-[#4A4468]">Noch nicht genügend Daten vorhanden.</p>
+                      <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig an mehreren Tagen Fragen, um euren Verlauf zu sehen!</p>
+                    </div>
+                  )}
+
+                  <div className="bg-purple-50/30 border border-purple-100/50 rounded-2xl p-3.5 text-left w-full text-[10px] leading-relaxed text-[#4A4468]">
+                    <p className="font-black text-[#1F1939] uppercase tracking-wider text-[8px] mb-1.5 text-[var(--secondary)]">Der Bisou-Score</p>
+                    Der Bisou-Score misst eure harmonische Übereinstimmung der letzten 30 Tage. 
+                    Diese Kurve zeigt euren täglichen Beziehungs-Score über die letzten 90 Tage. 
+                    Er wird aus euren Antworten bei Dies-oder-Das, Ranglisten, WWE und Freitexten berechnet.
+                  </div>
+                </div>
+              ) : (
+                /* Original stats overview */
+                <>
+                  {/* Top Area stats */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
+                      <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1.5">Gemeinsam Aktiv</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
+                        <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Match rates 2x2 Grid */}
-              <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
-                <div className="flex items-center gap-1.5 mb-3">
-                  <Sparkles className="w-3.5 h-3.5 text-[var(--secondary)]" />
-                  <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2 text-center">
-                  {/* TOT Match */}
-                  <div 
-                    onClick={() => setHeartprintType('tot')}
-                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                  >
-                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies oder das</span>
-                    <span className="text-sm font-black text-[var(--secondary)]">{displayTotMatch}%</span>
-                  </div>
-
-                  {/* Ranking Match */}
-                  <div 
-                    onClick={() => setHeartprintType('ranking')}
-                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                  >
-                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
-                    <span className="text-sm font-black text-[var(--secondary)]">{displayRankingMatch}%</span>
-                  </div>
-
-                  {/* Text Match */}
-                  <div 
-                    onClick={() => setHeartprintType('text')}
-                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                  >
-                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
-                    <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
-                  </div>
-
-                  {/* WWE Match */}
-                  <div 
-                    onClick={() => setHeartprintType('wwe')}
-                    className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
-                  >
-                    <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
-                    <span className="text-sm font-black text-[var(--secondary)]">{displayWweMatch}%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Answer Habits */}
-              <div className="bg-white border-2 border-purple-50 rounded-2xl p-3">
-                <div className="flex items-center gap-1.5 mb-2">
-                  <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
-                  <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
-                    <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.myHabit}:00</span>
-                      <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
+                    </div>
+                    <div 
+                      className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-transform" 
+                      onClick={() => setShowHistory(true)}
+                    >
+                      <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
+                      <div className="flex items-baseline justify-between">
+                        <div className="flex items-baseline">
+                          <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
+                            {displayScore.toFixed(1)}
+                          </span>
+                          <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
+                        </div>
+                        {scoreTrend && (
+                          <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
+                            scoreTrend.direction === 'up' 
+                              ? 'bg-emerald-50 text-emerald-500' 
+                              : scoreTrend.direction === 'down' 
+                              ? 'bg-red-50 text-red-400' 
+                              : 'bg-gray-50 text-gray-400'
+                          }`}>
+                            {scoreTrend.direction === 'up' && <TrendingUp className="w-2.5 h-2.5" strokeWidth={3} />}
+                            {scoreTrend.direction === 'down' && <TrendingDown className="w-2.5 h-2.5" strokeWidth={3} />}
+                            {scoreTrend.direction === 'same' && <Minus className="w-2.5 h-2.5" strokeWidth={3} />}
+                            <span>{scoreTrend.direction === 'same' ? '±0' : scoreTrend.delta.toFixed(1)}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-100">
-                    <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
-                      <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
+
+                  {/* Match rates 2x2 Grid */}
+                  <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <Sparkles className="w-3.5 h-3.5 text-[var(--secondary)]" />
+                      <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      {/* TOT Match */}
+                      <div 
+                        onClick={() => setHeartprintType('tot')}
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies oder das</span>
+                        <span className="text-sm font-black text-[var(--secondary)]">{displayTotMatch}%</span>
+                      </div>
+
+                      {/* Ranking Match */}
+                      <div 
+                        onClick={() => setHeartprintType('ranking')}
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
+                        <span className="text-sm font-black text-[var(--secondary)]">{displayRankingMatch}%</span>
+                      </div>
+
+                      {/* Text Match */}
+                      <div 
+                        onClick={() => setHeartprintType('text')}
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
+                        <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
+                      </div>
+
+                      {/* WWE Match */}
+                      <div 
+                        onClick={() => setHeartprintType('wwe')}
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
+                        <span className="text-sm font-black text-[var(--secondary)]">{displayWweMatch}%</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-center gap-1.5 mt-3">
-                <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
-                  Berechnet mit dem HeartPrint™-Algorithmus
-                </p>
-                <button 
-                  onClick={() => setHeartprintType('all')}
-                  className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0 -mt-[1px] heartprint-info-pulse"
-                >
-                  <HelpCircle className="w-full h-full" strokeWidth={2.5} />
-                </button>
-              </div>
+                  {/* Answer Habits */}
+                  <div className="bg-white border-2 border-purple-50 rounded-2xl p-3">
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
+                      <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
+                        <span className="text-base">{getTimeIcon(stats.myHabit)}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.myHabit}:00</span>
+                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-100">
+                        <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
+                          <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-1.5 mt-3">
+                    <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
+                      Berechnet mit dem HeartPrint™-Algorithmus
+                    </p>
+                    <button 
+                      onClick={() => setHeartprintType('all')}
+                      className="w-3.5 h-3.5 rounded-full flex items-center justify-center hover:opacity-70 transition-opacity focus:outline-none shrink-0 -mt-[1px] heartprint-info-pulse"
+                    >
+                      <HelpCircle className="w-full h-full" strokeWidth={2.5} />
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

@@ -74,13 +74,17 @@ serve(async (req) => {
       )
     }
 
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const dateStr90 = ninetyDaysAgo.toISOString().split('T')[0];
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+    const dateStr30 = thirtyDaysAgo.toISOString().split('T')[0];
 
-    // Fetch answers and streaks in parallel
+    // Fetch answers and streaks in parallel (90 days of answers)
     const [answersRes, streaksRes] = await Promise.all([
-      db.from('answers').select('*').gte('day_key', dateStr).in('user_id', [userId, partnerId]),
+      db.from('answers').select('*').gte('day_key', dateStr90).in('user_id', [userId, partnerId]),
       db.from('streaks').select('*').in('user_id', [userId, partnerId])
     ]);
 
@@ -93,13 +97,18 @@ serve(async (req) => {
     const myAnswers = answers.filter(a => a.user_id === userId);
     const partnerAnswers = answers.filter(a => a.user_id === partnerId);
 
-    // 1. Total Questions (Days where both answered)
+    // Days where both answered (90 day window)
     const daysWithBoth = myAnswers.filter(ma => 
       partnerAnswers.some(pa => pa.day_key === ma.day_key)
     );
 
-    // Calculate together active days based on streaks table intersection
-    let totalAnswers = daysWithBoth.length;
+    // Filter for 30 day window
+    const daysWithBoth30 = daysWithBoth.filter(ma => ma.day_key >= dateStr30);
+    const myAnswers30 = myAnswers.filter(a => a.day_key >= dateStr30);
+    const partnerAnswers30 = partnerAnswers.filter(a => a.day_key >= dateStr30);
+
+    // Calculate together active days based on streaks table intersection (30 days)
+    let totalAnswers = daysWithBoth30.length;
     if (streaks && streaks.length > 0) {
       const myStreak = streaks.find(s => s.user_id === userId);
       const partnerStreak = streaks.find(s => s.user_id === partnerId);
@@ -107,8 +116,8 @@ serve(async (req) => {
       const myHist = Array.isArray(myStreak?.streak_history) ? myStreak.streak_history : [];
       const partnerHist = Array.isArray(partnerStreak?.streak_history) ? partnerStreak.streak_history : [];
 
-      const myHist30 = myHist.filter(d => d >= dateStr);
-      const partnerHist30 = partnerHist.filter(d => d >= dateStr);
+      const myHist30 = myHist.filter(d => d >= dateStr30);
+      const partnerHist30 = partnerHist.filter(d => d >= dateStr30);
 
       const commonDates = myHist30.filter(d => partnerHist30.includes(d));
       if (commonDates.length > 0) {
@@ -119,14 +128,15 @@ serve(async (req) => {
     if (daysWithBoth.length === 0) {
       return new Response(
         JSON.stringify({
-          totalAnswers,
+          totalAnswers: 0,
           myHabit: 0,
           partnerHabit: 0,
           totMatch: 0,
           rankingMatch: 0,
           textMatch: 0,
           wweMatch: 0,
-          bisouScore: 0
+          bisouScore: 0,
+          scoreHistory: []
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -144,47 +154,14 @@ serve(async (req) => {
       };
     };
 
-    let totSum = 0;
-    let totDaysCount = 0;
-    let rankingSum = 0;
-    let rankingDaysCount = 0;
-    let wweSum = 0;
-    let wweDaysCount = 0;
     const textPairs: { day_key: string; text1: string; text2: string }[] = [];
 
+    // Setup Free Text pairs for comparison across all 90 days
     daysWithBoth.forEach(ma => {
       const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
       if (pa) {
         const myP = parseChoice(ma.choice);
         const partnerP = parseChoice(pa.choice);
-
-        // Dies-oder-Das-Frage: Binärer Logik-Abgleich
-        if (myP.tot && partnerP.tot) {
-          totDaysCount++;
-          if (myP.tot === partnerP.tot) {
-            totSum += 100;
-          }
-        }
-
-        // Ranking-Frage: Positions-Abstands-Analyse
-        const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
-        const n = commonItems.length;
-        if (n > 1) {
-          let sumSqDiff = 0;
-          for (const item of commonItems) {
-            const myPos = myP.ranking.indexOf(item);
-            const partnerPos = partnerP.ranking.indexOf(item);
-            sumSqDiff += Math.pow(myPos - partnerPos, 2);
-          }
-          const maxSqDiff = (n * (n * n - 1)) / 3;
-          const rawSim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
-          // Apply an encouraging square-root scaling to make the score feel more balanced and fair
-          const sim = Math.sqrt(Math.max(0, rawSim) / 100) * 100;
-          rankingSum += sim;
-          rankingDaysCount++;
-        }
-
-        // Setup Free Text pairs for comparison
         if (myP.text || partnerP.text) {
           textPairs.push({
             day_key: ma.day_key,
@@ -192,114 +169,53 @@ serve(async (req) => {
             text2: partnerP.text
           });
         }
-
-        // Wer-würde-eher-Frage: Binärer Logik-Abgleich
-        if (myP.wwe && partnerP.wwe) {
-          wweDaysCount++;
-          // A match happens if both choose the same person.
-          // Since one says "Ich" and the other says "Partner" for the same person, 
-          // a match is when the strings are NOT equal.
-          if (myP.wwe !== partnerP.wwe) {
-            wweSum += 100;
-          }
-        }
       }
     });
 
-    const totalDays = daysWithBoth.length;
-    const totMatchAvg = totDaysCount > 0 ? Math.round(totSum / totDaysCount) : 0;
-    const rankingMatchAvg = rankingDaysCount > 0 
-      ? Math.round(rankingSum / rankingDaysCount) 
-      : 0;
-    const wweMatchAvg = wweDaysCount > 0
-      ? Math.round(wweSum / wweDaysCount)
-      : 0;
-
-    // 4. Free Text match (semantic comparison via Gemini API or fallback)
-    let textMatchAvg = 0;
+    // 4. Free Text match (semantic comparison via Jaccard overlap fallback)
     const textSimilarities: Record<string, number> = {};
 
     if (textPairs.length > 0) {
-      const uniqueTexts = new Set<string>()
-      for (const pair of textPairs) {
-        const t1 = String(pair.text1 || '').trim()
-        const t2 = String(pair.text2 || '').trim()
-        if (t1 && t2 && t1 !== t2) {
-          uniqueTexts.add(t1)
-          uniqueTexts.add(t2)
-        }
-      }
-
-      const textToVectorMap = new Map<string, number[]>()
-
-      if (uniqueTexts.size > 0) {
-        console.log("Using Jaccard similarity for free text comparison (optimized bypass).");
-      }
-
       textPairs.forEach(pair => {
-        const t1 = String(pair.text1 || '').trim()
-        const t2 = String(pair.text2 || '').trim()
+        const t1 = String(pair.text1 || '').trim();
+        const t2 = String(pair.text2 || '').trim();
 
         if (!t1 || !t2) {
           textSimilarities[pair.day_key] = 0;
         } else if (t1 === t2) {
           textSimilarities[pair.day_key] = 100;
         } else {
-          const v1 = textToVectorMap.get(t1)
-          const v2 = textToVectorMap.get(t2)
-
-          if (!v1 || !v2) {
-            // Local Jaccard overlap fallback if embeddings failed
-            const clean1 = t1.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-            const clean2 = t2.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-            if (!clean1 || !clean2) {
-              textSimilarities[pair.day_key] = 0;
-            } else {
-              const words1 = clean1.split(/\s+/);
-              const words2 = clean2.split(/\s+/);
-              const set1 = new Set(words1);
-              const set2 = new Set(words2);
-              let intersect = 0;
-              for (const w of set1) {
-                if (set2.has(w)) intersect++;
-              }
-              const union = new Set([...words1, ...words2]).size;
-              textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
-            }
+          // Local Jaccard overlap fallback (optimized bypass)
+          const clean1 = t1.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+          const clean2 = t2.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+          if (!clean1 || !clean2) {
+            textSimilarities[pair.day_key] = 0;
           } else {
-            const rawSimilarity = cosineSimilarity(v1, v2)
-            // Map [0.3, 0.9] to [0, 100] linearly for a fair, balanced score
-            const normalized = Math.max(0, (rawSimilarity - 0.3) / 0.6)
-            const similarityPercent = Math.min(100, Math.max(0, Math.round(normalized * 1000) / 10))
-            textSimilarities[pair.day_key] = similarityPercent
+            const words1 = clean1.split(/\s+/);
+            const words2 = clean2.split(/\s+/);
+            const set1 = new Set(words1);
+            const set2 = new Set(words2);
+            let intersect = 0;
+            for (const w of set1) {
+              if (set2.has(w)) intersect++;
+            }
+            const union = new Set([...words1, ...words2]).size;
+            textSimilarities[pair.day_key] = union > 0 ? (intersect / union) * 100 : 0;
           }
         }
       });
-
-      let textSum = 0;
-      let activeTextDays = 0;
-      daysWithBoth.forEach(ma => {
-        const sim = textSimilarities[ma.day_key];
-        if (sim !== undefined) {
-          textSum += sim;
-          activeTextDays++;
-        }
-      });
-      textMatchAvg = activeTextDays > 0 ? Math.round(textSum / activeTextDays) : 0;
     }
 
-    // 5. Calculate Bisou Score (0-10, one decimal place) 
-    const calculateScoreForDays = (daysList: any[]) => {
-      if (daysList.length === 0) return 0;
+    // 5. Modular Helper to calculate scores & match averages for any range of days
+    const getStatsForDays = (daysList: any[]) => {
+      if (daysList.length === 0) {
+        return { tot: 0, ranking: 0, wwe: 0, text: 0, score: 0 };
+      }
       
-      let totSum = 0;
-      let totDaysCount = 0;
-      let rankingSum = 0;
-      let rankingDaysCount = 0;
-      let wweSum = 0;
-      let wweDaysCount = 0;
-      let textSum = 0;
-      let textDaysCount = 0;
+      let totSum = 0, totDaysCount = 0;
+      let rankingSum = 0, rankingDaysCount = 0;
+      let wweSum = 0, wweDaysCount = 0;
+      let textSum = 0, textDaysCount = 0;
 
       daysList.forEach(ma => {
         const pa = partnerAnswers.find(p => p.day_key === ma.day_key);
@@ -363,27 +279,54 @@ serve(async (req) => {
       if (textDaysCount > 0) { activeWeights += 0.25; weightedSum += textMatchAvg * 0.25; }
 
       const weightedPercent = activeWeights > 0 ? (weightedSum / activeWeights) : 0;
-      return Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
+      const score = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
+
+      return {
+        tot: totMatchAvg,
+        ranking: rankingMatchAvg,
+        wwe: wweMatchAvg,
+        text: textMatchAvg,
+        score
+      };
     };
 
-    // Calculate today's Bisou Score (using all days)
-    const bisouScore = calculateScoreForDays(daysWithBoth);
+    // Calculate current stats based on the last 30 days
+    const stats30 = getStatsForDays(daysWithBoth30);
+    const bisouScore = stats30.score;
+    const totMatchAvg = stats30.tot;
+    const rankingMatchAvg = stats30.ranking;
+    const wweMatchAvg = stats30.wwe;
+    const textMatchAvg = stats30.text;
 
-    // Sort days with both answered in ascending order of date
-    const sortedDays = [...daysWithBoth].sort((a, b) => a.day_key.localeCompare(b.day_key));
-    
-    // The previous score should be calculated by excluding the most recent day's answers.
-    // This handles both cases:
-    // - If both answered today: compares today's score with yesterday's score.
-    // - If both have NOT answered today: compares yesterday's score (last active) with the day before yesterday's score.
+    // Calculate previous 30-day score (minus the most recent day in the 30-day window)
+    const sortedDays30 = [...daysWithBoth30].sort((a, b) => a.day_key.localeCompare(b.day_key));
     let prevBisouScore: number | null = null;
-    if (sortedDays.length > 1) {
-      const mostRecentDayKey = sortedDays[sortedDays.length - 1].day_key;
-      const prevDays = sortedDays.filter(d => d.day_key !== mostRecentDayKey);
-      prevBisouScore = calculateScoreForDays(prevDays);
+    if (sortedDays30.length > 1) {
+      const mostRecentDayKey = sortedDays30[sortedDays30.length - 1].day_key;
+      const prevDays30 = sortedDays30.filter(d => d.day_key !== mostRecentDayKey);
+      prevBisouScore = getStatsForDays(prevDays30).score;
     }
 
-    // 6. Habits (Avg Hour) in target timezone
+    // Sort 90 days answers chronologically
+    const sortedDays90 = [...daysWithBoth].sort((a, b) => a.day_key.localeCompare(b.day_key));
+
+    // Calculate rolling 30-day Bisou Score for each day in the 90-day history
+    const scoreHistory = sortedDays90.map(d => {
+      const currentDate = new Date(d.day_key);
+      const startDate = new Date(currentDate);
+      startDate.setDate(startDate.getDate() - 30);
+      const startStr = startDate.toISOString().split('T')[0];
+
+      // Filter answers to the 30-day window ending on d.day_key
+      const daysSubset = sortedDays90.filter(sd => sd.day_key >= startStr && sd.day_key <= d.day_key);
+      const score = getStatsForDays(daysSubset).score;
+      return {
+        date: d.day_key,
+        score: score
+      };
+    });
+
+    // 6. Habits (Avg Hour) in target timezone (representing last 30 days)
     const getAvgHour = (ans: any[]) => {
       if (ans.length === 0) return 0;
       const totalHours = ans.reduce((acc, a) => {
@@ -406,14 +349,15 @@ serve(async (req) => {
 
     const finalStats = {
       totalAnswers,
-      myHabit: getAvgHour(myAnswers),
-      partnerHabit: getAvgHour(partnerAnswers),
+      myHabit: getAvgHour(myAnswers30),
+      partnerHabit: getAvgHour(partnerAnswers30),
       totMatch: totMatchAvg,
       rankingMatch: rankingMatchAvg,
       textMatch: textMatchAvg,
       wweMatch: wweMatchAvg,
       bisouScore,
-      prevBisouScore
+      prevBisouScore,
+      scoreHistory
     };
 
     return new Response(
