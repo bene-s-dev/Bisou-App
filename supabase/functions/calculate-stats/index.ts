@@ -388,11 +388,11 @@ serve(async (req) => {
       }
     };
 
-    // Fetch unlocked milestones for the couple
+    // Fetch unlocked milestones for the calling user only (not the partner)
     const { data: unlocked, error: milestonesErr } = await db
       .from('unlocked_milestones')
       .select('*, milestones(*)')
-      .in('user_id', [userId, partnerId]);
+      .eq('user_id', userId);
 
     if (milestonesErr) {
       console.error("Milestones fetch error:", milestonesErr);
