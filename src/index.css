@@ -605,6 +605,16 @@ body.modal-open #root {
   display: none;
 }
 
+/* Hide scrollbar completely while maintaining scroll behavior */
+.scrollbar-none {
+  overflow-y: auto;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;          /* Chrome, Safari, Opera */
+}
+
 .sortable-ghost .card-inner {
   opacity: 0.35 !important;
   border: 2.5px dashed var(--secondary) !important;

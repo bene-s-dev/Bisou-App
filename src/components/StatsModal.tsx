@@ -254,7 +254,9 @@ export default function StatsModal({
   return createPortal(
     <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
       <div className="absolute inset-0" onClick={handleClose} />
-      <div className="modal-content pt-6 px-4 pb-0 h-[520px] max-h-[92vh] flex flex-col overflow-hidden">
+      <div className={`modal-content pt-6 px-4 pb-0 flex flex-col overflow-hidden transition-all duration-300 ${
+        showHistory ? 'h-[92vh] max-h-[92vh]' : 'h-[520px] max-h-[92vh]'
+      }`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
@@ -304,7 +306,7 @@ export default function StatsModal({
 
 
 
-        <div className="relative w-full flex-1 overflow-y-auto scrollbar-soft pr-0.5 pb-6">
+        <div className="relative w-full flex-1 scrollbar-none overflow-hidden flex flex-col pb-4">
           {/* Gears overlay */}
           {(!renderStats || loading) && (
             <div
@@ -333,7 +335,7 @@ export default function StatsModal({
                 transition: 'opacity 0.25s ease',
                 pointerEvents: fadeGears && !loading ? 'auto' : 'none',
               }}
-              className="space-y-3"
+              className="space-y-2.5 w-full flex-1 flex flex-col min-h-0 max-h-full overflow-hidden"
             >
               {showHistory ? (
                 /* History curve view (interactive like a finance/fitness app) */
@@ -399,8 +401,8 @@ export default function StatsModal({
                   };
 
                   return (
-                    <div className="space-y-4 animate-fade-in flex flex-col items-center w-full">
-                      <div className="text-center py-2 w-full flex flex-col items-center space-y-3">
+                    <div className="space-y-4 animate-fade-in flex flex-col items-center w-full flex-1 min-h-0 max-h-full overflow-hidden">
+                      <div className="text-center py-2 w-full flex flex-col items-center space-y-3 shrink-0">
                         <div className="text-center">
                           <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
                             {activeDay ? formatDate(activeDay.date) : "Aktueller Wert"}
@@ -438,7 +440,7 @@ export default function StatsModal({
                       </div>
 
                       {visibleHistory && visibleHistory.length > 1 ? (
-                        <div className="relative w-full bg-purple-50/20 rounded-3xl py-4 px-4 border border-purple-100/50 flex flex-col items-center justify-center min-h-[179px]">
+                        <div className="relative w-full bg-purple-50/20 rounded-3xl py-4 px-4 border border-purple-100/50 flex flex-col items-center justify-center min-h-[179px] shrink-0">
                           {chartView === 'curve' ? (
                             <svg
                               ref={chartRef}
@@ -620,15 +622,15 @@ export default function StatsModal({
 
                       {/* Day milestones display list */}
                       {visibleHistory && visibleHistory.length > 1 && (
-                        <div className="w-full space-y-1.5 select-none h-[114px] flex flex-col justify-start shrink-0">
+                        <div className="w-full space-y-1.5 select-none flex-1 min-h-0 flex flex-col justify-start">
                           {dayMilestones.length > 0 ? (
                             <>
-                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1 h-3.5 shrink-0 flex items-center">
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-center justify-center h-3.5 shrink-0 flex items-center w-full">
                                 ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
                               </p>
-                              <div className="flex-1 overflow-y-auto pr-1 scroll-smooth grid grid-cols-1 gap-1.5 min-h-0 items-start">
+                              <div className="flex-1 overflow-y-auto scrollbar-none scroll-smooth grid grid-cols-1 gap-1.5 min-h-0 items-start w-full px-0.5">
                                 {dayMilestones.map((m: any) => (
-                                  <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out]">
+                                  <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out] w-full">
                                     <span className="text-xl shrink-0">{m.icon}</span>
                                     <div className="flex-1 min-w-0">
                                       <h5 className="text-[10px] font-black text-[#1F1939] leading-tight truncate">{m.name}</h5>
@@ -639,7 +641,7 @@ export default function StatsModal({
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[114px] shrink-0">
+                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[114px] shrink-0 text-center">
                               <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
                             </div>
                           )}
@@ -650,21 +652,21 @@ export default function StatsModal({
                 })()
               ) : (
                 /* Original stats overview */
-                <>
+                <div className="space-y-2.5 flex-1 flex flex-col justify-between min-h-0 w-full">
                   {/* Top Area stats */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-purple-50/40 rounded-3xl p-4 border border-purple-100/50 flex flex-col justify-between h-[76px]">
-                      <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1.5">Gemeinsam Aktiv</p>
+                  <div className="grid grid-cols-2 gap-2.5 shrink-0">
+                    <div className="bg-purple-50/40 rounded-3xl p-3.5 border border-purple-100/50 flex flex-col justify-between h-[72px]">
+                      <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Gemeinsam Aktiv</p>
                       <div className="flex items-baseline gap-1">
                         <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
                         <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
                       </div>
                     </div>
                     <div 
-                      className="bg-rose-50/40 rounded-3xl p-4 border border-rose-100/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-transform" 
+                      className="bg-rose-50/40 rounded-3xl p-3.5 border border-rose-100/50 flex flex-col justify-between h-[72px] cursor-pointer active:scale-95 transition-transform" 
                       onClick={() => setShowHistory(true)}
                     >
-                      <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1.5">Bisou Score</p>
+                      <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Bisou Score</p>
                       <div className="flex items-baseline justify-between">
                         <div className="flex items-baseline">
                           <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
@@ -691,8 +693,8 @@ export default function StatsModal({
                   </div>
 
                   {/* Match rates 2x2 Grid */}
-                  <div className="bg-white border-2 border-purple-50 rounded-2xl p-4">
-                    <div className="flex items-center gap-1.5 mb-3">
+                  <div className="bg-white border-2 border-purple-50 rounded-2xl p-3.5 shrink-0">
+                    <div className="flex items-center gap-1.5 mb-2">
                       <Sparkles className="w-3.5 h-3.5 text-[var(--secondary)]" />
                       <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Übereinstimmung</h4>
                     </div>
@@ -701,7 +703,7 @@ export default function StatsModal({
                       {/* TOT Match */}
                       <div 
                         onClick={() => setHeartprintType('tot')}
-                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[48px] cursor-pointer active:scale-95 transition-transform"
                       >
                         <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Dies oder das</span>
                         <span className="text-sm font-black text-[var(--secondary)]">{displayTotMatch}%</span>
@@ -710,7 +712,7 @@ export default function StatsModal({
                       {/* Ranking Match */}
                       <div 
                         onClick={() => setHeartprintType('ranking')}
-                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[48px] cursor-pointer active:scale-95 transition-transform"
                       >
                         <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Ranking</span>
                         <span className="text-sm font-black text-[var(--secondary)]">{displayRankingMatch}%</span>
@@ -719,7 +721,7 @@ export default function StatsModal({
                       {/* Text Match */}
                       <div 
                         onClick={() => setHeartprintType('text')}
-                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[48px] cursor-pointer active:scale-95 transition-transform"
                       >
                         <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5">Freitext</span>
                         <span className="text-sm font-black text-[var(--secondary)]">{displayTextMatch}%</span>
@@ -728,7 +730,7 @@ export default function StatsModal({
                       {/* WWE Match */}
                       <div 
                         onClick={() => setHeartprintType('wwe')}
-                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[52px] cursor-pointer active:scale-95 transition-transform"
+                        className="flex flex-col items-center justify-center p-1.5 bg-purple-100/50 rounded-xl border border-purple-100/80 min-h-[48px] cursor-pointer active:scale-95 transition-transform"
                       >
                         <span className="text-[7px] font-bold text-[var(--muted)] uppercase tracking-wider mb-0.5 leading-tight text-center">Wer würde eher</span>
                         <span className="text-sm font-black text-[var(--secondary)]">{displayWweMatch}%</span>
@@ -737,8 +739,8 @@ export default function StatsModal({
                   </div>
 
                   {/* Answer Habits */}
-                  <div className="bg-white border-2 border-purple-50 rounded-2xl p-3">
-                    <div className="flex items-center gap-1.5 mb-2">
+                  <div className="bg-white border-2 border-purple-50 rounded-2xl p-2.5 shrink-0">
+                    <div className="flex items-center gap-1.5 mb-1.5">
                       <Clock className="w-3.5 h-3.5 text-[var(--secondary)]" />
                       <h4 className="text-[9px] font-black text-[#1F1939] uppercase tracking-widest">Antwort-Gewohnheiten</h4>
                     </div>
@@ -787,7 +789,7 @@ export default function StatsModal({
                   </div>
 
 
-                  <div className="flex items-center justify-center gap-1.5 mt-3">
+                  <div className="flex items-center justify-center gap-1.5 mt-2 shrink-0">
                     <p className="text-[8px] text-[var(--muted)] opacity-50 uppercase tracking-[0.12em] font-bold">
                       Berechnet mit dem HeartPrint™-Algorithmus
                     </p>
@@ -798,7 +800,7 @@ export default function StatsModal({
                       <HelpCircle className="w-full h-full" strokeWidth={2.5} />
                     </button>
                   </div>
-                </>
+                </div>
               )}
             </div>
           )}
@@ -827,7 +829,7 @@ export default function StatsModal({
               </button>
             </div>
             <div 
-              className="flex-1 overflow-y-auto scrollbar-soft px-1 pb-6 space-y-4 text-[#4A4468] text-[11px] leading-relaxed"
+              className="flex-1 overflow-y-auto scrollbar-none px-1 pb-6 space-y-4 text-[#4A4468] text-[11px] leading-relaxed"
               style={{ hyphens: 'auto', WebkitHyphens: 'auto' }}
               lang="de"
             >
