@@ -369,7 +369,7 @@ export default function StatsModal({
                                     const px = (idx / (stats.scoreHistory.length - 1)) * 300;
                                     return (
                                       <g key={`ms-dots-${pt.date}-${idx}`}>
-                                        {Array.from({ length: mCount }).map((_, dotIdx) => {
+                                        {Array.from({ length: Math.min(5, mCount) }).map((_, dotIdx) => {
                                           const py = 137 - dotIdx * 5; // stack upwards
                                           return (
                                             <circle
@@ -411,7 +411,7 @@ export default function StatsModal({
                           </svg>
 
                           {/* Rough date scale */}
-                          <div className="flex justify-between items-center px-1 mt-2.5 text-[9px] text-[var(--muted)] font-black uppercase tracking-wider select-none">
+                          <div className="flex justify-between items-center px-1 mt-0.5 text-[9px] text-[var(--muted)] font-black uppercase tracking-wider select-none">
                             <span>{formatDate(stats.scoreHistory[0].date)}</span>
                             {stats.scoreHistory.length > 2 && (
                               <span>{formatDate(stats.scoreHistory[Math.floor(stats.scoreHistory.length / 2)].date)}</span>
@@ -428,13 +428,13 @@ export default function StatsModal({
 
                       {/* Day milestones display list */}
                       {stats.scoreHistory && stats.scoreHistory.length > 1 && (
-                        <div className="w-full space-y-2 select-none min-h-[64px] flex flex-col justify-center">
+                        <div className="w-full space-y-1.5 select-none h-[92px] flex flex-col justify-start">
                           {dayMilestones.length > 0 ? (
                             <>
-                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1">
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1 h-3 shrink-0">
                                 ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
                               </p>
-                              <div className="grid grid-cols-1 gap-1.5 w-full">
+                              <div className="grid grid-cols-1 gap-1.5 w-full h-[76px] overflow-y-auto pr-1 scroll-smooth">
                                 {dayMilestones.map((m: any) => (
                                   <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out]">
                                     <span className="text-xl shrink-0">{m.icon}</span>
@@ -447,7 +447,7 @@ export default function StatsModal({
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center p-3 bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full">
+                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[92px] shrink-0">
                               <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
                             </div>
                           )}
