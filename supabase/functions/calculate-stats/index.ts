@@ -360,6 +360,52 @@ serve(async (req) => {
       prevBisouScore = getStatsForDays(prevDays30).score;
     }
 
+    const getLocalDateStr = (utcString: string, timeZone: string) => {
+      try {
+        const date = new Date(utcString);
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timeZone || 'Europe/Berlin',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        const parts = formatter.formatToParts(date);
+        const year = parts.find(p => p.type === 'year')?.value;
+        const month = parts.find(p => p.type === 'month')?.value;
+        const day = parts.find(p => p.type === 'day')?.value;
+        return `${year}-${month}-${day}`;
+      } catch {
+        return utcString.split('T')[0];
+      }
+    };
+
+    // Fetch unlocked milestones for the couple
+    const { data: unlocked, error: milestonesErr } = await db
+      .from('unlocked_milestones')
+      .select('*, milestones(*)')
+      .in('user_id', [userId, partnerId]);
+
+    if (milestonesErr) {
+      console.error("Milestones fetch error:", milestonesErr);
+    }
+
+    const milestonesByDate: Record<string, any[]> = {};
+    if (unlocked && unlocked.length > 0) {
+      unlocked.forEach(u => {
+        const localDate = getLocalDateStr(u.unlocked_at, timezone);
+        if (!milestonesByDate[localDate]) {
+          milestonesByDate[localDate] = [];
+        }
+        milestonesByDate[localDate].push({
+          id: u.milestones?.id || u.milestone_id,
+          name: u.milestones?.name || 'Meilenstein',
+          description: u.milestones?.description || '',
+          icon: u.milestones?.icon || '🏆',
+          userId: u.user_id
+        });
+      });
+    }
+
     // Sort 90 days answers chronologically
     const sortedDays90 = [...daysWithBoth].sort((a, b) => a.day_key.localeCompare(b.day_key));
 
@@ -375,7 +421,8 @@ serve(async (req) => {
       const score = getStatsForDays(daysSubset).score;
       return {
         date: d.day_key,
-        score: score
+        score: score,
+        milestones: milestonesByDate[d.day_key] || []
       };
     });
 

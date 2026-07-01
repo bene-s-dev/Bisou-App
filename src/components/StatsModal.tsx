@@ -280,119 +280,182 @@ export default function StatsModal({
             >
               {showHistory ? (
                 /* History curve view (interactive like a finance/fitness app) */
-                <div className="space-y-4 animate-fade-in flex flex-col items-center">
-                  <div className="text-center py-2 w-full">
-                    <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
-                      {selectedIndex !== null ? formatDate(stats.scoreHistory[selectedIndex].date) : "Aktueller Wert"}
-                    </p>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-4xl font-black text-[var(--primary)] tabular-nums transition-all">
-                        {(selectedIndex !== null ? stats.scoreHistory[selectedIndex].score : stats.bisouScore).toFixed(1)}
-                      </span>
-                      <span className="text-xs font-bold text-rose-400">/ 10</span>
-                    </div>
-                  </div>
+                (() => {
+                  const defaultIndex = stats.scoreHistory && stats.scoreHistory.length > 0 ? stats.scoreHistory.length - 1 : 0;
+                  const currentIndex = selectedIndex !== null ? selectedIndex : defaultIndex;
+                  const activeDay = stats.scoreHistory && stats.scoreHistory[currentIndex] ? stats.scoreHistory[currentIndex] : null;
+                  const dayMilestones = activeDay?.milestones || [];
 
-                  {stats.scoreHistory && stats.scoreHistory.length > 1 ? (
-                    <div className="relative w-full bg-purple-50/20 rounded-3xl p-4 border border-purple-100/50">
-                      <svg
-                        ref={chartRef}
-                        className="w-full overflow-visible touch-none cursor-crosshair select-none"
-                        viewBox="0 0 300 160"
-                        height="160"
-                        onTouchStart={handleTouchMove}
-                        onTouchMove={handleTouchMove}
-                        onTouchEnd={() => setSelectedIndex(null)}
-                        onMouseMove={handleMouseMove}
-                        onMouseLeave={() => setSelectedIndex(null)}
-                        onMouseDown={(e) => {
-                          handlePointer(e.clientX);
-                        }}
-                      >
-                        <defs>
-                          <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
-                            <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
-                          </linearGradient>
-                          <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="var(--primary)" floodOpacity="0.3" />
-                          </filter>
-                        </defs>
-
-                        {/* Grid lines */}
-                        {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
-                          const y = 140 - (gridVal / 10) * 120;
-                          const isZero = gridVal === 0;
-                          return (
-                            <g key={gridVal} opacity={isZero ? "0.7" : "0.45"}>
-                              <line x1="0" y1={isZero ? y - 0.5 : y} x2="300" y2={isZero ? y - 0.5 : y} stroke={isZero ? "#4A4468" : "#8C88A5"} strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
-                              <text x="0" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal}</text>
-                            </g>
-                          );
-                        })}
-
-                        {/* Render line & fill path */}
-                        {(() => {
-                          const points = stats.scoreHistory.map((pt: any, i: number) => {
-                            const x = (i / (stats.scoreHistory.length - 1)) * 300;
-                            const y = 140 - (pt.score / 10) * 120;
-                            return { x, y };
-                          });
-
-                          const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-                          const areaD = `${pathD} L 300 140 L 0 140 Z`;
-                          const selPt = selectedIndex !== null ? points[selectedIndex] : null;
-
-                          return (
-                            <>
-                              <path d={areaD} fill="url(#chartGradient)" />
-                              <path
-                                d={pathD}
-                                fill="none"
-                                stroke="var(--primary)"
-                                strokeWidth="3.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                              {selPt && (
-                                <line
-                                  x1={selPt.x}
-                                  y1="20"
-                                  x2={selPt.x}
-                                  y2="140"
-                                  stroke="var(--secondary)"
-                                  strokeWidth="1.5"
-                                  strokeDasharray="2 2"
-                                  opacity="0.7"
-                                />
-                              )}
-                              {selPt && (
-                                <g filter="url(#dotShadow)">
-                                  <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
-                                  <circle cx={selPt.x} cy={selPt.y} r="5" fill="var(--primary)" />
-                                </g>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </svg>
-
-                      {/* Rough date scale */}
-                      <div className="flex justify-between items-center px-1 mt-2.5 text-[9px] text-[var(--muted)] font-black uppercase tracking-wider select-none">
-                        <span>{formatDate(stats.scoreHistory[0].date)}</span>
-                        {stats.scoreHistory.length > 2 && (
-                          <span>{formatDate(stats.scoreHistory[Math.floor(stats.scoreHistory.length / 2)].date)}</span>
-                        )}
-                        <span>{formatDate(stats.scoreHistory[stats.scoreHistory.length - 1].date)}</span>
+                  return (
+                    <div className="space-y-4 animate-fade-in flex flex-col items-center">
+                      <div className="text-center py-2 w-full">
+                        <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
+                          {activeDay ? formatDate(activeDay.date) : "Aktueller Wert"}
+                        </p>
+                        <div className="flex items-baseline justify-center gap-1">
+                          <span className="text-4xl font-black text-[var(--primary)] tabular-nums transition-all">
+                            {(activeDay ? activeDay.score : stats.bisouScore).toFixed(1)}
+                          </span>
+                          <span className="text-xs font-bold text-rose-400">/ 10</span>
+                        </div>
                       </div>
+
+                      {stats.scoreHistory && stats.scoreHistory.length > 1 ? (
+                        <div className="relative w-full bg-purple-50/20 rounded-3xl p-4 border border-purple-100/50">
+                          <svg
+                            ref={chartRef}
+                            className="w-full overflow-visible touch-none cursor-crosshair select-none"
+                            viewBox="0 0 300 160"
+                            height="160"
+                            onTouchStart={handleTouchMove}
+                            onTouchMove={handleTouchMove}
+                            onTouchEnd={() => setSelectedIndex(null)}
+                            onMouseMove={handleMouseMove}
+                            onMouseLeave={() => setSelectedIndex(null)}
+                            onMouseDown={(e) => {
+                              handlePointer(e.clientX);
+                            }}
+                          >
+                            <defs>
+                              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.3" />
+                                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+                              </linearGradient>
+                              <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="var(--primary)" floodOpacity="0.3" />
+                              </filter>
+                            </defs>
+
+                            {/* Grid lines */}
+                            {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
+                              const y = 140 - (gridVal / 10) * 120;
+                              const isZero = gridVal === 0;
+                              return (
+                                <g key={gridVal} opacity={isZero ? "0.7" : "0.45"}>
+                                  <line x1="0" y1={isZero ? y - 0.5 : y} x2="300" y2={isZero ? y - 0.5 : y} stroke={isZero ? "#4A4468" : "#8C88A5"} strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
+                                  <text x="0" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal}</text>
+                                </g>
+                              );
+                            })}
+
+                            {/* Render line & fill path */}
+                            {(() => {
+                              const points = stats.scoreHistory.map((pt: any, i: number) => {
+                                const x = (i / (stats.scoreHistory.length - 1)) * 300;
+                                const y = 140 - (pt.score / 10) * 120;
+                                return { x, y };
+                              });
+
+                              const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+                              const areaD = `${pathD} L 300 140 L 0 140 Z`;
+                              const selPt = points[currentIndex];
+
+                              return (
+                                <>
+                                  <path d={areaD} fill="url(#chartGradient)" />
+                                  <path
+                                    d={pathD}
+                                    fill="none"
+                                    stroke="var(--primary)"
+                                    strokeWidth="3.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  
+                                  {/* Milestone stacked dots on the chart timeline */}
+                                  {stats.scoreHistory.map((pt: any, idx: number) => {
+                                    const mCount = pt.milestones?.length || 0;
+                                    if (mCount === 0) return null;
+                                    const px = (idx / (stats.scoreHistory.length - 1)) * 300;
+                                    return (
+                                      <g key={`ms-dots-${pt.date}-${idx}`}>
+                                        {Array.from({ length: mCount }).map((_, dotIdx) => {
+                                          const py = 137 - dotIdx * 5; // stack upwards
+                                          return (
+                                            <circle
+                                              key={dotIdx}
+                                              cx={px}
+                                              cy={py}
+                                              r="2.2"
+                                              fill="#FBBF24"
+                                              stroke="#FFF"
+                                              strokeWidth="0.4"
+                                            />
+                                          );
+                                        })}
+                                      </g>
+                                    );
+                                  })}
+
+                                  {selPt && (
+                                    <line
+                                      x1={selPt.x}
+                                      y1="20"
+                                      x2={selPt.x}
+                                      y2="140"
+                                      stroke="var(--secondary)"
+                                      strokeWidth="1.5"
+                                      strokeDasharray="2 2"
+                                      opacity={selectedIndex !== null ? "0.7" : "0.35"}
+                                    />
+                                  )}
+                                  {selPt && (
+                                    <g filter="url(#dotShadow)">
+                                      <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
+                                      <circle cx={selPt.x} cy={selPt.y} r="5" fill="var(--primary)" />
+                                    </g>
+                                  )}
+                                </>
+                              );
+                            })()}
+                          </svg>
+
+                          {/* Rough date scale */}
+                          <div className="flex justify-between items-center px-1 mt-2.5 text-[9px] text-[var(--muted)] font-black uppercase tracking-wider select-none">
+                            <span>{formatDate(stats.scoreHistory[0].date)}</span>
+                            {stats.scoreHistory.length > 2 && (
+                              <span>{formatDate(stats.scoreHistory[Math.floor(stats.scoreHistory.length / 2)].date)}</span>
+                            )}
+                            <span>{formatDate(stats.scoreHistory[stats.scoreHistory.length - 1].date)}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
+                          <p className="text-xs font-bold text-[#4A4468]">Noch nicht genügend Daten vorhanden.</p>
+                          <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig an mehreren Tagen Fragen, um euren Verlauf zu sehen!</p>
+                        </div>
+                      )}
+
+                      {/* Day milestones display list */}
+                      {stats.scoreHistory && stats.scoreHistory.length > 1 && (
+                        <div className="w-full space-y-2 select-none min-h-[64px] flex flex-col justify-center">
+                          {dayMilestones.length > 0 ? (
+                            <>
+                              <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1">
+                                ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
+                              </p>
+                              <div className="grid grid-cols-1 gap-1.5 w-full">
+                                {dayMilestones.map((m: any) => (
+                                  <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out]">
+                                    <span className="text-xl shrink-0">{m.icon}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <h5 className="text-[10px] font-black text-[#1F1939] leading-tight truncate">{m.name}</h5>
+                                      <p className="text-[8.5px] font-bold text-[var(--muted)] leading-tight truncate mt-0.5">{m.description}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center p-3 bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full">
+                              <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
-                      <p className="text-xs font-bold text-[#4A4468]">Noch nicht genügend Daten vorhanden.</p>
-                      <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig an mehreren Tagen Fragen, um euren Verlauf zu sehen!</p>
-                    </div>
-                  )}
-                </div>
+                  );
+                })()
               ) : (
                 /* Original stats overview */
                 <>
