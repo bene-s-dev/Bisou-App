@@ -678,7 +678,7 @@ export default function App() {
         if (profileData.partner_id) {
           const { data: pData } = await supabase
             .from('profiles')
-            .select('id, display_name, avatar_url')
+            .select('id, display_name, avatar_url, emoji_status, emoji_status_updated_at')
             .eq('id', profileData.partner_id)
             .maybeSingle();
           pProfile = pData;
@@ -984,8 +984,10 @@ export default function App() {
                   <Route path="dashboard" element={<Dashboard 
                     userName={profile.display_name} 
                     userAvatar={profile.avatar_url} 
+                    myEmojiStatus={profile.emoji_status}
                     partnerName={partnerProfile?.display_name || 'Partner'} 
                     partnerAvatar={partnerProfile?.avatar_url}
+                    partnerEmojiStatus={partnerProfile?.emoji_status}
                     partnerId={profile.partner_id}
                     dashboardData={dashboardData}
                     dayKey={dayKey}
@@ -994,6 +996,19 @@ export default function App() {
                       else navigate('/questions');
                     }} 
                     onRefreshData={refreshData}
+                    onUpdateProfile={async (updates: any) => {
+                      const { data, error } = await supabase
+                        .from('profiles')
+                        .update(updates)
+                        .eq('id', profile.id)
+                        .select('*')
+                        .maybeSingle();
+                      if (data) {
+                        setProfile(data);
+                        localStorage.setItem('cached_profile', JSON.stringify(data));
+                      }
+                      return { data, error };
+                    }}
                   />} />
                   <Route path="questions" element={profile.partner_id ? <Questions 
                     profile={profile}

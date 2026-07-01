@@ -16,25 +16,31 @@ import StreakModal from './StreakModal';
 interface DashboardProps {
   userName: string;
   userAvatar?: string;
+  myEmojiStatus?: string | null;
   partnerName: string;
   partnerAvatar?: string | null;
+  partnerEmojiStatus?: string | null;
   partnerId?: string | null;
   dashboardData: any;
   dayKey: string;
   onStartQuestions: () => void;
   onRefreshData?: () => Promise<void>;
+  onUpdateProfile?: (updates: any) => Promise<{ data: any; error: any }>;
 }
 
 export default function Dashboard({ 
   userName, 
   userAvatar, 
+  myEmojiStatus,
   partnerName, 
   partnerAvatar, 
+  partnerEmojiStatus,
   partnerId, 
   dashboardData,
   dayKey,
   onStartQuestions,
-  onRefreshData
+  onRefreshData,
+  onUpdateProfile
 }: DashboardProps) {
   const { showAlert, showConfirm } = useDialog();
   const [showComparison, setShowComparison] = useState(false);
@@ -48,6 +54,8 @@ export default function Dashboard({
   const [isFullscreenPartner, setIsFullscreenPartner] = useState(false);
   const [isNudging, setIsNudging] = useState(false);
   const [isPartnerHovered, setIsPartnerHovered] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [offlineAnswers, setOfflineAnswers] = useState<any>(() => {
     try {
       const saved = localStorage.getItem('failed_sync_answers');
@@ -58,6 +66,24 @@ export default function Dashboard({
   });
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOfflineDismissed, setIsOfflineDismissed] = useState(false);
+  const [customEmoji, setCustomEmoji] = useState("");
+
+  const handleSaveStatus = async (emoji: string | null) => {
+    if (!onUpdateProfile) return;
+    setIsUpdatingStatus(true);
+    try {
+      const { error } = await onUpdateProfile({
+        emoji_status: emoji,
+        emoji_status_updated_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      setShowEmojiPicker(false);
+    } catch (e: any) {
+      showAlert("Fehler beim Aktualisieren des Status: " + e.message);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   const [stats, setStats] = useState<any>(() => {
     try {
@@ -598,6 +624,12 @@ export default function Dashboard({
                 onMouseEnter={() => setIsPartnerHovered(true)}
                 onMouseLeave={() => setIsPartnerHovered(false)}
               >
+                {/* Floating Partner Emoji Status (positioned next to partner avatar on the left) */}
+                {partnerEmojiStatus && (
+                  <div className="absolute top-[28px] sm:top-[34px] -left-5 sm:-left-7 z-40 text-[22px] sm:text-[26px] select-none pointer-events-none transition-all duration-300 animate-[scaleUp_0.2s_ease-out]">
+                    {partnerEmojiStatus}
+                  </div>
+                )}
                 {/* Unclipped shadow element behind the masked avatar */}
                 <div className="absolute inset-0 rounded-[2.2rem] sm:rounded-[2.6rem] shadow-md pointer-events-none -z-10" />
                 <div 
@@ -636,6 +668,22 @@ export default function Dashboard({
  
               {/* User Avatar (on the right) */}
               <div className="relative z-10 w-[88px] h-[88px] sm:w-[106px] sm:h-[106px]">
+                {/* Floating User Emoji Status (positioned next to user avatar on the right) */}
+                {myEmojiStatus ? (
+                  <div 
+                    onClick={() => setShowEmojiPicker(true)}
+                    className="absolute top-[28px] sm:top-[34px] -right-5 sm:-right-7 z-40 text-[22px] sm:text-[26px] cursor-pointer hover:scale-125 active:scale-90 transition-all duration-300 animate-[scaleUp_0.2s_ease-out] select-none"
+                  >
+                    {myEmojiStatus}
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => setShowEmojiPicker(true)}
+                    className="absolute top-[28px] sm:top-[34px] -right-5 sm:-right-7 z-40 text-[20px] sm:text-[24px] cursor-pointer opacity-30 hover:opacity-75 hover:scale-125 active:scale-90 transition-all duration-300 select-none"
+                  >
+                    💬
+                  </div>
+                )}
                 <div 
                   onClick={() => {
                     setFullscreenImage(userAvatar || 'placeholder');
@@ -854,6 +902,94 @@ export default function Dashboard({
                 className="px-6 py-3.5 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-xs font-black rounded-2xl transition-all uppercase tracking-widest border-none shadow-lg active:scale-95 flex items-center gap-2"
               >
                 <span>Profilbild ändern 📸</span>
+              </button>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {showEmojiPicker && createPortal(
+        <div 
+          className="modal-backdrop z-[3500] animate-in fade-in duration-200 flex flex-col items-center justify-center p-4"
+          onClick={() => setShowEmojiPicker(false)}
+        >
+          <div 
+            className="w-full max-w-[320px] bg-white dark:bg-[#1E1B2E] border border-purple-100/50 dark:border-purple-900/50 rounded-[2.5rem] p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-center select-none flex flex-col items-center gap-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close button */}
+            <button 
+              className="absolute top-4 right-4 p-1 text-[var(--muted)] hover:text-[#1F1939] dark:hover:text-white transition-colors"
+              onClick={() => setShowEmojiPicker(false)}
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1 mt-2">
+              <h3 className="text-sm font-black text-[#1F1939] dark:text-white uppercase tracking-wider">
+                Emoji Status setzen
+              </h3>
+              <p className="text-[10px] font-bold text-[var(--muted)]">
+                Dein Partner sieht diesen Status direkt auf dem Dashboard.
+              </p>
+            </div>
+
+            {/* Quick-select emojis grid */}
+            <div className="grid grid-cols-4 gap-3 w-full my-1">
+              {['😊', '😴', '🍕', '🍿', '❤️', '🔋', '🪫', '💻', '🏋️', '🤒', '🍷', '☕'].map((emoji) => (
+                <button
+                  key={emoji}
+                  disabled={isUpdatingStatus}
+                  onClick={() => handleSaveStatus(emoji)}
+                  className={`aspect-square text-2xl flex items-center justify-center bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50 dark:hover:bg-purple-900/50 rounded-2xl transition-transform active:scale-90 border border-purple-100/20 ${myEmojiStatus === emoji ? 'ring-2 ring-[var(--primary)] border-transparent' : ''}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom Emoji Input Row */}
+            <div className="w-full space-y-1.5 pt-2 border-t border-purple-100/30 dark:border-purple-900/20">
+              <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider text-left pl-1">
+                Eigener Emoji Status
+              </p>
+              <div className="flex gap-2 w-full">
+                <input
+                  type="text"
+                  placeholder="Z.B. 🚀"
+                  value={customEmoji}
+                  onChange={(e) => {
+                    const chars = Array.from(e.target.value);
+                    if (chars.length > 0) {
+                      setCustomEmoji(chars[chars.length - 1]);
+                    } else {
+                      setCustomEmoji("");
+                    }
+                  }}
+                  className="flex-1 min-w-0 h-11 px-4 bg-purple-50/30 dark:bg-purple-950/30 border border-purple-100/50 dark:border-purple-900/50 rounded-2xl text-center text-lg placeholder:text-xs placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--primary)] text-[#1F1939] dark:text-white"
+                />
+                <button
+                  disabled={isUpdatingStatus || !customEmoji}
+                  onClick={() => handleSaveStatus(customEmoji)}
+                  className="h-11 w-11 shrink-0 flex items-center justify-center bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white text-[11px] font-black uppercase tracking-wider rounded-2xl active:scale-95 disabled:opacity-40"
+                >
+                  Ok
+                </button>
+              </div>
+            </div>
+
+            {/* Clear Status Button */}
+            {myEmojiStatus && (
+              <button
+                disabled={isUpdatingStatus}
+                onClick={() => {
+                  setCustomEmoji("");
+                  handleSaveStatus(null);
+                }}
+                className="w-full py-2.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 text-[10px] font-black uppercase tracking-wider rounded-2xl active:scale-95 transition-all mt-1"
+              >
+                Status löschen
               </button>
             )}
           </div>
