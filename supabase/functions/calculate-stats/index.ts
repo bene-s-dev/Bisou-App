@@ -329,10 +329,10 @@ serve(async (req) => {
       let activeWeights = 0;
       let weightedSum = 0;
 
-      if (totDaysCount > 0) { activeWeights += 0.25; weightedSum += totMatchAvg * 0.25; }
-      if (rankingDaysCount > 0) { activeWeights += 0.25; weightedSum += rankingMatchAvg * 0.25; }
-      if (wweDaysCount > 0) { activeWeights += 0.25; weightedSum += wweMatchAvg * 0.25; }
-      if (textDaysCount > 0) { activeWeights += 0.25; weightedSum += textMatchAvg * 0.25; }
+      if (totDaysCount > 0) { activeWeights += 0.20; weightedSum += totMatchAvg * 0.20; }
+      if (rankingDaysCount > 0) { activeWeights += 0.35; weightedSum += rankingMatchAvg * 0.35; }
+      if (wweDaysCount > 0) { activeWeights += 0.30; weightedSum += wweMatchAvg * 0.30; }
+      if (textDaysCount > 0) { activeWeights += 0.15; weightedSum += textMatchAvg * 0.15; }
 
       const weightedPercent = activeWeights > 0 ? (weightedSum / activeWeights) : 0;
       const score = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
