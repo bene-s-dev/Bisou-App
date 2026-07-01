@@ -2,6 +2,9 @@ export interface Question {
   q: string;
   h: string;
   o: string[];
+  hDir?: 'high' | 'low'; // harmony compatibility direction: high agreement or low agreement
+  visual?: boolean;   // if true, show image tiles instead of text buttons
+  images?: string[];  // 2 Unsplash photo IDs (used when visual === true)
 }
 
 export interface QuestionPool {

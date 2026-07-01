@@ -1242,8 +1242,63 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
           : (isForward ? 'animate-slide-in-right' : 'animate-slide-in-left'))
         : '';
 
+      const ENABLE_VISUAL_QUESTIONS = false; // Set to true to activate photo questions on Sundays
+
       switch (s) {
         case 0:
+          // ── Visual image-tile mode (Sundays) ──────────────────────────
+          if (ENABLE_VISUAL_QUESTIONS && q0.visual && q0.images && q0.images.length === 2) {
+            return (
+              <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-5 py-4 ${animationClass}`}>
+                <h2 className="text-xl font-black mb-1.5 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q0.q}</h2>
+                <p className="text-[10px] font-bold text-[var(--muted)] text-center mb-5 tracking-wider uppercase opacity-70">Tippe auf dein Bild</p>
+                <div className="min-h-0 pb-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    {q0.images.map((imgId: string, i: number) => {
+                      const label = q0.o?.[i] ?? '';
+                      const selected = selectedTot === label;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => setSelectedTot(label)}
+                          className={`relative flex flex-col rounded-3xl overflow-hidden border-2 transition-all active:scale-95 ${
+                            selected
+                              ? 'border-[var(--secondary)] shadow-lg shadow-purple-200/60'
+                              : 'border-[var(--card-border)] shadow-sm'
+                          }`}
+                        >
+                          {/* Image */}
+                          <div className="w-full aspect-[3/4] bg-purple-50 relative overflow-hidden">
+                            <img
+                              src={`https://images.unsplash.com/photo-${imgId}?w=400&h=530&fit=crop&crop=center&q=80`}
+                              alt={label}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            {/* Selection overlay */}
+                            {selected && (
+                              <div className="absolute inset-0 bg-[var(--secondary)]/15 flex items-start justify-end p-2.5">
+                                <div className="w-7 h-7 bg-[var(--secondary)] rounded-full flex items-center justify-center shadow-md">
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {/* Label */}
+                          <div className={`py-2.5 px-2 text-center transition-colors ${selected ? 'bg-purple-50' : 'bg-white'}`}>
+                            <span className={`text-[11px] font-black leading-tight ${selected ? 'text-[var(--secondary)]' : 'text-[#1F1939]'}`}>{label}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          // ── Normal text-button mode ────────────────────────────────────
           return (
             <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
               <h2 className="text-xl font-black mb-6 text-[#1F1939] leading-[1.2] shrink-0 tracking-tight text-center">{q0.q}</h2>
@@ -1256,6 +1311,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
               </div>
             </div>
           );
+
         case 1:
           return (
             <div className={`w-full h-full flex flex-col justify-center overflow-y-auto scrollbar-soft px-6 py-4 ${animationClass}`}>
@@ -1398,7 +1454,29 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
           >
             <header className="mb-4 px-6">
               <div className="quiz-prog-dots">
-                {progressIndices.map(i => (<div key={i} onClick={() => handleDotClick(i)} className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${i === step ? 'active' : (i < step ? 'done' : '')}`}></div>))}
+                {progressIndices.map(i => {
+                  const isActive = i === step;
+                  const isDone = i < step;
+                  let dotStyle = {};
+                  if (isActive) {
+                    const q = dailyQs[i] || (
+                      i === 0 ? FALLBACK_QUESTIONS.tot :
+                      i === 1 ? FALLBACK_QUESTIONS.ranking :
+                      i === 2 ? FALLBACK_QUESTIONS.text :
+                      FALLBACK_QUESTIONS.wwe
+                    );
+                    const hDir = q?.hDir || 'high';
+                    dotStyle = { backgroundColor: hDir === 'low' ? '#93C5FD' : '#FCA5A5' };
+                  }
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => i <= myResults.length && handleDotClick(i)}
+                      style={dotStyle}
+                      className={`quiz-dot ${i <= myResults.length ? 'cursor-pointer' : ''} ${isActive ? 'active' : (isDone ? 'done' : '')}`}
+                    />
+                  );
+                })}
               </div>
             </header>
             <div className="flex-1 overflow-hidden relative w-full h-full">
@@ -1468,6 +1546,80 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                       return val;
                     };
 
+                    const ENABLE_VISUAL_QUESTIONS = false; // Set to true to activate photo questions on Sundays
+
+                    // ── Visual ToT: show image tiles ──────────────────
+                    if (ENABLE_VISUAL_QUESTIONS && i === 0 && question?.visual && question?.images?.length === 2) {
+                      return (
+                        <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
+                          <div className="flex items-center mb-4 pl-4 pr-2">
+                            <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
+                          </div>
+                          <div className="px-2 space-y-3">
+                            {/* Two image tiles */}
+                            <div className="grid grid-cols-2 gap-2.5">
+                              {question.images.map((imgId: string, idx: number) => {
+                                const label = question.o?.[idx] ?? '';
+                                const myChose = m === label;
+                                const partnerChose = p === label;
+                                const anyChose = myChose || partnerChose;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`relative rounded-2xl overflow-hidden border-2 transition-all ${
+                                      anyChose ? 'border-[var(--secondary)] shadow-md shadow-purple-100' : 'border-[var(--card-border)] opacity-50'
+                                    }`}
+                                  >
+                                    <div className="w-full aspect-[3/4] relative">
+                                      <img
+                                        src={`https://images.unsplash.com/photo-${imgId}?w=300&h=400&fit=crop&crop=center&q=75`}
+                                        alt={label}
+                                        className="w-full h-full object-cover"
+                                        loading="lazy"
+                                      />
+                                      {/* Avatar chips bottom-right */}
+                                      {anyChose && (
+                                        <div className="absolute bottom-2 right-2 flex gap-1">
+                                          {partnerChose && (
+                                            <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-white bg-purple-50 flex items-center justify-center shadow">
+                                              {(partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url) ? (
+                                                <img src={partnerProfile?.avatar_url || dashboardData?.partnerProfile?.avatar_url} alt="" className="w-full h-full object-cover" />
+                                              ) : (
+                                                <Heart className="w-3 h-3 text-purple-300" />
+                                              )}
+                                            </div>
+                                          )}
+                                          {myChose && (
+                                            <div className="w-6 h-6 rounded-full overflow-hidden border-2 border-white bg-purple-100 flex items-center justify-center shadow">
+                                              {profile?.avatar_url ? (
+                                                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                                              ) : (
+                                                <User className="w-3 h-3 text-purple-400" />
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className={`py-2 px-2 text-center ${anyChose ? 'bg-purple-50' : 'bg-white'}`}>
+                                      <span className={`text-[10px] font-black leading-tight ${anyChose ? 'text-[var(--secondary)]' : 'text-[#1F1939]'}`}>{label}</span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            {/* Match/mismatch hint */}
+                            {p && (
+                              <p className="text-center text-[9px] font-black uppercase tracking-widest opacity-50 text-[#2D264B]">
+                                {m === p ? '💜 Ihr habt dasselbe gewählt' : '🔀 Unterschiedliche Wahl'}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // ── Default bubble layout ─────────────────────────
                     return (
                       <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
                         <div className="flex items-center mb-4 pl-4 pr-2">
@@ -1517,6 +1669,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                       </div>
                     );
                   })}
+
                 </div>
               </div>
               <div

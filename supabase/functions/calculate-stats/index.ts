@@ -102,6 +102,21 @@ serve(async (req) => {
       partnerAnswers.some(pa => pa.day_key === ma.day_key)
     );
 
+    // Fetch daily questions for these days to check hDir metadata
+    const dayKeysList = daysWithBoth.map(d => d.day_key);
+    const { data: dailyQuestions, error: dqError } = dayKeysList.length > 0
+      ? await db.from('daily_questions').select('day_key, questions').in('day_key', dayKeysList)
+      : { data: [], error: null };
+    
+    if (dqError) throw dqError;
+
+    const questionsMap = new Map<string, any>();
+    if (dailyQuestions) {
+      dailyQuestions.forEach(row => {
+        questionsMap.set(row.day_key, row.questions);
+      });
+    }
+
     // Filter for 30 day window
     const daysWithBoth30 = daysWithBoth.filter(ma => ma.day_key >= dateStr30);
     const myAnswers30 = myAnswers.filter(a => a.day_key >= dateStr30);
@@ -278,12 +293,22 @@ serve(async (req) => {
         if (pa) {
           const myP = parseChoice(ma.choice);
           const partnerP = parseChoice(pa.choice);
+          const qData = questionsMap.get(ma.day_key);
+
+          // Get harmony directions, fallback to "high" (full backward compatibility)
+          const totHDir = qData?.tot?.hDir || "high";
+          const rankingHDir = qData?.ranking?.hDir || "high";
+          const textHDir = qData?.text?.hDir || "high";
+          const wweHDir = qData?.wwe?.hDir || "high";
 
           // Dies-oder-Das-Frage
           if (myP.tot && partnerP.tot) {
             totDaysCount++;
-            if (myP.tot === partnerP.tot) {
-              totSum += 100;
+            const isMatch = myP.tot === partnerP.tot;
+            if (totHDir === "low") {
+              totSum += !isMatch ? 100 : 0;
+            } else {
+              totSum += isMatch ? 100 : 0;
             }
           }
 
@@ -300,22 +325,30 @@ serve(async (req) => {
             const maxSqDiff = (n * (n * n - 1)) / 3;
             const rawSim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
             const sim = Math.sqrt(Math.max(0, rawSim) / 100) * 100;
-            rankingSum += sim;
+            
+            const finalSim = rankingHDir === "low" ? 100 - sim : sim;
+            rankingSum += finalSim;
             rankingDaysCount++;
           }
 
           // Wer-würde-eher-Frage
           if (myP.wwe && partnerP.wwe) {
             wweDaysCount++;
-            if (myP.wwe !== partnerP.wwe) {
-              wweSum += 100;
+            // Note: in string representation, A saying "Ich" and B saying "Partner" is actually agreement.
+            // That means strings are DIFFERENT (myP.wwe !== partnerP.wwe).
+            const isAgree = myP.wwe !== partnerP.wwe;
+            if (wweHDir === "low") {
+              wweSum += !isAgree ? 100 : 0; // disagreement speaks for harmony
+            } else {
+              wweSum += isAgree ? 100 : 0; // agreement speaks for harmony
             }
           }
 
           // Freitext-Frage
           const sim = textSimilarities[ma.day_key];
           if (sim !== undefined) {
-            textSum += sim;
+            const finalSim = textHDir === "low" ? 100 - sim : sim;
+            textSum += finalSim;
             textDaysCount++;
           }
         }
@@ -326,16 +359,17 @@ serve(async (req) => {
       const wweMatchAvg = wweDaysCount > 0 ? Math.round(wweSum / wweDaysCount) : 0;
       const textMatchAvg = textDaysCount > 0 ? Math.round(textSum / textDaysCount) : 0;
 
-      let activeWeights = 0;
-      let weightedSum = 0;
+      // Equal Weighting: Arithmetic mean of all active categories
+      let activeCategories = 0;
+      let sumMatchAvgs = 0;
 
-      if (totDaysCount > 0) { activeWeights += 0.20; weightedSum += totMatchAvg * 0.20; }
-      if (rankingDaysCount > 0) { activeWeights += 0.35; weightedSum += rankingMatchAvg * 0.35; }
-      if (wweDaysCount > 0) { activeWeights += 0.30; weightedSum += wweMatchAvg * 0.30; }
-      if (textDaysCount > 0) { activeWeights += 0.15; weightedSum += textMatchAvg * 0.15; }
+      if (totDaysCount > 0) { activeCategories++; sumMatchAvgs += totMatchAvg; }
+      if (rankingDaysCount > 0) { activeCategories++; sumMatchAvgs += rankingMatchAvg; }
+      if (wweDaysCount > 0) { activeCategories++; sumMatchAvgs += wweMatchAvg; }
+      if (textDaysCount > 0) { activeCategories++; sumMatchAvgs += textMatchAvg; }
 
-      const weightedPercent = activeWeights > 0 ? (weightedSum / activeWeights) : 0;
-      const score = Math.max(0, Math.min(10, Math.round((weightedPercent / 10) * 10) / 10));
+      const avgPercent = activeCategories > 0 ? (sumMatchAvgs / activeCategories) : 0;
+      const score = Math.max(0, Math.min(10, Math.round((avgPercent / 10) * 10) / 10));
 
       return {
         tot: totMatchAvg,

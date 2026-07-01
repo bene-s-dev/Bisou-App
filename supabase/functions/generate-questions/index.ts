@@ -17,22 +17,30 @@ function cleanJsonString(str: string): string {
 // ==========================================
 // ZOD-SCHEMA FÜR STRUKTURIERTE AUSGABE
 // ==========================================
+const harmonyDirectionSchema = z.enum(["high", "low"]).describe(
+  "Gibt an, ob eine hohe Übereinstimmung der Antworten (high) oder eine geringe/komplementäre Übereinstimmung/Gegensätzlichkeit (low) für eine harmonische Beziehung spricht."
+);
+
 const dailyQuestionsSchema = z.object({
   tot: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 50 bis 130 Zeichen"),
-    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage, Länge jeweils ca. 10 bis 70 Zeichen")
+    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen für die Entweder-Oder-Frage, Länge jeweils ca. 10 bis 70 Zeichen"),
+    hDir: harmonyDirectionSchema
   }),
   ranking: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    o: z.array(z.string()).length(4).describe("Exakt 4 Optionen, Länge jeweils ca. 10 bis 60 Zeichen")
+    o: z.array(z.string()).length(4).describe("Exakt 4 Optionen, Länge jeweils ca. 10 bis 60 Zeichen"),
+    hDir: harmonyDirectionSchema
   }),
   text: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    o: z.array(z.string()).length(0).describe("Muss ein leeres Array sein")
+    o: z.array(z.string()).length(0).describe("Muss ein leeres Array sein"),
+    hDir: harmonyDirectionSchema
   }),
   wwe: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen: ['Ich', 'Partner']")
+    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen: ['Ich', 'Partner']"),
+    hDir: harmonyDirectionSchema
   })
 });
 
@@ -126,6 +134,26 @@ serve(async (req) => {
     const todaysThemes = themeSets[dayOfYear % themeSets.length];
     const [themaTot, themaRanking, themaText, themaWwe] = todaysThemes;
 
+    // ==========================================================
+    // SUNDAY VISUAL PAIR – fetch next unused photo pair
+    // ==========================================================
+    const ENABLE_VISUAL_QUESTIONS = false; // Set to true to activate photo questions on Sundays
+    const dayDate = new Date(dayKey + 'T00:00:00Z');
+    const isSunday = dayDate.getUTCDay() === 0;
+
+    let visualPair: any = null;
+    if (isSunday && ENABLE_VISUAL_QUESTIONS) {
+      const { data: vp } = await db
+        .from('visual_questions_pool')
+        .select('*')
+        .is('used_on', null)
+        .order('order_index', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      visualPair = vp;
+      console.log(visualPair ? `Visual pair found: #${visualPair.order_index} (${visualPair.topic_hint})` : 'No unused visual pair available – using text tot');
+    }
+
     const prompt = `Du bist ein einfühlsamer, kreativer und bodenständiger Fragenautor für eine Pärchen-App. Deine Aufgabe ist es, exakt 4 Fragen für den heutigen Tag zu schreiben.
 
 WICHTIGSTE STRUKTURELLE REGEL (STRENGER AUSSCHLUSS VON DOPPELUNGEN):
@@ -141,8 +169,15 @@ Prüfe jede deiner 4 neu generierten Fragen einzeln gegen die obige Liste:
 Um maximale Abwechslung zu garantieren, befolge für die 4 heutigen Fragen exakt diese Themen-Vorgaben, Fragentypen und Zeichenlimits:
 
 1. "tot" (Entweder-Oder-Frage):
-   - Thema: "${themaTot}" (Die Frage und die beiden Antwortoptionen müssen sich um dieses Thema drehen).
-   - Format: Frage ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.
+${visualPair
+  ? `   - HEUTE IST SONNTAG – BILD-FRAGE: Die Nutzer sehen heute zwei echte Fotos statt Text-Buttons.
+   - Bild A zeigt: "${visualPair.label_a}" | Bild B zeigt: "${visualPair.label_b}"
+   - Thema-Kontext: "${visualPair.topic_hint}"
+   - Schreibe eine kurze, einladende Frage, die zu diesen beiden Bildern passt (z.B. "Welcher Wohnstil spricht dich eher an?").
+   - Die Antwortoptionen MÜSSEN exakt lauten: ["${visualPair.label_a}", "${visualPair.label_b}"] – ändere sie NICHT.
+   - Format: Frage ca. 40-100 Zeichen.`
+  : `   - Thema: "${themaTot}" (Die Frage und die beiden Antwortoptionen müssen sich um dieses Thema drehen).
+   - Format: Frage ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.`}
 
 2. "ranking" (4 Dinge ordnen/priorisieren):
    - Thema: "${themaRanking}" (Die Frage und alle 4 Antwortoptionen müssen zu diesem Thema passen).
@@ -155,6 +190,11 @@ Um maximale Abwechslung zu garantieren, befolge für die 4 heutigen Fragen exakt
 4. "wwe" (Wer würde eher-Frage):
    - Thema: "${themaWwe}" (Die "Wer würde eher"-Situation muss zu diesem Thema passen).
    - Format: Frage ca. 40-130 Zeichen. Die Antwortoptionen müssen IMMER exakt ["Ich", "Partner"] sein.
+
+NEU: BEWERTUNG DER KOMPATIBILITÄT (hDir für alle Fragen):
+Du musst für jede Frage entscheiden, ob eine hohe Übereinstimmung (Similarity) oder eine geringe Übereinstimmung (Complementarity/Opposites) harmonischer für eine Liebesbeziehung ist. Setze dafür das Feld "hDir" auf einen der folgenden Werte:
+- "high": Hohe Übereinstimmung spricht für Harmonie. Das ist der Standard für gemeinsame Interessen, Werte, Zukunftspläne oder Konsens (z. B. "Derselbe Urlaubsort", "Gleiche Priorität bei der Karriere").
+- "low": Eine geringe Übereinstimmung oder Ergänzung (Komplementarität) spricht für Harmonie. Das gilt für komplementäre Rollen (z. B. "Wer kocht vs. wer spült"), gegensätzliche Persönlichkeitsmerkmale, die sich ausgleichen (z. B. "Einer plant, einer ist spontan"), oder spielerische Fragen, bei denen Gegensätze die Beziehung bereichern.
 
 STIMMUNG & TONFALL (SEHR WICHTIG!):
 - Schreibe alltagsnahe, nahbare, liebevolle und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
@@ -205,19 +245,23 @@ Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jed
 {
   "tot": {
     "q": "Eine Frage...",
-    "o": ["Option 1", "Option 2"]
+    "o": ["Option 1", "Option 2"],
+    "hDir": "high"
   },
   "ranking": {
     "q": "Eine Frage...",
-    "o": ["Option 1", "Option 2", "Option 3", "Option 4"]
+    "o": ["Option 1", "Option 2", "Option 3", "Option 4"],
+    "hDir": "high"
   },
   "text": {
     "q": "Eine Frage...",
-    "o": []
+    "o": [],
+    "hDir": "high"
   },
   "wwe": {
     "q": "Wer würde eher...",
-    "o": ["Ich", "Partner"]
+    "o": ["Ich", "Partner"],
+    "hDir": "low"
   }
 }`;
       modelConfig = {
@@ -258,14 +302,36 @@ Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jed
         if (key) {
           transformed[key] = {
             q: item.question || item.q || '',
-            o: item.options || item.o || []
+            o: item.options || item.o || [],
+            hDir: item.hDir || item.hdir || 'high',
+            visual: item.visual,
+            images: item.images
           };
         }
       }
       rawJson = transformed;
     }
     
-    const content = dailyQuestionsSchema.parse(rawJson);
+    let content: any = dailyQuestionsSchema.parse(rawJson);
+
+    // If Sunday visual pair was used, override tot with image fields & mark as used
+    if (visualPair) {
+      content = {
+        ...content,
+        tot: {
+          ...content.tot,
+          o: [visualPair.label_a, visualPair.label_b], // enforce exact labels
+          h: 'Tippe auf das Bild, das dich mehr anspricht.',
+          visual: true,
+          images: [visualPair.photo_id_a, visualPair.photo_id_b]
+        }
+      };
+      // Mark pair as used (fire-and-forget, don't block response)
+      db.from('visual_questions_pool')
+        .update({ used_on: dayKey })
+        .eq('id', visualPair.id)
+        .then(({ error }) => { if (error) console.error('Failed to mark visual pair as used:', error.message); });
+    }
 
     // ==========================================
     // IN DATENBANK SPEICHERN

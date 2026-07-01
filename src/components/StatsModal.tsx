@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings, ChevronLeft } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings, ChevronLeft, Calendar } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 import { supabase } from '../lib/supabase';
 
@@ -41,6 +41,7 @@ export default function StatsModal({
   const [showHistory, setShowHistory] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [timeRange, setTimeRange] = useState<'1w' | '4w' | 'max'>('max');
+  const [chartView, setChartView] = useState<'curve' | 'heatmap'>('curve');
   const chartRef = React.useRef<SVGSVGElement>(null);
 
   const visibleHistory = React.useMemo(() => {
@@ -62,8 +63,13 @@ export default function StatsModal({
   const handlePointer = (clientX: number) => {
     if (!chartRef.current || visibleHistory.length === 0) return;
     const rect = chartRef.current.getBoundingClientRect();
-    const x = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const paddingLeft = 22;
+    const paddingRight = 8;
+    const paddingLeftPx = paddingLeft * (rect.width / 300);
+    const paddingRightPx = paddingRight * (rect.width / 300);
+    const xActive = clientX - rect.left - paddingLeftPx;
+    const widthActive = rect.width - paddingLeftPx - paddingRightPx;
+    const percentage = Math.max(0, Math.min(1, xActive / widthActive));
     const index = Math.round(percentage * (visibleHistory.length - 1));
     setSelectedIndex(index);
   };
@@ -111,6 +117,7 @@ export default function StatsModal({
   const handleClose = () => {
     if (showHistory) {
       window.history.back();
+      return;
     }
     onClose();
   };
@@ -247,7 +254,7 @@ export default function StatsModal({
   return createPortal(
     <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
       <div className="absolute inset-0" onClick={handleClose} />
-      <div className="modal-content p-6 max-h-[92vh] overflow-y-auto">
+      <div className="modal-content pt-6 px-4 pb-0 h-[520px] max-h-[92vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
@@ -262,10 +269,42 @@ export default function StatsModal({
               </p>
             </div>
           </div>
-          <button onClick={handleClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors"><X className="w-4 h-4" /></button>
+          <div className="flex items-center gap-2">
+            {showHistory && (
+              <div className="flex bg-purple-50 p-0.5 rounded-xl border border-purple-100/50">
+                <button
+                  onClick={() => setChartView('curve')}
+                  className={`p-1 rounded-lg transition-all ${
+                    chartView === 'curve'
+                      ? 'bg-white text-[var(--secondary)] shadow-sm'
+                      : 'text-[var(--muted)] hover:text-[#1F1939]'
+                  }`}
+                  title="Kurven-Ansicht"
+                >
+                  <TrendingUp className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setChartView('heatmap')}
+                  className={`p-1 rounded-lg transition-all ${
+                    chartView === 'heatmap'
+                      ? 'bg-white text-[var(--secondary)] shadow-sm'
+                      : 'text-[var(--muted)] hover:text-[#1F1939]'
+                  }`}
+                  title="Heatmap-Ansicht"
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+            <button onClick={handleClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="relative w-full" style={{ minHeight: '430px' }}>
+
+
+        <div className="relative w-full flex-1 overflow-y-auto scrollbar-soft pr-0.5 pb-6">
           {/* Gears overlay */}
           {(!renderStats || loading) && (
             <div
@@ -304,17 +343,63 @@ export default function StatsModal({
                   const activeDay = visibleHistory && visibleHistory[currentIndex] ? visibleHistory[currentIndex] : null;
                   const dayMilestones = activeDay?.milestones || [];
 
-                  // Subtle dynamic colors based on active score (reaction to even 0.1 changes)
-                  const activeScore = activeDay ? activeDay.score : stats.bisouScore;
-                  const hue = 356; // Red/rose theme
-                  const sat = Math.round(70 + activeScore * 2.5); // 70% to 95%
-                  const light = Math.round(85 - activeScore * 3); // 85% to 55%
-                  const gradientColor = `hsl(${hue}, ${sat}%, ${light}%)`;
-                  const gradientOpacity = (0.22 + (activeScore / 10) * 0.18).toFixed(2);
-                  const strokeColor = `hsl(${hue}, ${sat}%, ${Math.round(77 - activeScore * 2.2)}%)`;
+                  // Fixed steady colors for consistency (no shifts when scrubbing)
+                  const gradientColor = "#FF5A5A";
+                  const gradientOpacity = "0.15";
+                  const strokeColor = "#FF5A5A";
+
+                  const allDatesInRange = (() => {
+                    if (!visibleHistory || visibleHistory.length === 0) return [];
+                    const start = new Date(visibleHistory[0].date);
+                    const end = new Date(visibleHistory[visibleHistory.length - 1].date);
+                    const dates = [];
+                    const cur = new Date(start);
+                    while (cur <= end) {
+                      dates.push(cur.toISOString().split('T')[0]);
+                      cur.setDate(cur.getDate() + 1);
+                    }
+                    return dates;
+                  })();
+
+                  const firstDate = allDatesInRange[0];
+                  const lastDate = allDatesInRange[allDatesInRange.length - 1];
+                  const startWeekday = firstDate ? (new Date(firstDate).getDay() + 6) % 7 : 0;
+                  const endWeekday = lastDate ? (new Date(lastDate).getDay() + 6) % 7 : 0;
+
+                  const heatmapCells = (() => {
+                    if (allDatesInRange.length === 0) return [];
+                    const cells = [];
+                    // Pad start
+                    for (let i = 0; i < startWeekday; i++) {
+                      cells.push({ isPlaceholder: true, key: `pad-start-${i}` });
+                    }
+                    // Real days
+                    allDatesInRange.forEach((dateStr) => {
+                      const pt = visibleHistory.find(d => d.date === dateStr);
+                      cells.push({
+                        isPlaceholder: false,
+                        date: dateStr,
+                        score: pt ? pt.score : null,
+                        milestones: pt ? pt.milestones : [],
+                        key: dateStr
+                      });
+                    });
+                    // Pad end
+                    const padEndCount = 6 - endWeekday;
+                    for (let i = 0; i < padEndCount; i++) {
+                      cells.push({ isPlaceholder: true, key: `pad-end-${i}` });
+                    }
+                    return cells;
+                  })();
+
+                  const getHeatmapColor = (score: number | null) => {
+                    if (score === null) return 'rgba(138, 92, 245, 0.05)';
+                    const opacity = 0.15 + (score / 10) * 0.85;
+                    return `rgba(255, 90, 90, ${opacity})`;
+                  };
 
                   return (
-                    <div className="space-y-4 animate-fade-in flex flex-col items-center">
+                    <div className="space-y-4 animate-fade-in flex flex-col items-center w-full">
                       <div className="text-center py-2 w-full flex flex-col items-center space-y-3">
                         <div className="text-center">
                           <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
@@ -353,112 +438,178 @@ export default function StatsModal({
                       </div>
 
                       {visibleHistory && visibleHistory.length > 1 ? (
-                        <div className="relative w-full bg-purple-50/20 rounded-3xl p-4 border border-purple-100/50">
-                          <svg
-                            ref={chartRef}
-                            className="w-full overflow-visible touch-none cursor-crosshair select-none"
-                            viewBox="0 0 300 145"
-                            height="145"
-                            onTouchStart={handleTouchMove}
-                            onTouchMove={handleTouchMove}
-                            onMouseMove={handleMouseMove}
-                            onMouseDown={(e) => {
-                              handlePointer(e.clientX);
-                            }}
-                          >
-                            <defs>
-                              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={gradientColor} stopOpacity={gradientOpacity} />
-                                <stop offset="100%" stopColor={gradientColor} stopOpacity="0.0" />
-                              </linearGradient>
-                              <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor={strokeColor} floodOpacity="0.3" />
-                              </filter>
-                            </defs>
+                        <div className="relative w-full bg-purple-50/20 rounded-3xl py-4 px-4 border border-purple-100/50 flex flex-col items-center justify-center min-h-[179px]">
+                          {chartView === 'curve' ? (
+                            <svg
+                              ref={chartRef}
+                              className="w-full h-auto overflow-visible touch-none cursor-crosshair select-none"
+                              viewBox="0 0 300 145"
+                              width="100%"
+                              onTouchStart={handleTouchMove}
+                              onTouchMove={handleTouchMove}
+                              onMouseMove={handleMouseMove}
+                              onMouseDown={(e) => {
+                                handlePointer(e.clientX);
+                              }}
+                            >
+                              <defs>
+                                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor={gradientColor} stopOpacity={gradientOpacity} />
+                                  <stop offset="100%" stopColor={gradientColor} stopOpacity="0.0" />
+                                </linearGradient>
+                                <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor={strokeColor} floodOpacity="0.3" />
+                                </filter>
+                              </defs>
 
-                            {/* Grid lines */}
-                            {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
-                              const y = 140 - (gridVal / 10) * 120;
-                              const isZero = gridVal === 0;
-                              return (
-                                <g key={gridVal} opacity={isZero ? "0.7" : "0.45"}>
-                                  <line x1="0" y1={isZero ? y - 0.5 : y} x2="300" y2={isZero ? y - 0.5 : y} stroke={isZero ? "#4A4468" : "#8C88A5"} strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
-                                  <text x="0" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal}</text>
-                                </g>
-                              );
-                            })}
+                              {/* Grid lines */}
+                              {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
+                                const y = 140 - (gridVal / 10) * 120;
+                                const isZero = gridVal === 0;
+                                return (
+                                  <g key={gridVal} opacity="0.45">
+                                    <line x1="22" y1={isZero ? y - 0.5 : y} x2="292" y2={isZero ? y - 0.5 : y} stroke="#8C88A5" strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
+                                    <text x="4" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal}</text>
+                                  </g>
+                                );
+                              })}
 
-                            {/* Render line & fill path */}
-                            {(() => {
-                              const points = visibleHistory.map((pt: any, i: number) => {
-                                const x = (i / (visibleHistory.length - 1)) * 300;
-                                const y = 140 - (pt.score / 10) * 120;
-                                return { x, y };
-                              });
+                              {/* Render line & fill path */}
+                              {(() => {
+                                const paddingLeft = 22;
+                                const paddingRight = 8;
+                                const points = visibleHistory.map((pt: any, i: number) => {
+                                  const x = paddingLeft + (i / (visibleHistory.length - 1)) * (300 - paddingLeft - paddingRight);
+                                  const y = 140 - (pt.score / 10) * 120;
+                                  return { x, y };
+                                });
 
-                              const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-                              const areaD = `${pathD} L 300 140 L 0 140 Z`;
-                              const selPt = points[currentIndex];
+                                const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+                                const areaD = `${pathD} L 292 140 L 22 140 Z`;
+                                const selPt = points[currentIndex];
 
-                              return (
-                                <>
-                                  <path d={areaD} fill="url(#chartGradient)" />
-                                  <path
-                                    d={pathD}
-                                    fill="none"
-                                    stroke={strokeColor}
-                                    strokeWidth="3.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                  
-                                  {/* Milestone stacked dots on the chart timeline */}
-                                  {visibleHistory.map((pt: any, idx: number) => {
-                                    const mCount = pt.milestones?.length || 0;
-                                    if (mCount === 0) return null;
-                                    const px = (idx / (visibleHistory.length - 1)) * 300;
-                                    return (
-                                      <g key={`ms-dots-${pt.date}-${idx}`}>
-                                        {Array.from({ length: Math.min(5, mCount) }).map((_, dotIdx) => {
-                                          const py = 137 - dotIdx * 5; // stack upwards
-                                          return (
-                                            <circle
-                                              key={dotIdx}
-                                              cx={px}
-                                              cy={py}
-                                              r="2.2"
-                                              fill="#FBBF24"
-                                              stroke="#FFF"
-                                              strokeWidth="0.4"
-                                            />
-                                          );
-                                        })}
-                                      </g>
-                                    );
-                                  })}
+                                return (
+                                  <>
+                                    {/* Milestone stacked dots on the chart timeline */}
+                                    {visibleHistory.map((pt: any, idx: number) => {
+                                      const mCount = pt.milestones?.length || 0;
+                                      if (mCount === 0) return null;
+                                      let px = paddingLeft + (idx / (visibleHistory.length - 1)) * (300 - paddingLeft - paddingRight);
+                                      if (idx === 0) px += 2.2;
+                                      else if (idx === visibleHistory.length - 1) px -= 2.2;
+                                      return (
+                                        <g key={`ms-dots-${pt.date}-${idx}`}>
+                                          {Array.from({ length: Math.min(5, mCount) }).map((_, dotIdx) => {
+                                            const py = 137 - dotIdx * 5; // stack upwards
+                                            return (
+                                              <circle
+                                                key={dotIdx}
+                                                cx={px}
+                                                cy={py}
+                                                r="2.2"
+                                                fill="#FBBF24"
+                                                stroke="#FFF"
+                                                strokeWidth="0.4"
+                                              />
+                                            );
+                                          })}
+                                        </g>
+                                      );
+                                    })}
 
-                                  {selPt && (
-                                    <line
-                                      x1={selPt.x}
-                                      y1="20"
-                                      x2={selPt.x}
-                                      y2="140"
-                                      stroke="var(--secondary)"
-                                      strokeWidth="1.5"
-                                      strokeDasharray="2 2"
-                                      opacity={selectedIndex !== null ? "0.7" : "0.35"}
+                                    <path d={areaD} fill="url(#chartGradient)" />
+                                    <path
+                                      d={pathD}
+                                      fill="none"
+                                      stroke={strokeColor}
+                                      strokeWidth="3.5"
+                                      strokeLinecap="butt"
+                                      strokeLinejoin="round"
                                     />
-                                  )}
-                                  {selPt && (
-                                    <g filter="url(#dotShadow)">
-                                      <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
-                                      <circle cx={selPt.x} cy={selPt.y} r="5" fill="var(--primary)" />
-                                    </g>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </svg>
+                                    
+                                    {selPt && (
+                                      <line
+                                        x1={selPt.x}
+                                        y1="20"
+                                        x2={selPt.x}
+                                        y2="140"
+                                        stroke="var(--secondary)"
+                                        strokeWidth="1.5"
+                                        strokeDasharray="2 2"
+                                        opacity={selectedIndex !== null ? "0.7" : "0.35"}
+                                      />
+                                    )}
+                                    {selPt && (
+                                      <g filter="url(#dotShadow)">
+                                        <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
+                                        <circle cx={selPt.x} cy={selPt.y} r="5" fill="var(--primary)" />
+                                      </g>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </svg>
+                          ) : (
+                            /* GitHub-style Heatmap Grid */
+                            <div className="flex items-center gap-2 select-none py-1 animate-fade-in w-full justify-center min-h-[145px]">
+                              {/* Weekday labels */}
+                              <div className="flex flex-col justify-between text-[7.5px] text-[var(--muted)] font-black uppercase pr-1.5 h-[120px] py-1 shrink-0">
+                                <span>Mo</span>
+                                <span className="opacity-0">Di</span>
+                                <span>Mi</span>
+                                <span className="opacity-0">Do</span>
+                                <span>Fr</span>
+                                <span className="opacity-0">Sa</span>
+                                <span>So</span>
+                              </div>
+
+                              {/* Heatmap grid */}
+                              <div 
+                                className="grid grid-rows-7 grid-flow-col gap-[3.5px] justify-center"
+                                style={{ gridTemplateRows: 'repeat(7, minmax(0, 1fr))' }}
+                              >
+                                {heatmapCells.map((cell: any) => {
+                                  if (cell.isPlaceholder) {
+                                    return (
+                                      <div 
+                                        key={cell.key} 
+                                        className="w-[14px] h-[14px] bg-transparent" 
+                                      />
+                                    );
+                                  }
+
+                                  const isSelected = selectedIndex !== null && visibleHistory[selectedIndex]?.date === cell.date;
+                                  const cellIndex = visibleHistory.findIndex(d => d.date === cell.date);
+                                  const hasMilestones = cell.milestones && cell.milestones.length > 0;
+
+                                  return (
+                                    <button
+                                      key={cell.key}
+                                      onClick={() => {
+                                        if (cellIndex !== -1) {
+                                          setSelectedIndex(cellIndex);
+                                        }
+                                      }}
+                                      className={`w-[14px] h-[14px] rounded-[3px] transition-all relative ${
+                                        isSelected 
+                                          ? 'ring-2 ring-[var(--secondary)] ring-offset-1 ring-offset-white dark:ring-offset-[#1E1B2E] scale-110 z-10' 
+                                          : 'hover:scale-105 hover:z-10'
+                                      }`}
+                                      style={{
+                                        backgroundColor: getHeatmapColor(cell.score),
+                                        border: cell.score === null ? '1px solid rgba(138, 92, 245, 0.15)' : 'none'
+                                      }}
+                                      title={`${cell.date}: ${cell.score !== null ? cell.score.toFixed(1) : 'Keine Daten'}`}
+                                    >
+                                      {hasMilestones && (
+                                        <span className="absolute bottom-[1.5px] right-[1.5px] w-1.5 h-1.5 rounded-full bg-[#FBBF24] border-[0.5px] border-white" />
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
@@ -469,13 +620,13 @@ export default function StatsModal({
 
                       {/* Day milestones display list */}
                       {visibleHistory && visibleHistory.length > 1 && (
-                        <div className="w-full space-y-1.5 select-none h-[126px] flex flex-col justify-start shrink-0">
+                        <div className="w-full space-y-1.5 select-none h-[114px] flex flex-col justify-start shrink-0">
                           {dayMilestones.length > 0 ? (
                             <>
                               <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-left pl-1 h-3.5 shrink-0 flex items-center">
                                 ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
                               </p>
-                              <div className="flex-1 overflow-y-auto pr-1 scroll-smooth grid grid-cols-1 gap-1.5 min-h-0">
+                              <div className="flex-1 overflow-y-auto pr-1 scroll-smooth grid grid-cols-1 gap-1.5 min-h-0 items-start">
                                 {dayMilestones.map((m: any) => (
                                   <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out]">
                                     <span className="text-xl shrink-0">{m.icon}</span>
@@ -488,7 +639,7 @@ export default function StatsModal({
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[126px] shrink-0">
+                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[114px] shrink-0">
                               <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
                             </div>
                           )}
@@ -610,26 +761,27 @@ export default function StatsModal({
                       </div>
                     </div>
 
-                    {/* Who answers first bar */}
+                    {/* Who answers first text */}
                     {stats.myFirstPercent != null && (
-                      <div className="pt-1.5 border-t border-purple-50">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
-                          <span className="text-[8px] font-black text-[#1F1939]">
+                      <div className="pt-2.5 border-t border-purple-50/60 flex items-center justify-center gap-1.5">
+                        <p className="text-[10px] text-[#4A4468] font-bold leading-none">
+                          In letzter Zeit antwortet{' '}
+                          <span className="text-[var(--secondary)] font-black text-[11px]">
                             {stats.myFirstPercent === 50
-                              ? '⚡ Gleichauf'
+                              ? 'keiner'
                               : stats.myFirstPercent > 50
-                              ? `Du zuerst · ${stats.myFirstPercent}%`
-                              : `${capitalizeName(partnerName.split(' ')[0])} zuerst · ${100 - stats.myFirstPercent}%`}
-                          </span>
-                          <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
-                        </div>
-                        <div className="w-full h-2 rounded-full overflow-hidden bg-orange-100/60">
-                          <div
-                            className="h-full rounded-full bg-[var(--secondary)] transition-all duration-700"
-                            style={{ width: `${stats.myFirstPercent}%` }}
-                          />
-                        </div>
+                              ? capitalizeName(userName.split(' ')[0])
+                              : capitalizeName(partnerName.split(' ')[0])}
+                          </span>{' '}
+                          zuerst.
+                        </p>
+                        <span className="px-1.5 py-0.5 rounded-full bg-purple-50 border border-purple-100/60 text-[8px] font-black text-[var(--secondary)] leading-none -mt-[1px]">
+                          {stats.myFirstPercent === 50
+                            ? '50%'
+                            : stats.myFirstPercent > 50
+                            ? `${stats.myFirstPercent}%`
+                            : `${100 - stats.myFirstPercent}%`}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -656,7 +808,7 @@ export default function StatsModal({
       {heartprintType && (
         <div className="modal-backdrop !backdrop-blur-none px-4 !z-[3000] will-change-[opacity] transition-all animate-fade-in">
           <div className="absolute inset-0" onClick={() => setHeartprintType(null)} />
-          <div className="modal-content p-6 max-h-[85vh] flex flex-col w-full max-w-sm relative z-10 animate-entrance shadow-2xl border border-purple-100/50">
+          <div className="modal-content pt-6 px-4 pb-0 h-[520px] max-h-[92vh] flex flex-col w-full max-w-sm relative z-10 animate-entrance shadow-2xl border border-purple-100/50 overflow-hidden">
             <div className="flex items-center justify-between mb-4 border-b border-purple-50 pb-3 shrink-0">
               <div className="flex items-start gap-2.5">
                 <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center shrink-0">
@@ -674,64 +826,26 @@ export default function StatsModal({
                 <X className="w-4 h-4" />
               </button>
             </div>
-
-            <div className="flex-1 overflow-y-auto scrollbar-soft px-1.5 pb-2 space-y-4 text-[#4A4468] text-[11px] leading-relaxed">
+            <div 
+              className="flex-1 overflow-y-auto scrollbar-soft px-1 pb-6 space-y-4 text-[#4A4468] text-[11px] leading-relaxed"
+              style={{ hyphens: 'auto', WebkitHyphens: 'auto' }}
+              lang="de"
+            >
               <p className="px-0.5">
-                Der <strong>Bisou-Score</strong> zeigt euren Antwort-Übereinstimmungswert der letzten 30 Tage. Er wird mit dem <strong>HeartPrint</strong>-Algorithmus errechnet und setzt sich aus vier Werten zusammen:
+                Der <strong>Bisou-Score</strong> zeigt euren <span className="whitespace-nowrap">Beziehungs-Matchwert</span> der letzten 30 Tage. Er wird mit dem <span className="whitespace-nowrap"><strong>HeartPrint™-Algorithmus</strong></span> errechnet, der alle vier Fragetypen (Dies oder das, Ranglisten, Wer würde eher und Freitexte) gleich gewichtet.
               </p>
 
-              <div className="space-y-3 px-0.5">
-                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'tot' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">1. Dies oder das</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">20% Gewichtung</span>
-                  </div>
-                  <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Binärer Abgleich eurer Entweder-oder-Antworten
-                  </p>
-                  <p className="text-[9px] opacity-70 leading-normal">
-                    Wählen beide dieselbe Option, zählt dies als 100% Match, sonst 0%.
-                  </p>
-                </div>
-
-                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'ranking' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">2. Ranglisten</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">35% Gewichtung</span>
-                  </div>
-                  <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Positions-Abstands-Analyse
-                  </p>
-                  <p className="text-[9px] opacity-70 leading-normal">
-                    Kleine Abweichungen ziehen den Score kaum nach unten. Eine Quadratwurzel-Kurve federt leichte Meinungsunterschiede ab.
-                  </p>
-                </div>
-
-                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'wwe' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">3. Wer würde eher</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">30% Gewichtung</span>
-                  </div>
-                  <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Einschätzungs-Abgleich
-                  </p>
-                  <p className="text-[9px] opacity-70 leading-normal">
-                    Wenn beide auf dieselbe Person tippen, ist es ein 100% Match, ansonsten 0%.
-                  </p>
-                </div>
-
-                <div className={`rounded-2xl p-3 border transition-all duration-500 origin-center ${heartprintType === 'text' ? 'bg-purple-100 border-purple-300 shadow-sm scale-[1.02]' : 'bg-purple-50/40 border-purple-100/50'}`}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-black text-[var(--secondary)] uppercase text-[8px] tracking-wider">4. Freitexte</span>
-                    <span className="font-bold text-[9px] bg-purple-100 text-[var(--secondary)] px-1.5 py-0.5 rounded-full">15% Gewichtung</span>
-                  </div>
-                  <p className="text-[10px] opacity-90 leading-normal mb-1">
-                    Semantischer Sinn-Vergleich
-                  </p>
-                  <p className="text-[9px] opacity-70 leading-normal">
-                    Verglichen wird der Sinn, nicht die Schreibweise. HeartPrint analysiert die inhaltliche Ähnlichkeit eurer Antworten. So wird auch berücksichtigt, wenn z. B. einer "Auto fahren" und der andere "Roadtrip" schreibt.
-                  </p>
-                </div>
+              <div className="rounded-2xl p-3 bg-purple-50/40 border border-purple-100/50 space-y-2.5 px-3">
+                <h5 className="font-black text-[var(--secondary)] uppercase text-[9px] tracking-wider mb-0.5">So funktioniert die Berechnung:</h5>
+                <p className="text-[10px] opacity-90 leading-relaxed">
+                  Für jede eurer täglichen Fragen erkennt der <span className="whitespace-nowrap"><strong>HeartPrint™-Algorithmus</strong></span> automatisch, ob eine hohe Übereinstimmung oder eine geringe bzw. komplementäre Übereinstimmung für eine harmonische Beziehung spricht.
+                </p>
+                <p className="text-[10px] opacity-90 leading-relaxed">
+                  • <strong>Übereinstimmung:</strong> Bringt euch Punkte, wenn ihr dieselbe Option wählt, Prioritäten teilt oder inhaltlich sehr ähnliche Gedanken äußert (z. B. bei gemeinsamen Werten oder Interessen).
+                </p>
+                <p className="text-[10px] opacity-90 leading-relaxed">
+                  • <strong>Ergänzung:</strong> Bringt euch Punkte, wenn ihr euch gegenseitig ergänzt oder gegensätzliche Meinungen habt (z. B. bei der Rollenaufteilung im Haushalt oder Persönlichkeitsmerkmalen, die einander ausgleichen).
+                </p>
               </div>
 
             </div>
