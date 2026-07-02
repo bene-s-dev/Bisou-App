@@ -173,10 +173,10 @@ ${ausgeschlosseneFragenText}
 --------------------------------
 
 Prüfe jede deiner 4 neu generierten Fragen einzeln gegen die obige Liste:
-- Falls in der Liste bereits eine Frage zu einem ähnlichen Thema existiert (z.B. Konflikte, Streitverhalten, Versöhnung, Macken des Partners, Geldausgaben, etc.), darfst du KEINE neue Frage stellen, die dasselbe Kernproblem, denselben Auslöser oder dieselbe Dynamik behandelt. Weiche stattdessen auf ein völlig anderes Teilthema oder eine andere Perspektive aus.
+- Falls in der Liste bereits eine Frage zu einem ähnlichen Thema existiert (z.B. Konflikte, Streitverhalten, Versöhnung, Macken, Geldausgaben, etc.), darfst du KEINE neue Frage stellen, die dieselbe Dynamik behandelt. Weiche stattdessen auf ein anderes Teilthema aus.
 - Die neu generierten Fragen müssen sich komplett frisch, neuartig und unverbraucht anfühlen.
 
-Um maximale Abwechslung zu garantieren, befolge für die 4 heutigen Fragen exakt diese Themen-Vorgaben, Fragentypen und Zeichenlimits:
+Befolge für die 4 heutigen Fragen exakt diese Vorgaben, Fragentypen und Limits:
 
 1. "tot" (Entweder-Oder-Frage):
 ${visualPair
@@ -186,59 +186,47 @@ ${visualPair
    - Schreibe eine kurze, einladende Frage, die zu diesen beiden Bildern passt (z.B. "Welcher Wohnstil spricht dich eher an?").
    - Die Antwortoptionen MÜSSEN exakt lauten: ["${visualPair.label_a}", "${visualPair.label_b}"] – ändere sie NICHT.
    - Format: Frage ca. 40-100 Zeichen.`
-  : `   - Thema: "${themaTot}" (Die Frage und die beiden Antwortoptionen müssen sich um dieses Thema drehen).
-   - Format: Frage ca. 50-130 Zeichen. Die 2 Antwortoptionen sollen jeweils ca. 10-70 Zeichen lang sein.`}
+  : `   - Thema: "${themaTot}" (Frage und Optionen müssen sich um dieses Thema drehen).
+   - Format: Frage ca. 50-130 Zeichen. Die 2 Optionen jeweils ca. 10-70 Zeichen.`}
 
 2. "ranking" (4 Dinge ordnen/priorisieren):
-   - Thema: "${themaRanking}" (Die Frage und alle 4 Antwortoptionen müssen zu diesem Thema passen).
-   - Format: Frage ca. 40-130 Zeichen. Die 4 Antwortoptionen zum Sortieren sollen jeweils ca. 10-60 Zeichen lang sein.
+   - Thema: "${themaRanking}".
+   - Format: Frage ca. 40-130 Zeichen. Die 4 Antwortoptionen zum Sortieren jeweils ca. 10-60 Zeichen.
 
 3. "text" (Offene Frage):
-   - Thema: "${themaText}" (Die offene Frage muss sich auf dieses Thema beziehen).
+   - Thema: "${themaText}".
    - Format: Frage ca. 40-130 Zeichen. Das Antwortoptionen-Array ("o") MUSS leer sein (also []).
 
 4. "wwe" (Wer würde eher-Frage):
-   - Thema: "${themaWwe}" (Die "Wer würde eher"-Situation muss zu diesem Thema passen).
-   - Format: Frage ca. 40-130 Zeichen. Die Antwortoptionen müssen IMMER exakt ["Ich", "Partner"] sein.
+   - Thema: "${themaWwe}".
+   - Format: Frage ca. 40-130 Zeichen. Die Optionen müssen IMMER exakt ["Ich", "Partner"] sein.
 
 NEU: BEWERTUNG DER KOMPATIBILITÄT (hDir für alle Fragen):
-Du musst für jede Frage entscheiden, ob eine hohe Übereinstimmung (Similarity) oder eine geringe Übereinstimmung (Complementarity/Opposites) harmonischer für eine Liebesbeziehung ist. Setze dafür das Feld "hDir" auf einen der folgenden Werte:
+WICHTIG: Entscheide für jede Frage völlig unabhängig und inhaltlich begründet, ob eine hohe Übereinstimmung (Similarity) oder eine geringe Übereinstimmung (Complementarity/Opposites) harmonischer für eine Liebesbeziehung ist. Setze dafür das Feld "hDir" auf einen der folgenden Werte (kopiere keinesfalls einfach Vorgabewerte):
 - "high": Hohe Übereinstimmung spricht für Harmonie. Das ist der Standard für gemeinsame Interessen, Werte, Zukunftspläne oder Konsens (z. B. "Derselbe Urlaubsort", "Gleiche Priorität bei der Karriere").
 - "low": Eine geringe Übereinstimmung oder Ergänzung (Komplementarität) spricht für Harmonie. Das gilt für komplementäre Rollen (z. B. "Wer kocht vs. wer spült"), gegensätzliche Persönlichkeitsmerkmale, die sich ausgleichen (z. B. "Einer plant, einer ist spontan"), oder spielerische Fragen, bei denen Gegensätze die Beziehung bereichern.
 
 STIMMUNG & TONFALL (SEHR WICHTIG!):
 - Schreibe alltagsnahe, nahbare, liebevolle und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.
-- Jede Frage muss im Kontext einer Liebesbeziehung stehen und einen echten Gesprächsimpuls für die Partner bieten.
-- Vermeide absurde Gedankenexperimente, bizarre hypothetische Szenarien oder allzu abstrakte philosophische Rätsel. Die Fragen müssen bodenständig und realistisch sein.
+- Vermeide absurde Gedankenexperimente oder allzu abstrakte Rätsel. Die Fragen müssen bodenständig und realistisch sein.
 - Variiere die Stimmung zwischen den 4 Fragen: Mache eine eher leicht/humorvoll, eine tiefgründig/reflektiert, eine alltäglich/praktisch und eine neugierig/spielerisch.
 
 METHODE FÜR MULTIPERSPEKTIVISCHE FRAGEN (STRENGSTENS BEFOLGEN):
-Wenn ein Thema (wie z. B. "Streitkultur", "Romantik", "Finanzen") breit oder unvollständig definiert ist, darfst du dich NICHT auf die naheliegendste Standardfrage verlassen. Beleuchte stattdessen gezielt verschiedene Dimensionen des Themas:
-- **Die emotionale Dimension**: Gefühle, Unsicherheiten, Hoffnungen, Werte.
-- **Die Verhaltens-Dimension**: Typische Alltagsreaktionen, kleine Angewohnheiten, Macken.
-- **Die biografische Dimension**: Prägungen aus der Kindheit, Verhaltensmuster der eigenen Eltern.
-- **Die zukunftsorientierte Dimension**: Pläne, Wünsche, Träume, hypothetische Weiterentwicklungen.
+Vermeide oberflächliche Standardfragen (z.B. nicht "Wer gibt mehr Geld aus?" oder "Wer verträgt sich schneller?"). Beleuchte stattdessen gezielt verschiedene Dimensionen eines Themas:
+- **Emotionale Dimension**: Gefühle, Unsicherheiten, Hoffnungen, Werte.
+- **Verhaltens-Dimension**: Typische Alltagsreaktionen, kleine Angewohnheiten, Macken.
+- **Biografische Dimension**: Prägungen aus der Kindheit, Verhaltensmuster der eigenen Eltern.
+- **Zukunftsorientierte Dimension**: Pläne, Wünsche, Träume.
 
-Beispiel für ein Thema wie "Finanzen":
-*Schlecht (generisch)*: "Wer von euch gibt mehr Geld aus?"
-*Gut (spezifisch/mehrdimensional)*:
-  - "Welche Spar-Angewohnheit deiner Eltern irritiert dich bis heute?" (Biografisch)
-  - "Bei welchem Spontankauf für unter 50 Euro fühlst du dich sofort schuldig?" (Emotional)
-  - "Welcher finanzielle Traum fühlt sich für dich nach purer Freiheit an?" (Zukunftsorientiert)
-
-Beispiel für ein Thema wie "Streitkultur":
-*Schlecht (generisch)*: "Wer verträgt sich nach einem Streit schneller?"
-*Gut (spezifisch/mehrdimensional)*:
-  - "Gibt es ein bestimmtes Wort oder eine Geste deines Partners, die eine hitzige Diskussion sofort abkühlen kann?" (Verhalten/Praktisch)
-  - "Wie wurde in deiner Familie gestritten, als du ein Kind warst – eher laut oder schweigend?" (Biografisch)
-  - "Welcher Gedanke hilft dir am meisten, wenn wir uns mal nicht einig werden?" (Emotional)
+Gute Beispiele für tiefgründige / spezifische Fragen:
+* "Welche Spar-Angewohnheit deiner Eltern irritiert dich bis heute?" (Biografisch)
+* "Bei welchem Spontankauf für unter 50 Euro fühlst du dich sofort schuldig?" (Emotional)
+* "Gibt es ein bestimmtes Wort oder eine Geste deines Partners, die eine hitzige Diskussion sofort abkühlen kann?" (Verhalten)
+* "Welcher finanzielle Traum fühlt sich für dich nach purer Freiheit an?" (Zukunftsorientiert)
 
 WICHTIGE VERTEILUNGS-REGELN (GEGEN MONOTONIE):
-- **Keine Wiederholung von Dimensionen an einem Tag**: Die 4 heutigen Fragen müssen sich auf völlig unterschiedliche Dimensionen beziehen (z.B. 1x emotional, 1x biografisch, 1x spielerisch/Alltag, 1x Zukunft). Erzeuge niemals am selben Tag mehrere biografische Fragen (wie Kindheit/Familie) oder mehrere schwere emotionale Fragen.
-- **Biografische Fragen sparsam einsetzen**: Fragen zu Kindheit, Eltern oder früheren Beziehungen sind spannend, sollten aber maximal 1 der 4 täglichen Fragen ausmachen und nicht an jedem Tag vorkommen. Die Mehrheit der Fragen (ca. 70-80%) soll im Hier und Jetzt der Partnerschaft, der gemeinsamen Zukunft oder auf einer humorvollen/spielerischen Ebene stattfinden.
-- **Natürliche Variation**: Wechsle die Perspektive von Tag zu Tag. Wenn gestern über die Kindheit gesprochen wurde, soll heute der Fokus auf einer witzigen Alltagsgewohnheit oder einem Zukunftstraum liegen.
-
-Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jedes Thema an, um tiefe, aber ausgewogene und abwechslungsreiche Einblicke zu schaffen!`;
+- **Keine Wiederholung von Dimensionen**: Die 4 heutigen Fragen müssen sich auf völlig unterschiedliche Dimensionen beziehen (z.B. 1x emotional, 1x biografisch, 1x Alltag, 1x Zukunft).
+- **Biografische Fragen sparsam**: Maximal 1 der 4 täglichen Fragen darf biografisch sein. Die Mehrheit (70-80%) soll im Hier & Jetzt der Partnerschaft oder der Zukunft stattfinden.`;
 
     // ==========================================
     // API CALL ZU GEMINI ODER GEMMA MIT THINKING & ZOD
@@ -251,7 +239,8 @@ Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jed
     let modelConfig: any = {};
 
     if (useGemma) {
-      promptText += `\n\nAntworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (keine Erklärungen, kein Markdown-Codeblock, nur das JSON):
+      promptText += `\n\nAntworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (keine Erklärungen, kein Markdown-Codeblock, nur das JSON).
+WICHTIG: Kopiere nicht stumpf die "hDir"-Werte ("high"/"low") aus diesem Beispiel, sondern entscheide für jede deiner generierten Fragen individuell und inhaltlich begründet, ob "high" oder "low" zutrifft:
 {
   "tot": {
     "q": "Eine Frage...",

@@ -1552,8 +1552,15 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                     if (ENABLE_VISUAL_QUESTIONS && i === 0 && question?.visual && question?.images?.length === 2) {
                       return (
                         <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
-                          <div className="flex items-center mb-4 pl-4 pr-2">
+                          <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                             <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
+                            {question?.hDir && (
+                              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                                question.hDir === 'low' ? 'bg-blue-50 text-blue-500 border border-blue-100/50' : 'bg-rose-50 text-rose-400 border border-rose-100/50'
+                              }`}>
+                                {question.hDir === 'low' ? '⬇ Gegensätze gut' : '⬆ Gleichheit gut'}
+                              </span>
+                            )}
                           </div>
                           <div className="px-2 space-y-3">
                             {/* Two image tiles */}
@@ -1622,8 +1629,15 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                     // ── Default bubble layout ─────────────────────────
                     return (
                       <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
-                        <div className="flex items-center mb-4 pl-4 pr-2">
+                        <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                           <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
+                          {question?.hDir && (
+                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                              question.hDir === 'low' ? 'bg-blue-50 text-blue-500 border border-blue-100/50' : 'bg-rose-50 text-rose-400 border border-rose-100/50'
+                            }`}>
+                              {question.hDir === 'low' ? '⬇ Gegensätze gut' : '⬆ Gleichheit gut'}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-stretch gap-2 w-full px-2">
                           {/* Partner Bubble */}

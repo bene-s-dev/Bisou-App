@@ -200,24 +200,28 @@ export default function JournalModal({
       questions: [
         { 
           q: qs.tot?.q || 'Wie war dein Tag?', 
+          hDir: qs.tot?.hDir,
           my: parse(myAns?.choice)[0], 
           partner: !isLocked ? parse(partnerAns?.choice)[0] : null,
           isPartnerLocked: isLocked
         },
         { 
           q: qs.ranking?.q || 'Ranking', 
+          hDir: qs.ranking?.hDir,
           my: parse(myAns?.choice)[1], 
           partner: !isLocked ? parse(partnerAns?.choice)[1] : null,
           isPartnerLocked: isLocked
         },
         { 
           q: qs.text?.q || 'Dankbarkeit', 
+          hDir: qs.text?.hDir,
           my: parse(myAns?.choice)[2], 
           partner: !isLocked ? parse(partnerAns?.choice)[2] : null,
           isPartnerLocked: isLocked
         },
         { 
           q: qs.wwe?.q || 'Wer würde eher...', 
+          hDir: qs.wwe?.hDir,
           my: formatWwe(parse(myAns?.choice)[3]), 
           partner: !isLocked ? formatWwe(parse(partnerAns?.choice)[3]) : null,
           isPartnerLocked: isLocked
@@ -267,8 +271,15 @@ export default function JournalModal({
           >
             {data.questions.map((q, i) => (
               <div key={i}>
-                <div className="flex items-center mb-4 pl-4 pr-2">
+                <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                   <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{q.q}</span>
+                  {q.hDir && (
+                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                      q.hDir === 'low' ? 'bg-blue-50 text-blue-500 border border-blue-100/50' : 'bg-rose-50 text-rose-400 border border-rose-100/50'
+                    }`}>
+                      {q.hDir === 'low' ? '⬇ Gegensätze gut' : '⬆ Gleichheit gut'}
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-4 px-2">
                   {/* Partner Answer */}
