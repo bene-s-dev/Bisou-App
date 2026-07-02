@@ -44,6 +44,26 @@ function BottleWine({ className }: { className?: string }) {
   );
 }
 
+function WoodSticks({ className }: { className?: string }) {
+  return (
+    <svg 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      className={className} 
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Log 1 (Bottom Left, leaning slightly down-right) */}
+      <line x1="4" y1="20" x2="16" y2="19" stroke="#5C3810" strokeWidth="3.2" strokeLinecap="round" />
+      {/* Log 2 (Bottom Right, leaning slightly up-right) */}
+      <line x1="8" y1="20" x2="20" y2="18" stroke="#7A4E1B" strokeWidth="3.2" strokeLinecap="round" />
+      {/* Log 3 (Top Middle, lying across them) */}
+      <line x1="5" y1="14" x2="19" y2="15" stroke="#9A6A38" strokeWidth="3.2" strokeLinecap="round" />
+      {/* Log 4 (A small cross piece at the back for texture) */}
+      <line x1="12" y1="10" x2="17" y2="20" stroke="#4A2F11" strokeWidth="2.5" strokeLinecap="round" opacity="0.9" />
+    </svg>
+  );
+}
+
 interface StreakModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -114,6 +134,16 @@ export default function StreakModal({
 
   return createPortal(
     <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
+      {/* SVG Gradient Defs for Animated Flame */}
+      <svg width="0" height="0" style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }} aria-hidden="true">
+        <defs>
+          <linearGradient id="flameGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" className="flame-stop-1" />
+            <stop offset="50%" className="flame-stop-2" />
+            <stop offset="100%" className="flame-stop-3" />
+          </linearGradient>
+        </defs>
+      </svg>
       <div className="absolute inset-0" onClick={onClose} />
       <div className="modal-content p-5 overflow-hidden will-change-transform contain-layout">
         <div className="flex items-center justify-between mb-3.5">
@@ -201,7 +231,7 @@ export default function StreakModal({
           <div className="bg-orange-50/40 rounded-xl py-2 px-1.5 text-center border border-orange-100 flex flex-col justify-center items-center relative">
             <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-wider mb-2 leading-tight">Aktuell</p>
             <div className="flex items-center gap-1.5 justify-center">
-              <Flame className="w-5 h-5 text-orange-400 fill-orange-400 animate-flicker" />
+              <Flame className="w-5 h-5 animated-flame animate-flicker" />
               <span className="text-lg font-black text-orange-500 leading-none">
                 {activeStreakData?.current_streak || 0}
               </span>
@@ -210,11 +240,29 @@ export default function StreakModal({
 
           {/* Rechts: Streak Freeze */}
           <div className="bg-slate-50/40 rounded-xl py-1.5 px-1 text-center border border-slate-200/50 flex flex-col justify-center items-center">
-            <p className="text-[7.5px] sm:text-[8.5px] font-black text-[var(--muted)] uppercase tracking-tight mb-2 leading-tight">
-              Grill-<span className="block">anzünder</span>
+            <p className="text-[7.5px] sm:text-[8.5px] font-black text-[var(--muted)] uppercase tracking-tight mb-2 leading-tight whitespace-nowrap">
+              Grillanzünder
             </p>
-            <div className="flex items-center gap-1 justify-center">
-              <BottleWine className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1 justify-center mt-1">
+              <div key={activeTab} className="relative w-8 h-3.5 flex items-center justify-center pointer-events-none shrink-0 mr-0.5">
+                {/* Wood sticks (bottom-left) */}
+                <div className="absolute bottom-0 left-0 w-3 h-3 flex items-center justify-center">
+                  <WoodSticks className="w-full h-full" />
+                </div>
+                
+                {/* Tiny Flame (sitting on top of wood, ignites after pour) */}
+                <div className="absolute top-[0.5px] left-[1px] w-2.5 h-2.5 flex items-center justify-center animate-ignite-flame">
+                  <Flame className="w-full h-full animated-flame animate-flicker-strong" />
+                </div>
+
+                {/* Liquid Stream (dripping from bottle to wood) */}
+                <div className="absolute top-[3px] left-[8px] w-[1px] h-2 bg-blue-300/70 rounded-full origin-top animate-pour-liquid" />
+
+                {/* Bottle (at the bottom-right, animates up, tips left, and back) */}
+                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 animate-pour-bottle origin-bottom-right">
+                  <BottleWine className="w-full h-full" />
+                </div>
+              </div>
               <span className="text-sm font-black text-slate-600 leading-none">
                 {freezesUsedThisMonth}
               </span>

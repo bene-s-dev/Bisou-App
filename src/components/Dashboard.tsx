@@ -28,6 +28,47 @@ interface DashboardProps {
   onUpdateProfile?: (updates: any) => Promise<{ data: any; error: any }>;
 }
 
+function AnimatedDigit({ value }: { value: string }) {
+  const [prevValue, setPrevValue] = useState(value);
+  const [currentValue, setCurrentValue] = useState(value);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    if (value !== currentValue) {
+      setPrevValue(currentValue);
+      setCurrentValue(value);
+      setAnimating(true);
+      const timer = setTimeout(() => setAnimating(false), 350);
+      return () => clearTimeout(timer);
+    }
+  }, [value, currentValue]);
+
+  if (value === ':') {
+    return <span className="inline-block px-[1px] opacity-75">:</span>;
+  }
+
+  return (
+    <span className="relative inline-flex items-center justify-center overflow-hidden h-[1.3em] w-[0.58em] align-middle">
+      <span
+        key={`curr-${currentValue}`}
+        className={`absolute inset-0 flex items-center justify-center ${
+          animating ? 'animate-digit-slide-in' : ''
+        }`}
+      >
+        {currentValue}
+      </span>
+      {animating && (
+        <span
+          key={`prev-${prevValue}`}
+          className="absolute inset-0 flex items-center justify-center animate-digit-slide-out"
+        >
+          {prevValue}
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function Dashboard({ 
   userName, 
   userAvatar, 
@@ -511,6 +552,16 @@ export default function Dashboard({
 
   return (
     <div className="animate-entrance flex flex-col flex-1 overflow-hidden relative">
+      {/* SVG Gradient Defs for Animated Flame */}
+      <svg width="0" height="0" style={{ position: 'absolute', width: 0, height: 0, pointerEvents: 'none' }} aria-hidden="true">
+        <defs>
+          <linearGradient id="flameGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" className="flame-stop-1" />
+            <stop offset="50%" className="flame-stop-2" />
+            <stop offset="100%" className="flame-stop-3" />
+          </linearGradient>
+        </defs>
+      </svg>
       {((import.meta.env.DEV && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) || localStorage.getItem('bisou_dev_mode') === 'true') && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[3000] flex items-center gap-2">
           <div className="bg-orange-500/15 backdrop-blur-md border border-orange-200/50 py-1 px-3 rounded-full flex items-center gap-1.5 shadow-sm">
@@ -659,10 +710,10 @@ export default function Dashboard({
                       : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
                   } ${hasPartner ? 'active:scale-95 cursor-pointer' : 'opacity-40'}`}
                 >
-                  <span className={`text-[11px] font-black leading-none ${isPartnerStreakFrozen ? 'text-blue-600' : 'text-orange-600'}`}>
+                  <span className={`text-[11px] font-black leading-none ${isPartnerStreakFrozen ? 'text-blue-600' : 'text-orange-500'}`}>
                     {hasPartner ? (partnerStreak?.current_streak || 0) : 0}
                   </span>
-                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isPartnerStreakFrozen ? 'text-blue-500 fill-blue-500' : 'text-orange-500 fill-orange-500'}`} />
+                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isPartnerStreakFrozen ? 'text-blue-500 fill-blue-500' : 'animated-flame animate-flicker'}`} />
                 </div>
               </div>
  
@@ -702,8 +753,8 @@ export default function Dashboard({
                       : 'bg-orange-50 border border-orange-200 hover:bg-orange-100'
                   }`}
                 >
-                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isMyStreakFrozen ? 'text-blue-500 fill-blue-500' : 'text-orange-500 fill-orange-500'}`} />
-                  <span className={`text-[11px] font-black leading-none ${isMyStreakFrozen ? 'text-blue-600' : 'text-orange-600'}`}>
+                  <Flame className={`w-3.5 h-3.5 shrink-0 ${isMyStreakFrozen ? 'text-blue-500 fill-blue-500' : 'animated-flame animate-flicker'}`} />
+                  <span className={`text-[11px] font-black leading-none ${isMyStreakFrozen ? 'text-blue-600' : 'text-orange-500'}`}>
                     {myStreak?.current_streak || 0}
                   </span>
                 </div>
@@ -801,8 +852,10 @@ export default function Dashboard({
                   <div className="flex items-center justify-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-[var(--muted)]" />
                     <span className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest">Neue Fragen in:</span>
-                    <span className="font-mono font-black text-xs text-[var(--secondary)] tracking-widest">
-                      {String(countdown.hours).padStart(2, '0')}:{String(countdown.minutes).padStart(2, '0')}:{String(countdown.seconds).padStart(2, '0')}
+                    <span className="font-mono font-black text-xs text-[var(--secondary)] flex items-center">
+                      {`${String(countdown.hours).padStart(2, '0')}:${String(countdown.minutes).padStart(2, '0')}:${String(countdown.seconds).padStart(2, '0')}`.split('').map((char, idx) => (
+                        <AnimatedDigit key={idx} value={char} />
+                      ))}
                     </span>
                   </div>
                 </div>
