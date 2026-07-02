@@ -331,17 +331,12 @@ serve(async (req) => {
             rankingDaysCount++;
           }
 
-          // Wer-würde-eher-Frage
-          if (myP.wwe && partnerP.wwe && wweHDir !== "neutral" && wweHDir !== "none") {
+          // Wer-würde-eher-Frage (wwe ist immer 'high' / Agreement spricht für Harmonie)
+          if (myP.wwe && partnerP.wwe) {
             wweDaysCount++;
-            // Note: in string representation, A saying "Ich" and B saying "Partner" is actually agreement.
-            // That means strings are DIFFERENT (myP.wwe !== partnerP.wwe).
+            // A wählt "Ich" und B wählt "Partner" -> Einigkeit (Strings sind ungleich)
             const isAgree = myP.wwe !== partnerP.wwe;
-            if (wweHDir === "low") {
-              wweSum += !isAgree ? 100 : 0; // disagreement speaks for harmony
-            } else {
-              wweSum += isAgree ? 100 : 0; // agreement speaks for harmony
-            }
+            wweSum += isAgree ? 100 : 0;
           }
 
           // Freitext-Frage

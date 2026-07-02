@@ -39,8 +39,7 @@ const dailyQuestionsSchema = z.object({
   }),
   wwe: z.object({
     q: z.string().describe("Die eigentliche Frage, Länge ca. 40 bis 130 Zeichen"),
-    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen: ['Ich', 'Partner']"),
-    hDir: harmonyDirectionSchema
+    o: z.array(z.string()).length(2).describe("Exakt 2 Optionen: ['Ich', 'Partner']")
   })
 });
 
@@ -208,13 +207,12 @@ ${visualPair
    - Thema: "${themaWwe}".
    - Format: Frage ca. 40-130 Zeichen. Die Optionen müssen IMMER exakt ["Ich", "Partner"] sein.
 
-NEU: BEWERTUNG DER KOMPATIBILITÄT (hDir für alle Fragen):
-WICHTIG: Entscheide für jede Frage völlig unabhängig und inhaltlich begründet, welcher der 3 Kompatibilitäts-Werte zutrifft (kopiere keinesfalls einfach Vorgabewerte):
+NEU: BEWERTUNG DER KOMPATIBILITÄT (hDir für "tot", "ranking" und "text" Fragen):
+WICHTIG: Entscheide für diese 3 Fragen völlig unabhängig und inhaltlich begründet, welcher der 3 Kompatibilitäts-Werte zutrifft (kopiere keinesfalls einfach Vorgabewerte):
 - "high": Hohe Übereinstimmung spricht für Harmonie. Das ist der Standard für gemeinsame Interessen, Werte, Zukunftspläne oder Konsens (z. B. "Derselbe Urlaubsort", "Gleiche Priorität bei der Karriere").
-  *WICHTIG bei "wwe" (Wer würde eher)*: Da die Optionen "Ich" und "Partner" sind, bedeutet Harmonie hier meistens, dass ihr euch EINIG seid, wer es eher tun würde (z.B. A wählt "Ich", B wählt "Partner"). Das gilt als Übereinstimmung und erfordert daher "high".
 - "low": Eine geringe Übereinstimmung oder Ergänzung (Komplementarität) spricht für Harmonie. Das gilt für komplementäre Rollen (z. B. "Wer kocht vs. wer spült" bei Dies-oder-Das), gegensätzliche Persönlichkeitsmerkmale, die sich ausgleichen (z. B. "Einer plant, einer ist spontan"), oder spielerische Fragen, bei denen Gegensätze die Beziehung bereichern.
-  *WICHTIG bei "wwe"*: Setze "wwe" nur dann auf "low", wenn es harmonisch/lustig ist, dass ihr euch UNEINIG seid (z. B. beide wählen "Ich" oder beide wählen "Partner").
 - "neutral": Die Antworten haben keinen nennenswerten Einfluss auf Harmonie oder Disharmonie der Beziehung (z. B. reine Geschmacksfragen wie "Welcher Snack im Kino?", reine Wissensfragen oder banale Vorlieben). Diese Fragen fließen nicht in die Score-Berechnung ein.
+*(Hinweis: Für "wwe" Fragen wird kein "hDir" benötigt, da diese immer automatisch auf Übereinstimmung ausgewertet werden).*
 
 
 STIMMUNG & TONFALL (SEHR WICHTIG!):
@@ -251,7 +249,7 @@ WICHTIGE VERTEILUNGS-REGELN (GEGEN MONOTONIE):
 
     if (useGemma) {
       promptText += `\n\nAntworte AUSSCHLIESSLICH mit einem validen JSON-Objekt im folgenden Format (keine Erklärungen, kein Markdown-Codeblock, nur das JSON).
-WICHTIG: Kopiere nicht stumpf die "hDir"-Werte ("high"/"low") aus diesem Beispiel, sondern entscheide für jede deiner generierten Fragen individuell und inhaltlich begründet, ob "high" oder "low" zutrifft:
+WICHTIG: Kopiere nicht stumpf die "hDir"-Werte ("high"/"low"/"neutral") aus diesem Beispiel, sondern entscheide für "tot", "ranking" und "text" individuell und inhaltlich begründet, welcher Wert zutrifft:
 {
   "tot": {
     "q": "Eine Frage...",
@@ -270,8 +268,7 @@ WICHTIG: Kopiere nicht stumpf die "hDir"-Werte ("high"/"low") aus diesem Beispie
   },
   "wwe": {
     "q": "Wer würde eher...",
-    "o": ["Ich", "Partner"],
-    "hDir": "low"
+    "o": ["Ich", "Partner"]
   }
 }`;
       modelConfig = {

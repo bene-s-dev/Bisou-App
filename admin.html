@@ -809,12 +809,13 @@
             <div class="q-card-header">
               <span class="badge ${t.color}">${t.label}</span>
               <div style="display:flex;align-items:center;gap:8px">
-                ${q[t.key].hDir === 'low'
-                  ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#1e3a5f;color:#93c5fd" title="Gegensätzlichkeit = harmonischer">⬇ Low = Gegensätze gut</span>`
-                  : q[t.key].hDir === 'neutral'
-                    ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#334155;color:#cbd5e1" title="Neutral = fließt nicht in den Score ein">⚪ Neutral</span>`
-                    : `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#14532d;color:#86efac" title="Hohe Übereinstimmung = harmonischer">⬆ High = Gleichheit gut</span>`
-                }
+                ${t.key !== 'wwe' && q[t.key].hDir ? (
+                   q[t.key].hDir === 'low'
+                     ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#1e3a5f;color:#93c5fd" title="Gegensätzlichkeit = harmonischer">⬇ Low = Gegensätze gut</span>`
+                     : q[t.key].hDir === 'neutral'
+                       ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#334155;color:#cbd5e1" title="Neutral = fließt nicht in den Score ein">⚪ Neutral</span>`
+                       : `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#14532d;color:#86efac" title="Hohe Übereinstimmung = harmonischer">⬆ High = Gleichheit gut</span>`
+                 ) : '' }
                 <button class="btn ghost sm" style="font-size:11px" onclick='deleteQuestion("${row.day_key}")'>🗑 Löschen</button>
               </div>
             </div>
@@ -1007,14 +1008,10 @@
       }
       
       // wwe
-      if (myChoice.wwe && partnerChoice.wwe && wweHDir !== "neutral" && wweHDir !== "none") {
+      if (myChoice.wwe && partnerChoice.wwe) {
         wweCount++;
         const isAgree = myChoice.wwe !== partnerChoice.wwe;
-        if (wweHDir === "low") {
-          wweSum += !isAgree ? 100 : 0;
-        } else {
-          wweSum += isAgree ? 100 : 0;
-        }
+        wweSum += isAgree ? 100 : 0;
       }
       
       // ranking
