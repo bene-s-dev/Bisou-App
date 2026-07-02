@@ -935,18 +935,33 @@
   }
 
   async function loadUsers() {
-    const { data } = await sb.from('profiles').select('id, display_name, partner_code, partner_id, created_at').order('created_at', { ascending: false }).limit(100);
+    const { data } = await sb.from('profiles')
+      .select(`
+        id, 
+        display_name, 
+        partner_code, 
+        partner_id, 
+        created_at,
+        streaks(
+          current_streak
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100);
     const tbody = document.getElementById('users-table');
     if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Keine Nutzer gefunden</td></tr>'; return; }
-    tbody.innerHTML = data.map(u => `
-      <tr>
-        <td><strong>${u.display_name || '–'}</strong></td>
-        <td><code style="font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:4px">${u.partner_code || '–'}</code></td>
-        <td>${u.partner_id ? '<span class="badge badge-green">Verbunden</span>' : '<span class="badge badge-yellow">Alleine</span>'}</td>
-        <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('de-DE')}</td>
-        <td>–</td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = data.map(u => {
+      const streakVal = u.streaks && u.streaks[0] ? u.streaks[0].current_streak : 0;
+      return `
+        <tr>
+          <td><strong>${u.display_name || '–'}</strong></td>
+          <td><code style="font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:4px">${u.partner_code || '–'}</code></td>
+          <td>${u.partner_id ? '<span class="badge badge-green">Verbunden</span>' : '<span class="badge badge-yellow">Alleine</span>'}</td>
+          <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('de-DE')}</td>
+          <td><strong>${streakVal}</strong> 🔥</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   // ---- FAILED QUEUE ----
