@@ -309,15 +309,17 @@ export default function StatsModal({
       `}</style>
       <div className="absolute inset-0" onClick={handleClose} />
       <div 
-        className={`modal-content pt-6 px-4 pb-0 flex flex-col overflow-hidden transition-all duration-300 ${
+        className={`modal-content pt-6 px-4 pb-0 flex flex-col overflow-hidden transition-all duration-500 ${
           showHistory 
-            ? 'h-[92vh] max-h-[92vh] !border-rose-200' 
+            ? 'h-[80vh] max-h-[80vh] !border-rose-200' 
             : 'h-[520px] max-h-[92vh]'
         }`}
-        style={showHistory ? {
-          background: 'linear-gradient(135deg, #FFF1F2 0%, #FAF5FF 50%, #FDF4F5 100%)',
-          boxShadow: '0 20px 50px rgba(244, 63, 94, 0.15)'
-        } : undefined}
+        style={{
+          backgroundColor: showHistory ? '#FFF5F6' : '',
+          boxShadow: showHistory 
+            ? '0 20px 50px rgba(244, 63, 94, 0.15)' 
+            : ''
+        }}
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
