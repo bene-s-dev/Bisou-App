@@ -111,7 +111,7 @@
     }
 
     /* ---- APP SHELL ---- */
-    #app { display: flex; flex-direction: column; min-height: 100vh; }
+    #app { display: none; flex-direction: column; min-height: 100vh; }
     header {
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -391,6 +391,27 @@
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="logo">🔐</div>
+    <h1>Bisou Admin</h1>
+    <p>Melde dich an um Inhalte zu verwalten</p>
+    <div class="form-group">
+      <label>E-Mail</label>
+      <input type="email" id="email" />
+    </div>
+    <div class="form-group">
+      <label>Passwort</label>
+      <input type="password" id="password" placeholder="••••••••" />
+    </div>
+    <button class="btn full" onclick="login()">
+      <span id="login-label">Anmelden</span>
+    </button>
+    <div id="login-error" style="display:none" class="error-msg"></div>
+  </div>
+</div>
+
 <!-- APP -->
 <div id="app">
   <header>
@@ -398,6 +419,7 @@
       <span class="logo-badge">🛠️</span>
       <span class="app-title">Bisou Admin</span>
     </div>
+    <button class="btn ghost sm" onclick="logout()">Abmelden</button>
   </header>
 
   <div class="nav">
@@ -416,10 +438,6 @@
     <button class="nav-tab" onclick="showTab('users', this)">
       <span class="nav-icon">👥</span>
       <span class="nav-label">Nutzer</span>
-    </button>
-    <button class="nav-tab" onclick="showTab('failed', this)">
-      <span class="nav-icon">⚠️</span>
-      <span class="nav-label">Failed Queue</span>
     </button>
   </div>
 
@@ -445,6 +463,20 @@
           <button class="btn sm" onclick="generateMissing()">⚡ Fehlende generieren</button>
         </div>
         <div id="week-status"></div>
+      </div>
+
+      <!-- FAILED QUEUE -->
+      <div class="card" style="margin-top: 20px;">
+        <div class="card-header">
+          <span class="card-title">⚠️ Fehlgeschlagene Generierungen</span>
+          <button class="btn sm success" onclick="retryAllFailed()">↺ Alle erneut versuchen</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tag</th><th>Versuche</th><th>Letzter Versuch</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody id="failed-table"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -473,28 +505,13 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Code</th><th>Partner</th><th>Registriert</th><th>Meilensteine</th></tr></thead>
+          <thead><tr><th>Name</th><th>Code</th><th>Partner</th><th>Registriert</th><th>Streak</th></tr></thead>
           <tbody id="users-table"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- FAILED QUEUE -->
-    <div class="section" id="tab-failed">
-      <div class="section-header">
-        <h2 class="section-title">Failed Generation Queue</h2>
-        <div style="display:flex;gap:8px">
-          <button class="btn ghost sm" onclick="loadFailed()">↻ Aktualisieren</button>
-          <button class="btn sm success" onclick="retryAllFailed()">↺ Alle erneut versuchen</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Day Key</th><th>Versuche</th><th>Letzter Versuch</th><th>Status</th><th>Aktionen</th></tr></thead>
-          <tbody id="failed-table"></tbody>
-        </table>
-      </div>
-    </div>
+
 
   </main>
 </div>
@@ -581,8 +598,43 @@
 
   let editingAnnouncementId = null;
 
-  // ---- AUTH (Auto-run) ----
-  function showApp() {
+  // ---- AUTH ----
+  async function login() {
+    const email = document.getElementById('email').value.trim();
+    const pw = document.getElementById('password').value;
+    const lbl = document.getElementById('login-label');
+    const err = document.getElementById('login-error');
+    err.style.display = 'none';
+    lbl.innerHTML = '<span class="spinner"></span>';
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      err.textContent = error.message;
+      err.style.display = 'block';
+      lbl.textContent = 'Anmelden';
+      return;
+    }
+    // Check if user is allowed (display_name must be 'bene' and ID must match Bene's UUID)
+    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', data.user.id).maybeSingle();
+    if (!profile || profile.display_name?.toLowerCase() !== 'bene' || data.user.id !== '438bce53-5c85-4035-82a1-d6fbd23bc1e8') {
+      await sb.auth.signOut();
+      err.textContent = '🚫 Kein Zugriff – nur autorisierte Nutzer dürfen sich hier anmelden.';
+      err.style.display = 'block';
+      lbl.textContent = 'Anmelden';
+      return;
+    }
+    showApp(data.user);
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-label').textContent = 'Anmelden';
+  }
+
+  function showApp(user) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
     loadDashboard();
     loadQuestions();
     loadAnnouncements();
@@ -590,7 +642,16 @@
     loadFailed();
   }
 
-  showApp();
+  // Check session on load (also verify display_name and User ID)
+  sb.auth.getSession().then(async ({ data }) => {
+    if (!data.session) return;
+    const { data: profile } = await sb.from('profiles').select('display_name').eq('id', data.session.user.id).maybeSingle();
+    if (profile?.display_name?.toLowerCase() === 'bene' && data.session.user.id === '438bce53-5c85-4035-82a1-d6fbd23bc1e8') {
+      showApp(data.session.user);
+    } else {
+      await sb.auth.signOut();
+    }
+  });
 
   // ---- TABS ----
   function showTab(name, el) {
@@ -656,6 +717,7 @@
         </div>
       </div>`;
     }).join('');
+    loadFailed();
   }
 
   async function generateMissing() {
@@ -672,18 +734,38 @@
     if (!missing.length) { toast('Alle 7 Tage sind bereits generiert ✓'); return; }
     toast(`Generiere ${missing.length} fehlende Tag(e)…`);
     for (const day of missing) {
-      sb.functions.invoke('generate-questions', { body: { day_key: day } }).catch(() => {});
+      fetch(`${SUPABASE_URL}/functions/v1/generate-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ day_key: day })
+      }).catch(() => {});
     }
     setTimeout(loadDashboard, 3000);
   }
 
   async function triggerDirectGenerate(dayKey) {
     toast(`Generierung für ${dayKey} gestartet…`);
-    const { data, error } = await sb.functions.invoke('generate-questions', { body: { day_key: dayKey } });
-    if (error || !data?.questions) {
-      toast('Fehler: ' + (error?.message || 'Generierung fehlgeschlagen'), 'error');
-    } else {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ day_key: dayKey })
+      });
+      const data = await response.json();
+      if (!response.ok || data.error || !data.questions) {
+        throw new Error(data.error || 'Generierung fehlgeschlagen');
+      }
       toast(`Fragen für ${dayKey} erfolgreich generiert ✓`);
+    } catch (err) {
+      toast('Fehler: ' + err.message, 'error');
     }
     loadDashboard();
     loadQuestions();
@@ -692,7 +774,12 @@
 
   // ---- QUESTIONS ----
   async function loadQuestions() {
-    const { data } = await sb.from('daily_questions').select('day_key, questions').order('day_key', { ascending: false }).limit(14);
+    const todayStr = new Date().toISOString().split('T')[0];
+    const { data } = await sb.from('daily_questions')
+      .select('day_key, questions')
+      .gte('day_key', todayStr)
+      .order('day_key', { ascending: true })
+      .limit(14);
     const container = document.getElementById('questions-list');
     if (!data || !data.length) {
       container.innerHTML = '<div class="empty-state"><div class="empty-icon">❓</div>Keine Fragen gefunden</div>';
@@ -743,15 +830,27 @@
     if (!dayKey) { toast('Bitte ein Datum wählen', 'error'); return; }
     const res = document.getElementById('gen-result');
     res.innerHTML = '<span class="spinner"></span> Generierung läuft…';
-    const { data, error } = await sb.functions.invoke('generate-questions', { body: { day_key: dayKey } });
-    if (error || !data?.questions) {
-      res.textContent = '✕ Fehler: ' + (error?.message || 'Unbekannter Fehler');
-      toast('Generierung fehlgeschlagen', 'error');
-    } else {
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ day_key: dayKey })
+      });
+      const data = await response.json();
+      if (!response.ok || data.error || !data.questions) {
+        throw new Error(data.error || 'Generierung fehlgeschlagen');
+      }
       res.textContent = '✓ Erfolgreich generiert!';
       toast(`Fragen für ${dayKey} generiert ✓`);
       loadQuestions();
       loadDashboard();
+    } catch (err) {
+      res.textContent = '✕ Fehler: ' + err.message;
+      toast('Generierung fehlgeschlagen', 'error');
     }
   }
 
@@ -836,45 +935,18 @@
   }
 
   async function loadUsers() {
-    const { data } = await sb.from('profiles')
-      .select(`
-        id, 
-        display_name, 
-        partner_code, 
-        partner_id, 
-        created_at,
-        unlocked_milestones(
-          unlocked_at,
-          milestones(
-            name,
-            icon,
-            description
-          )
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const { data } = await sb.from('profiles').select('id, display_name, partner_code, partner_id, created_at').order('created_at', { ascending: false }).limit(100);
     const tbody = document.getElementById('users-table');
     if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Keine Nutzer gefunden</td></tr>'; return; }
-    tbody.innerHTML = data.map(u => {
-      const ums = u.unlocked_milestones || [];
-      const badges = ums
-        .map(um => {
-          const m = um.milestones;
-          if (!m) return '';
-          return `<span class="milestone-badge" title="${m.name}: ${m.description}" style="cursor:help;font-size:15px;margin-right:5px;display:inline-block;">${m.icon}</span>`;
-        })
-        .join('');
-      return `
-        <tr>
-          <td><strong>${u.display_name || '–'}</strong></td>
-          <td><code style="font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:4px">${u.partner_code || '–'}</code></td>
-          <td>${u.partner_id ? '<span class="badge badge-green">Verbunden</span>' : '<span class="badge badge-yellow">Alleine</span>'}</td>
-          <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('de-DE')}</td>
-          <td>${badges || '<span style="color:var(--muted);font-size:11px;">Keine</span>'}</td>
-        </tr>
-      `;
-    }).join('');
+    tbody.innerHTML = data.map(u => `
+      <tr>
+        <td><strong>${u.display_name || '–'}</strong></td>
+        <td><code style="font-size:12px;background:var(--surface2);padding:2px 8px;border-radius:4px">${u.partner_code || '–'}</code></td>
+        <td>${u.partner_id ? '<span class="badge badge-green">Verbunden</span>' : '<span class="badge badge-yellow">Alleine</span>'}</td>
+        <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('de-DE')}</td>
+        <td>–</td>
+      </tr>
+    `).join('');
   }
 
   // ---- FAILED QUEUE ----
@@ -901,9 +973,24 @@
 
   async function retryDay(dayKey) {
     toast(`Starte Generierung für ${dayKey}…`);
-    const { error } = await sb.functions.invoke('generate-questions', { body: { day_key: dayKey } });
-    if (error) { toast('Fehler: ' + error.message, 'error'); }
-    else { toast(`${dayKey} erfolgreich generiert ✓`); }
+    try {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ day_key: dayKey })
+      });
+      const data = await response.json();
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Fehler bei der Generierung');
+      }
+      toast(`${dayKey} erfolgreich generiert ✓`);
+    } catch (err) {
+      toast('Fehler: ' + err.message, 'error');
+    }
     loadFailed();
     loadDashboard();
     loadQuestions();
@@ -914,7 +1001,15 @@
     if (!data?.length) { toast('Queue ist leer'); return; }
     toast(`Starte ${data.length} Generierungen…`);
     for (const r of data) {
-      sb.functions.invoke('generate-questions', { body: { day_key: r.day_key } }).catch(() => {});
+      fetch(`${SUPABASE_URL}/functions/v1/generate-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ day_key: r.day_key })
+      }).catch(() => {});
     }
     setTimeout(() => { loadFailed(); loadDashboard(); loadQuestions(); }, 3000);
   }
@@ -926,7 +1021,10 @@
     loadDashboard();
   }
 
-  // initialized
+  // keyboard submit
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') login();
+  });
 </script>
 </body>
 </html>

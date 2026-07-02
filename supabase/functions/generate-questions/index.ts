@@ -44,7 +44,17 @@ const dailyQuestionsSchema = z.object({
   })
 });
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   const k = Deno.env.get('GEMINI_API_KEY') || ''
   const u = Deno.env.get('SUPABASE_URL') || ''
   const s = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
@@ -71,7 +81,7 @@ serve(async (req) => {
       // Clean up queue if it exists
       try { await db.from('failed_generations').delete().eq('day_key', dayKey); } catch (e) {}
       return new Response(JSON.stringify(ex), { 
-        headers: { 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       })
     }
 
@@ -352,7 +362,7 @@ Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jed
 
         if (ex2 && ex2.questions) {
           return new Response(JSON.stringify({ questions: ex2.questions }), { 
-            headers: { 'Content-Type': 'application/json' } 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           });
         }
         if (fetchError) throw fetchError;
@@ -364,7 +374,7 @@ Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jed
     try { await db.from('failed_generations').delete().eq('day_key', dayKey); } catch (e) {}
 
     return new Response(JSON.stringify({ questions: content }), { 
-      headers: { 'Content-Type': 'application/json' } 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   } catch (err: any) {
     console.error("Function error:", err.message);
@@ -395,7 +405,7 @@ Wende diese mehrdimensionale Denkweise und Verteilungs-Regeln konsequent auf jed
       rawResponseText: rawResponseText
     }), { 
       status: 500, 
-      headers: { 'Content-Type': 'application/json' } 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     })
   }
 })

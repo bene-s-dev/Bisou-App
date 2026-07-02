@@ -102,6 +102,10 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
+      input: {
+        main: './index.html',
+        admin: './admin.html'
+      },
       output: {
         // Code Splitting: Split third-party libraries into separate vendor files.
         // When you deploy an app change, only your app code chunk changes; the library chunks
