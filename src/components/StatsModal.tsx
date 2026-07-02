@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings, ChevronLeft, Calendar } from 'lucide-react';
+import { BarChart3, X, Sparkles, Clock, HelpCircle, TrendingUp, TrendingDown, Minus, Settings, ChevronLeft, ChevronRight, Calendar, LineChart } from 'lucide-react';
 import { capitalizeName } from '../lib/stringUtils';
 import { supabase } from '../lib/supabase';
 
@@ -42,6 +42,7 @@ export default function StatsModal({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [timeRange, setTimeRange] = useState<'1w' | '4w' | 'max'>('max');
   const [chartView, setChartView] = useState<'curve' | 'heatmap'>('curve');
+  const [isEntering, setIsEntering] = useState(true);
   const chartRef = React.useRef<SVGSVGElement>(null);
 
   const visibleHistory = React.useMemo(() => {
@@ -249,18 +250,85 @@ export default function StatsModal({
     }
   }, [isOpen]);
 
+  React.useEffect(() => {
+    if (showHistory) {
+      setIsEntering(true);
+      const timer = setTimeout(() => setIsEntering(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showHistory]);
+
   if (!isOpen) return null;
 
   return createPortal(
     <div className="modal-backdrop px-4 will-change-[opacity,backdrop-filter]">
+      <style>{`
+        @keyframes gradient-wave {
+          0% { 
+            background-position: 0% 50%; 
+            box-shadow: 0 10px 25px -3px rgba(244, 63, 94, 0.28), 0 4px 12px -2px rgba(244, 63, 94, 0.15);
+          }
+          50% { 
+            background-position: 100% 50%; 
+            box-shadow: 0 14px 30px -3px rgba(244, 63, 94, 0.38), 0 6px 16px -2px rgba(244, 63, 94, 0.2);
+          }
+          100% { 
+            background-position: 0% 50%; 
+            box-shadow: 0 10px 25px -3px rgba(244, 63, 94, 0.28), 0 4px 12px -2px rgba(244, 63, 94, 0.15);
+          }
+        }
+        .animate-gradient-wave {
+          background-size: 200% 200%;
+          animation: gradient-wave 6s ease-in-out infinite;
+        }
+        @keyframes pop-active-dot {
+          0% { transform: scale(0); opacity: 0; }
+          70% { transform: scale(1.2); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-active-dot {
+          opacity: 0;
+          animation: pop-active-dot 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        @keyframes fade-active-line-35 {
+          from { opacity: 0; }
+          to { opacity: 0.35; }
+        }
+        @keyframes fade-active-line-70 {
+          from { opacity: 0; }
+          to { opacity: 0.7; }
+        }
+        .animate-active-line-35 {
+          opacity: 0;
+          animation: fade-active-line-35 0.3s ease-out forwards;
+        }
+        .animate-active-line-70 {
+          opacity: 0;
+          animation: fade-active-line-70 0.3s ease-out forwards;
+        }
+      `}</style>
       <div className="absolute inset-0" onClick={handleClose} />
-      <div className={`modal-content pt-6 px-4 pb-0 flex flex-col overflow-hidden transition-all duration-300 ${
-        showHistory ? 'h-[92vh] max-h-[92vh]' : 'h-[520px] max-h-[92vh]'
-      }`}>
+      <div 
+        className={`modal-content pt-6 px-4 pb-0 flex flex-col overflow-hidden transition-all duration-300 ${
+          showHistory 
+            ? 'h-[92vh] max-h-[92vh] !border-rose-200' 
+            : 'h-[520px] max-h-[92vh]'
+        }`}
+        style={showHistory ? {
+          background: 'linear-gradient(135deg, #FFF1F2 0%, #FAF5FF 50%, #FDF4F5 100%)',
+          boxShadow: '0 20px 50px rgba(244, 63, 94, 0.15)'
+        } : undefined}
+      >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center">
-              <BarChart3 className="w-6 h-6 text-[var(--secondary)]" />
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors ${
+              showHistory ? 'bg-rose-50' : 'bg-purple-50'
+            }`}>
+              {showHistory ? (
+                <LineChart className="w-6 h-6 text-rose-500" />
+              ) : (
+                <BarChart3 className="w-6 h-6 text-[var(--secondary)]" />
+              )}
             </div>
             <div>
               <h3 className="font-black text-[#1F1939] text-base leading-tight">
@@ -273,24 +341,24 @@ export default function StatsModal({
           </div>
           <div className="flex items-center gap-2">
             {showHistory && (
-              <div className="flex bg-purple-50 p-0.5 rounded-xl border border-purple-100/50">
+              <div className="flex bg-rose-50 p-0.5 rounded-xl border border-rose-100/50">
                 <button
                   onClick={() => setChartView('curve')}
                   className={`p-1 rounded-lg transition-all ${
                     chartView === 'curve'
-                      ? 'bg-white text-[var(--secondary)] shadow-sm'
-                      : 'text-[var(--muted)] hover:text-[#1F1939]'
+                      ? 'bg-white text-rose-500 shadow-sm'
+                      : 'text-[var(--muted)] hover:text-rose-600'
                   }`}
                   title="Kurven-Ansicht"
                 >
-                  <TrendingUp className="w-3.5 h-3.5" />
+                  <LineChart className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setChartView('heatmap')}
                   className={`p-1 rounded-lg transition-all ${
                     chartView === 'heatmap'
-                      ? 'bg-white text-[var(--secondary)] shadow-sm'
-                      : 'text-[var(--muted)] hover:text-[#1F1939]'
+                      ? 'bg-white text-rose-500 shadow-sm'
+                      : 'text-[var(--muted)] hover:text-rose-600'
                   }`}
                   title="Heatmap-Ansicht"
                 >
@@ -298,7 +366,14 @@ export default function StatsModal({
                 </button>
               </div>
             )}
-            <button onClick={handleClose} className="p-1.5 bg-purple-50 rounded-full text-[var(--muted)] hover:bg-purple-100 transition-colors">
+            <button 
+              onClick={handleClose} 
+              className={`p-1.5 rounded-full transition-colors ${
+                showHistory 
+                  ? 'bg-rose-50 text-rose-400 hover:bg-rose-100 hover:text-rose-600' 
+                  : 'bg-purple-50 text-[var(--muted)] hover:bg-purple-100'
+              }`}
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -401,10 +476,10 @@ export default function StatsModal({
                   };
 
                   return (
-                    <div className="space-y-4 animate-fade-in flex flex-col items-center w-full flex-1 min-h-0 max-h-full overflow-hidden">
-                      <div className="text-center py-2 w-full flex flex-col items-center space-y-3 shrink-0">
+                    <div className="space-y-3 animate-fade-in flex flex-col items-center w-full flex-1 min-h-0 max-h-full overflow-hidden">
+                      <div className="text-center py-1.5 w-full flex flex-col items-center space-y-2.5 shrink-0">
                         <div className="text-center">
-                          <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">
+                          <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-0.5">
                             {activeDay ? formatDate(activeDay.date) : "Aktueller Wert"}
                           </p>
                           <div className="flex items-baseline justify-center gap-1">
@@ -419,7 +494,7 @@ export default function StatsModal({
                         </div>
 
                         {/* Sleek Segmented Control for Time Range */}
-                        <div className="flex bg-purple-50/50 dark:bg-purple-950/30 p-0.5 rounded-full border border-purple-100/30 dark:border-purple-900/10 w-[200px] h-7 items-center justify-between select-none">
+                        <div className="flex bg-rose-50/50 dark:bg-rose-950/30 p-0.5 rounded-full border border-rose-100/30 dark:border-rose-900/10 w-[200px] h-7 items-center justify-between select-none">
                           {(['1w', '4w', 'max'] as const).map((r) => (
                             <button
                               key={r}
@@ -429,8 +504,8 @@ export default function StatsModal({
                               }}
                               className={`flex-1 h-full text-[9px] font-black uppercase tracking-wider rounded-full transition-all ${
                                 timeRange === r
-                                  ? 'bg-white dark:bg-[#1E1B2E] text-[var(--primary)] shadow-sm'
-                                  : 'text-[var(--muted)] hover:text-[#1F1939] dark:hover:text-white'
+                                  ? 'bg-white dark:bg-[#1E1B2E] text-rose-500 shadow-sm'
+                                  : 'text-[var(--muted)] hover:text-rose-600 dark:hover:text-white'
                               }`}
                             >
                               {r === '1w' ? '1 Woche' : r === '4w' ? '4 Wochen' : 'Max'}
@@ -440,117 +515,195 @@ export default function StatsModal({
                       </div>
 
                       {visibleHistory && visibleHistory.length > 1 ? (
-                        <div className="relative w-full bg-purple-50/20 rounded-3xl py-4 px-4 border border-purple-100/50 flex flex-col items-center justify-center min-h-[179px] shrink-0">
+                        <div className="relative w-full bg-white/95 rounded-3xl py-3 px-3 border border-rose-100/40 shadow-sm shadow-rose-100/10 flex flex-col items-center justify-center min-h-[179px] shrink-0">
                           {chartView === 'curve' ? (
-                            <svg
-                              ref={chartRef}
-                              className="w-full h-auto overflow-visible touch-none cursor-crosshair select-none"
-                              viewBox="0 0 300 145"
-                              width="100%"
-                              onTouchStart={handleTouchMove}
-                              onTouchMove={handleTouchMove}
-                              onMouseMove={handleMouseMove}
-                              onMouseDown={(e) => {
-                                handlePointer(e.clientX);
-                              }}
-                            >
-                              <defs>
-                                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor={gradientColor} stopOpacity={gradientOpacity} />
-                                  <stop offset="100%" stopColor={gradientColor} stopOpacity="0.0" />
-                                </linearGradient>
-                                <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                  <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor={strokeColor} floodOpacity="0.3" />
-                                </filter>
-                              </defs>
+                            (() => {
+                              // Calculate dynamic Y-axis min and max
+                              const scores = visibleHistory.map((pt: any) => pt.score || 0);
+                              const minScore = scores.length > 0 ? Math.min(...scores) : 0;
+                              const maxScore = scores.length > 0 ? Math.max(...scores) : 10;
+                              
+                              // Add a 0.5 padding/margin to the min/max for visual breathing room, clamp to min 0 and max 10
+                              const yMin = Math.max(0, parseFloat((Math.floor(minScore * 2) / 2 - 0.5).toFixed(1)));
+                              const yMax = Math.min(10, parseFloat((Math.ceil(maxScore * 2) / 2 + 0.5).toFixed(1)));
+                              
+                              // Ensure we don't have yMin === yMax (e.g. if all scores are identical)
+                              const scoreRange = yMax - yMin === 0 ? 1 : yMax - yMin;
 
-                              {/* Grid lines */}
-                              {[0, 2.5, 5, 7.5, 10].map((gridVal) => {
-                                const y = 140 - (gridVal / 10) * 120;
-                                const isZero = gridVal === 0;
-                                return (
-                                  <g key={gridVal} opacity="0.45">
-                                    <line x1="22" y1={isZero ? y - 0.5 : y} x2="292" y2={isZero ? y - 0.5 : y} stroke="#8C88A5" strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
-                                    <text x="4" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal}</text>
-                                  </g>
-                                );
-                              })}
+                              const gridLines = [];
+                              const step = scoreRange / 4;
+                              for (let i = 0; i <= 4; i++) {
+                                gridLines.push(parseFloat((yMin + i * step).toFixed(2)));
+                              }
 
-                              {/* Render line & fill path */}
-                              {(() => {
-                                const paddingLeft = 22;
-                                const paddingRight = 8;
-                                const points = visibleHistory.map((pt: any, i: number) => {
-                                  const x = paddingLeft + (i / (visibleHistory.length - 1)) * (300 - paddingLeft - paddingRight);
-                                  const y = 140 - (pt.score / 10) * 120;
-                                  return { x, y };
-                                });
+                              return (
+                                <svg
+                                  ref={chartRef}
+                                  className="w-full h-auto overflow-visible touch-none cursor-crosshair select-none"
+                                  viewBox="0 0 300 145"
+                                  width="100%"
+                                  onTouchStart={handleTouchMove}
+                                  onTouchMove={handleTouchMove}
+                                  onMouseMove={handleMouseMove}
+                                  onMouseDown={(e) => {
+                                    handlePointer(e.clientX);
+                                  }}
+                                >
+                                  <defs>
+                                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#FF5A5A" stopOpacity="0.18">
+                                        <animate 
+                                          attributeName="stop-color" 
+                                          values="#FF5A5A;#8A5CF5;#FF5A5A" 
+                                          dur="8s" 
+                                          repeatCount="indefinite" 
+                                        />
+                                      </stop>
+                                      <stop offset="100%" stopColor="#FF5A5A" stopOpacity="0.0">
+                                        <animate 
+                                          attributeName="stop-color" 
+                                          values="#FF5A5A;#8A5CF5;#FF5A5A" 
+                                          dur="8s" 
+                                          repeatCount="indefinite" 
+                                        />
+                                      </stop>
+                                    </linearGradient>
+                                    <filter id="dotShadow" x="-20%" y="-20%" width="140%" height="140%">
+                                      <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#FF5A5A" floodOpacity="0.3" />
+                                    </filter>
+                                    <clipPath id="chartClip">
+                                      <rect x="0" y="0" height="145" width="0">
+                                        <animate 
+                                          attributeName="width" 
+                                          values="0;300" 
+                                          dur="0.8s" 
+                                          begin="0.3s" 
+                                          fill="freeze" 
+                                          calcMode="linear"
+                                        />
+                                      </rect>
+                                    </clipPath>
+                                  </defs>
 
-                                const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
-                                const areaD = `${pathD} L 292 140 L 22 140 Z`;
-                                const selPt = points[currentIndex];
-
-                                return (
-                                  <>
-                                    {/* Milestone stacked dots on the chart timeline */}
-                                    {visibleHistory.map((pt: any, idx: number) => {
-                                      const mCount = pt.milestones?.length || 0;
-                                      if (mCount === 0) return null;
-                                      let px = paddingLeft + (idx / (visibleHistory.length - 1)) * (300 - paddingLeft - paddingRight);
-                                      if (idx === 0) px += 2.2;
-                                      else if (idx === visibleHistory.length - 1) px -= 2.2;
-                                      return (
-                                        <g key={`ms-dots-${pt.date}-${idx}`}>
-                                          {Array.from({ length: Math.min(5, mCount) }).map((_, dotIdx) => {
-                                            const py = 137 - dotIdx * 5; // stack upwards
-                                            return (
-                                              <circle
-                                                key={dotIdx}
-                                                cx={px}
-                                                cy={py}
-                                                r="2.2"
-                                                fill="#FBBF24"
-                                                stroke="#FFF"
-                                                strokeWidth="0.4"
-                                              />
-                                            );
-                                          })}
-                                        </g>
-                                      );
-                                    })}
-
-                                    <path d={areaD} fill="url(#chartGradient)" />
-                                    <path
-                                      d={pathD}
-                                      fill="none"
-                                      stroke={strokeColor}
-                                      strokeWidth="3.5"
-                                      strokeLinecap="butt"
-                                      strokeLinejoin="round"
-                                    />
-                                    
-                                    {selPt && (
-                                      <line
-                                        x1={selPt.x}
-                                        y1="20"
-                                        x2={selPt.x}
-                                        y2="140"
-                                        stroke="var(--secondary)"
-                                        strokeWidth="1.5"
-                                        strokeDasharray="2 2"
-                                        opacity={selectedIndex !== null ? "0.7" : "0.35"}
-                                      />
-                                    )}
-                                    {selPt && (
-                                      <g filter="url(#dotShadow)">
-                                        <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
-                                        <circle cx={selPt.x} cy={selPt.y} r="5" fill="var(--primary)" />
+                                  {/* Grid lines */}
+                                  {gridLines.map((gridVal) => {
+                                    const y = 140 - ((gridVal - yMin) / scoreRange) * 120;
+                                    const isZero = gridVal === yMin;
+                                    return (
+                                      <g key={gridVal} opacity="0.45">
+                                        <line x1="22" y1={isZero ? y - 0.5 : y} x2="292" y2={isZero ? y - 0.5 : y} stroke="#8C88A5" strokeWidth="1" strokeDasharray={isZero ? "0" : "3 3"} />
+                                        <text x="4" y={y - 4} fill="#4A4468" fontSize="8" fontWeight="bold">{gridVal.toFixed(1)}</text>
                                       </g>
-                                    )}
-                                  </>
-                                );
-                              })()}
-                            </svg>
+                                    );
+                                  })}
+
+                                  {/* Render line & fill path */}
+                                  {(() => {
+                                    const paddingLeft = 22;
+                                    const paddingRight = 8;
+                                    const points = visibleHistory.map((pt: any, i: number) => {
+                                      const x = paddingLeft + (i / (visibleHistory.length - 1)) * (300 - paddingLeft - paddingRight);
+                                      const y = 140 - ((pt.score - yMin) / scoreRange) * 120;
+                                      return { x, y };
+                                    });
+
+                                    const pathD = points.map((p: any, i: number) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+                                    const areaD = `${pathD} L 292 140 L 22 140 Z`;
+                                    const selPt = points[currentIndex];
+
+                                    return (
+                                      <>
+                                        {/* Milestone stacked dots on the chart timeline */}
+                                        {visibleHistory.map((pt: any, idx: number) => {
+                                          const mCount = pt.milestones?.length || 0;
+                                          if (mCount === 0) return null;
+                                          let px = paddingLeft + (idx / (visibleHistory.length - 1)) * (300 - paddingLeft - paddingRight);
+                                          if (idx === 0) px += 2.2;
+                                          else if (idx === visibleHistory.length - 1) px -= 2.2;
+                                          return (
+                                            <g key={`ms-dots-${pt.date}-${idx}`}>
+                                              {Array.from({ length: Math.min(5, mCount) }).map((_, dotIdx) => {
+                                                const py = 137 - dotIdx * 5; // stack upwards
+                                                return (
+                                                  <circle
+                                                    key={dotIdx}
+                                                    cx={px}
+                                                    cy={py}
+                                                    r="2.2"
+                                                    fill="#FBBF24"
+                                                    stroke="#FFF"
+                                                    strokeWidth="0.4"
+                                                  />
+                                                );
+                                              })}
+                                            </g>
+                                          );
+                                        })}
+
+                                        <path clipPath="url(#chartClip)" d={areaD} fill="url(#chartGradient)" />
+                                        <path
+                                          pathLength="300"
+                                          d={pathD}
+                                          fill="none"
+                                          stroke="#FF5A5A"
+                                          strokeWidth="3.5"
+                                          strokeLinecap="butt"
+                                          strokeLinejoin="round"
+                                          {...(isEntering && { strokeDasharray: "300", strokeDashoffset: "300" })}
+                                        >
+                                          {isEntering && (
+                                            <animate 
+                                              attributeName="stroke-dashoffset" 
+                                              values="300;0" 
+                                              dur="0.8s" 
+                                              begin="0.3s" 
+                                              fill="freeze" 
+                                              calcMode="linear"
+                                            />
+                                          )}
+                                        </path>
+                                        
+                                        {selPt && (
+                                          (() => {
+                                            const p = (selPt.x - 22) / 270;
+                                            const arrivalDelay = Math.max(0.2, 0.3 + p * 0.8 - 0.25);
+                                            const isSelected = selectedIndex !== null;
+                                            
+                                            return (
+                                              <>
+                                                <line
+                                                  x1={selPt.x}
+                                                  y1="20"
+                                                  x2={selPt.x}
+                                                  y2="140"
+                                                  stroke="#FF5A5A"
+                                                  strokeWidth="1.5"
+                                                  strokeDasharray="2 2"
+                                                  className={isEntering ? (isSelected ? 'animate-active-line-70' : 'animate-active-line-35') : ''}
+                                                  style={isEntering ? { animationDelay: `${arrivalDelay}s` } : {}}
+                                                  opacity={isEntering ? undefined : (isSelected ? 0.7 : 0.35)}
+                                                />
+                                                <g 
+                                                  filter="url(#dotShadow)"
+                                                  className={isEntering ? 'animate-active-dot' : ''}
+                                                  style={isEntering ? { 
+                                                    transformOrigin: `${selPt.x}px ${selPt.y}px`,
+                                                    animationDelay: `${arrivalDelay}s` 
+                                                  } : {}}
+                                                >
+                                                  <circle cx={selPt.x} cy={selPt.y} r="8" fill="#FFF" />
+                                                  <circle cx={selPt.x} cy={selPt.y} r="5" fill="#FF5A5A" />
+                                                </g>
+                                              </>
+                                            );
+                                          })()
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </svg>
+                              );
+                            })()
                           ) : (
                             /* GitHub-style Heatmap Grid */
                             <div className="flex items-center gap-2 select-none py-1 animate-fade-in w-full justify-center min-h-[145px]">
@@ -614,7 +767,7 @@ export default function StatsModal({
                           )}
                         </div>
                       ) : (
-                        <div className="w-full h-40 bg-purple-50/20 rounded-3xl border border-purple-100/50 flex flex-col items-center justify-center p-6 text-center">
+                        <div className="w-full h-40 bg-rose-50/10 rounded-3xl border border-rose-100/50 flex flex-col items-center justify-center p-6 text-center">
                           <p className="text-xs font-bold text-[#4A4468]">Keine Daten für diesen Zeitraum.</p>
                           <p className="text-[10px] text-[var(--muted)] mt-1">Beantwortet fleißig Fragen, um euren Verlauf zu füllen!</p>
                         </div>
@@ -628,9 +781,9 @@ export default function StatsModal({
                               <p className="text-[8px] font-black text-amber-500 uppercase tracking-wider text-center justify-center h-3.5 shrink-0 flex items-center w-full">
                                 ✨ Meilenstein{dayMilestones.length > 1 ? 'e' : ''} an diesem Tag ({dayMilestones.length})
                               </p>
-                              <div className="flex-1 overflow-y-auto scrollbar-none scroll-smooth grid grid-cols-1 gap-1.5 min-h-0 items-start w-full px-0.5">
+                              <div className="flex-1 overflow-y-auto scrollbar-none scroll-smooth flex flex-col gap-1.5 min-h-0 items-start w-full px-0.5">
                                 {dayMilestones.map((m: any) => (
-                                  <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out] w-full">
+                                  <div key={m.id} className="flex items-center gap-2.5 bg-amber-500/10 border border-amber-500/25 rounded-2xl p-2.5 text-left transition-all animate-[scaleUp_0.2s_ease-out] w-full shrink-0">
                                     <span className="text-xl shrink-0">{m.icon}</span>
                                     <div className="flex-1 min-w-0">
                                       <h5 className="text-[10px] font-black text-[#1F1939] leading-tight truncate">{m.name}</h5>
@@ -641,7 +794,7 @@ export default function StatsModal({
                               </div>
                             </>
                           ) : (
-                            <div className="flex flex-col items-center justify-center bg-purple-50/20 border border-purple-100/50 rounded-2xl w-full h-[114px] shrink-0 text-center">
+                            <div className="flex flex-col items-center justify-center bg-rose-50/10 border border-rose-100/50 rounded-2xl w-full h-14 shrink-0 text-center">
                               <p className="text-[9px] font-bold text-[var(--muted)] opacity-60">Keine Meilensteine an diesem Tag freigeschaltet</p>
                             </div>
                           )}
@@ -654,33 +807,31 @@ export default function StatsModal({
                 /* Original stats overview */
                 <div className="space-y-2.5 flex-1 flex flex-col justify-between min-h-0 w-full">
                   {/* Top Area stats */}
-                  <div className="grid grid-cols-2 gap-2.5 shrink-0">
-                    <div className="bg-purple-50/40 rounded-3xl p-3.5 border border-purple-100/50 flex flex-col justify-between h-[72px]">
-                      <p className="text-[9px] font-black text-[var(--muted)] uppercase tracking-widest mb-1">Gemeinsam Aktiv</p>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-[var(--secondary)]">{stats.totalAnswers}</span>
-                        <span className="text-[9px] font-bold text-[#4A4468]">Tage</span>
-                      </div>
-                    </div>
+                  <div className="flex justify-center shrink-0 w-full pt-4 pb-1">
                     <div 
-                      className="bg-rose-50/40 rounded-3xl p-3.5 border border-rose-100/50 flex flex-col justify-between h-[72px] cursor-pointer active:scale-95 transition-transform" 
+                      className="bg-gradient-to-r from-rose-50 via-purple-50/60 to-rose-100/50 rounded-3xl p-3.5 border-2 border-rose-200/50 flex flex-col justify-between h-[76px] cursor-pointer active:scale-95 transition-all hover:from-rose-100/60 hover:to-purple-100/40 relative w-full max-w-[200px] animate-gradient-wave" 
                       onClick={() => setShowHistory(true)}
                     >
-                      <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Bisou Score</p>
+                      <p className="text-[9.5px] font-black text-rose-500/80 uppercase tracking-widest mb-1">Bisou Score</p>
+                      
+                      <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-white/85 border border-purple-100/80 flex items-center justify-center text-[var(--primary)] shadow-sm hover:scale-110 transition-transform opacity-70">
+                        <ChevronRight className="w-3.5 h-3.5" strokeWidth={2} />
+                      </div>
+
                       <div className="flex items-baseline justify-between">
                         <div className="flex items-baseline">
                           <span className="text-2xl font-black text-[var(--primary)] tabular-nums min-w-[45px]">
                             {displayScore.toFixed(1)}
                           </span>
-                          <span className="text-[9px] font-bold text-rose-400 ml-1">/ 10</span>
+                          <span className="text-[9px] font-bold text-rose-400/85 ml-1">/ 10</span>
                         </div>
                         {scoreTrend && (
-                          <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black ${
+                          <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[8px] font-black shadow-sm border ${
                             scoreTrend.direction === 'up' 
-                              ? 'bg-emerald-50 text-emerald-500' 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' 
                               : scoreTrend.direction === 'down' 
-                              ? 'bg-red-50 text-red-400' 
-                              : 'bg-gray-50 text-gray-400'
+                              ? 'bg-rose-50 text-rose-500 border-rose-100/50' 
+                              : 'bg-gray-50 text-gray-500 border-gray-100/50'
                           }`}>
                             {scoreTrend.direction === 'up' && <TrendingUp className="w-2.5 h-2.5" strokeWidth={3} />}
                             {scoreTrend.direction === 'down' && <TrendingDown className="w-2.5 h-2.5" strokeWidth={3} />}
@@ -754,11 +905,11 @@ export default function StatsModal({
                           <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(userName.split(' ')[0])}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-orange-50/40 rounded-xl border border-orange-100">
+                      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-purple-50/40 rounded-xl border border-purple-100">
                         <span className="text-base">{getTimeIcon(stats.partnerHabit)}</span>
                         <div className="flex flex-col">
                           <span className="text-sm font-black text-[#1F1939] leading-tight">{stats.partnerHabit}:00</span>
-                          <span className="text-[7px] font-black text-orange-500 uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
+                          <span className="text-[7px] font-black text-[var(--secondary)] uppercase tracking-[0.1em]">{capitalizeName(partnerName.split(' ')[0])}</span>
                         </div>
                       </div>
                     </div>
