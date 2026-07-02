@@ -447,7 +447,6 @@
     <div class="section active" id="tab-dashboard">
       <div class="section-header">
         <h2 class="section-title">Dashboard</h2>
-        <button class="btn ghost sm" onclick="loadDashboard()">↻ Aktualisieren</button>
       </div>
       <div class="stats-grid" id="stats-grid">
         <div class="stat-card"><div class="stat-label">Fragen generiert</div><div class="stat-value" id="stat-questions">–</div></div>
@@ -501,11 +500,10 @@
     <div class="section" id="tab-users">
       <div class="section-header">
         <h2 class="section-title">Nutzer</h2>
-        <button class="btn ghost sm" onclick="loadUsers()">↻ Aktualisieren</button>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Name</th><th>Code</th><th>Partner</th><th>Registriert</th><th>Streak</th></tr></thead>
+          <thead><tr><th>Name</th><th>Code</th><th>Partner</th><th>Registriert</th><th>Streak</th><th>Bisou Score</th></tr></thead>
           <tbody id="users-table"></tbody>
         </table>
       </div>
@@ -659,6 +657,12 @@
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     el.classList.add('active');
+    
+    // Auto-refresh data on tab click
+    if (name === 'dashboard') loadDashboard();
+    else if (name === 'questions') loadQuestions();
+    else if (name === 'announcements') loadAnnouncements();
+    else if (name === 'users') loadUsers();
   }
 
   // ---- TOAST ----
@@ -934,24 +938,146 @@
     loadAnnouncements();
   }
 
+  function calculateUserBisouScore(userId, partnerId, allAnswers, allQuestionsMap) {
+    if (!partnerId) return 0;
+    
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateStr30 = thirtyDaysAgo.toISOString().split('T')[0];
+    
+    const myAns = allAnswers.filter(a => a.user_id === userId && a.day_key >= dateStr30);
+    const partnerAns = allAnswers.filter(a => a.user_id === partnerId && a.day_key >= dateStr30);
+    
+    const sharedDays = myAns.filter(ma => partnerAns.some(pa => pa.day_key === ma.day_key));
+    if (sharedDays.length === 0) return 0;
+    
+    let totSum = 0, totCount = 0;
+    let wweSum = 0, wweCount = 0;
+    let rankingSum = 0, rankingCount = 0;
+    let textSum = 0, textCount = 0;
+    
+    sharedDays.forEach(ma => {
+      const pa = partnerAns.find(p => p.day_key === ma.day_key);
+      const qData = allQuestionsMap.get(ma.day_key);
+      if (!pa || !qData) return;
+      
+      let myChoice, partnerChoice;
+      try {
+        myChoice = JSON.parse(ma.choice);
+        partnerChoice = JSON.parse(pa.choice);
+      } catch (e) {
+        myChoice = ma.choice;
+        partnerChoice = pa.choice;
+      }
+      
+      // tot
+      if (qData.tot && myChoice?.tot !== undefined && partnerChoice?.tot !== undefined) {
+        totCount++;
+        totSum += (myChoice.tot === partnerChoice.tot) ? 100 : 0;
+      }
+      
+      // wwe
+      if (qData.wwe && myChoice?.wwe !== undefined && partnerChoice?.wwe !== undefined) {
+        wweCount++;
+        wweSum += (myChoice.wwe !== partnerChoice.wwe) ? 100 : 0;
+      }
+      
+      // ranking
+      if (qData.ranking && myChoice?.ranking && partnerChoice?.ranking) {
+        const myRank = myChoice.ranking;
+        const partnerRank = partnerChoice.ranking;
+        const commonItems = myRank.filter(item => partnerRank.includes(item));
+        if (commonItems.length >= 2) {
+          rankingCount++;
+          let sumSqDiff = 0;
+          const n = commonItems.length;
+          commonItems.forEach(item => {
+            const myPos = myRank.indexOf(item);
+            const partnerPos = partnerRank.indexOf(item);
+            sumSqDiff += Math.pow(myPos - partnerPos, 2);
+          });
+          const maxSqDiff = (n * (n * n - 1)) / 3;
+          const rawSim = maxSqDiff > 0 ? (1 - (sumSqDiff / maxSqDiff)) * 100 : 100;
+          const sim = Math.sqrt(Math.max(0, rawSim) / 100) * 100;
+          rankingSum += sim;
+        }
+      }
+      
+      // text
+      if (qData.text && myChoice?.text !== undefined && partnerChoice?.text !== undefined) {
+        textCount++;
+        const clean1 = String(myChoice.text).toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+        const clean2 = String(partnerChoice.text).toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+        if (!clean1 || !clean2) {
+          // 0
+        } else if (clean1 === clean2) {
+          textSum += 100;
+        } else {
+          const words1 = clean1.split(/\s+/);
+          const words2 = clean2.split(/\s+/);
+          const set1 = new Set(words1);
+          const set2 = new Set(words2);
+          let intersect = 0;
+          for (const w of set1) {
+            if (set2.has(w)) intersect++;
+          }
+          const union = new Set([...words1, ...words2]).size;
+          textSum += union > 0 ? (intersect / union) * 100 : 0;
+        }
+      }
+    });
+    
+    let activeCats = 0;
+    let totalScoreSum = 0;
+    if (totCount > 0) { activeCats++; totalScoreSum += (totSum / totCount); }
+    if (wweCount > 0) { activeCats++; totalScoreSum += (wweSum / wweCount); }
+    if (rankingCount > 0) { activeCats++; totalScoreSum += (rankingSum / rankingCount); }
+    if (textCount > 0) { activeCats++; totalScoreSum += (textSum / textCount); }
+    
+    if (activeCats === 0) return 0;
+    const avgPercent = totalScoreSum / activeCats;
+    return Math.max(0, Math.min(10, Math.round((avgPercent / 10) * 10) / 10));
+  }
+
   async function loadUsers() {
-    const { data } = await sb.from('profiles')
-      .select(`
-        id, 
-        display_name, 
-        partner_code, 
-        partner_id, 
-        created_at,
-        streaks(
-          current_streak
-        )
-      `)
-      .order('created_at', { ascending: false })
-      .limit(100);
+    const thirtyDaysAgoStr = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    const [{ data: profilesData }, { data: answersData }, { data: dailyQuestionsData }] = await Promise.all([
+      sb.from('profiles')
+        .select(`
+          id, 
+          display_name, 
+          partner_code, 
+          partner_id, 
+          created_at,
+          streaks(
+            current_streak
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100),
+      sb.from('answers')
+        .select('user_id, day_key, choice')
+        .gte('day_key', thirtyDaysAgoStr),
+      sb.from('daily_questions')
+        .select('day_key, questions')
+    ]);
+
+    const qMap = new Map();
+    if (dailyQuestionsData) {
+      dailyQuestionsData.forEach(q => qMap.set(q.day_key, q.questions));
+    }
+
     const tbody = document.getElementById('users-table');
-    if (!data || !data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">Keine Nutzer gefunden</td></tr>'; return; }
-    tbody.innerHTML = data.map(u => {
+    if (!profilesData || !profilesData.length) { 
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted)">Keine Nutzer gefunden</td></tr>'; 
+      return; 
+    }
+    
+    tbody.innerHTML = profilesData.map(u => {
       const streakVal = u.streaks && u.streaks[0] ? u.streaks[0].current_streak : 0;
+      const score = calculateUserBisouScore(u.id, u.partner_id, answersData || [], qMap);
+      const displayScore = u.partner_id ? `<strong>${score.toFixed(1)}</strong> 💖` : '–';
       return `
         <tr>
           <td><strong>${u.display_name || '–'}</strong></td>
@@ -959,6 +1085,7 @@
           <td>${u.partner_id ? '<span class="badge badge-green">Verbunden</span>' : '<span class="badge badge-yellow">Alleine</span>'}</td>
           <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('de-DE')}</td>
           <td><strong>${streakVal}</strong> 🔥</td>
+          <td>${displayScore}</td>
         </tr>
       `;
     }).join('');
