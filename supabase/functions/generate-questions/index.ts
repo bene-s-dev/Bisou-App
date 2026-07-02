@@ -17,8 +17,8 @@ function cleanJsonString(str: string): string {
 // ==========================================
 // ZOD-SCHEMA FÜR STRUKTURIERTE AUSGABE
 // ==========================================
-const harmonyDirectionSchema = z.enum(["high", "low"]).describe(
-  "Gibt an, ob eine hohe Übereinstimmung der Antworten (high) oder eine geringe/komplementäre Übereinstimmung/Gegensätzlichkeit (low) für eine harmonische Beziehung spricht."
+const harmonyDirectionSchema = z.enum(["high", "low", "neutral"]).describe(
+  "Gibt an, ob eine hohe Übereinstimmung der Antworten (high), eine komplementäre/gegensätzliche Übereinstimmung (low) für die Harmonie spricht, oder ob die Frage neutral ist und nicht in den Score einfließt (neutral)."
 );
 
 const dailyQuestionsSchema = z.object({
@@ -64,10 +64,12 @@ serve(async (req) => {
   const ai = new GoogleGenAI({ apiKey: k });
 
   let dayKey;
+  let force = false;
   let rawResponseText = "";
   try {
     const body = await req.json();
     dayKey = body.day_key || body.dayKey;
+    force = !!(body.force);
   } catch (e) {}
 
   if (!dayKey) {
@@ -75,14 +77,19 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Prüfen, ob für heute bereits Fragen existieren
-    const { data: ex } = await db.from('daily_questions').select('questions').eq('day_key', dayKey).maybeSingle()
-    if (ex) {
-      // Clean up queue if it exists
-      try { await db.from('failed_generations').delete().eq('day_key', dayKey); } catch (e) {}
-      return new Response(JSON.stringify(ex), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      })
+    if (force) {
+      console.log(`Force flag is set. Deleting existing question for ${dayKey} to regenerate.`);
+      await db.from('daily_questions').delete().eq('day_key', dayKey);
+    } else {
+      // 1. Prüfen, ob für heute bereits Fragen existieren
+      const { data: ex } = await db.from('daily_questions').select('questions').eq('day_key', dayKey).maybeSingle()
+      if (ex) {
+        // Clean up queue if it exists
+        try { await db.from('failed_generations').delete().eq('day_key', dayKey); } catch (e) {}
+        return new Response(JSON.stringify(ex), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        })
+      }
     }
 
     // Check how many attempts have been recorded for this dayKey
@@ -202,9 +209,13 @@ ${visualPair
    - Format: Frage ca. 40-130 Zeichen. Die Optionen müssen IMMER exakt ["Ich", "Partner"] sein.
 
 NEU: BEWERTUNG DER KOMPATIBILITÄT (hDir für alle Fragen):
-WICHTIG: Entscheide für jede Frage völlig unabhängig und inhaltlich begründet, ob eine hohe Übereinstimmung (Similarity) oder eine geringe Übereinstimmung (Complementarity/Opposites) harmonischer für eine Liebesbeziehung ist. Setze dafür das Feld "hDir" auf einen der folgenden Werte (kopiere keinesfalls einfach Vorgabewerte):
+WICHTIG: Entscheide für jede Frage völlig unabhängig und inhaltlich begründet, welcher der 3 Kompatibilitäts-Werte zutrifft (kopiere keinesfalls einfach Vorgabewerte):
 - "high": Hohe Übereinstimmung spricht für Harmonie. Das ist der Standard für gemeinsame Interessen, Werte, Zukunftspläne oder Konsens (z. B. "Derselbe Urlaubsort", "Gleiche Priorität bei der Karriere").
-- "low": Eine geringe Übereinstimmung oder Ergänzung (Komplementarität) spricht für Harmonie. Das gilt für komplementäre Rollen (z. B. "Wer kocht vs. wer spült"), gegensätzliche Persönlichkeitsmerkmale, die sich ausgleichen (z. B. "Einer plant, einer ist spontan"), oder spielerische Fragen, bei denen Gegensätze die Beziehung bereichern.
+  *WICHTIG bei "wwe" (Wer würde eher)*: Da die Optionen "Ich" und "Partner" sind, bedeutet Harmonie hier meistens, dass ihr euch EINIG seid, wer es eher tun würde (z.B. A wählt "Ich", B wählt "Partner"). Das gilt als Übereinstimmung und erfordert daher "high".
+- "low": Eine geringe Übereinstimmung oder Ergänzung (Komplementarität) spricht für Harmonie. Das gilt für komplementäre Rollen (z. B. "Wer kocht vs. wer spült" bei Dies-oder-Das), gegensätzliche Persönlichkeitsmerkmale, die sich ausgleichen (z. B. "Einer plant, einer ist spontan"), oder spielerische Fragen, bei denen Gegensätze die Beziehung bereichern.
+  *WICHTIG bei "wwe"*: Setze "wwe" nur dann auf "low", wenn es harmonisch/lustig ist, dass ihr euch UNEINIG seid (z. B. beide wählen "Ich" oder beide wählen "Partner").
+- "neutral": Die Antworten haben keinen nennenswerten Einfluss auf Harmonie oder Disharmonie der Beziehung (z. B. reine Geschmacksfragen wie "Welcher Snack im Kino?", reine Wissensfragen oder banale Vorlieben). Diese Fragen fließen nicht in die Score-Berechnung ein.
+
 
 STIMMUNG & TONFALL (SEHR WICHTIG!):
 - Schreibe alltagsnahe, nahbare, liebevolle und natürliche Fragen, über die ein echtes Paar abends gerne auf dem Sofa plaudert.

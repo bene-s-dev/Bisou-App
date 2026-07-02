@@ -1466,7 +1466,9 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                       FALLBACK_QUESTIONS.wwe
                     );
                     const hDir = q?.hDir || 'high';
-                    dotStyle = { backgroundColor: hDir === 'low' ? '#93C5FD' : '#FCA5A5' };
+                    dotStyle = { 
+                      backgroundColor: hDir === 'low' ? '#93C5FD' : hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5' 
+                    };
                   }
                   return (
                     <div
@@ -1555,10 +1557,14 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                           <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                             <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
                             {question?.hDir && (
-                              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
-                                question.hDir === 'low' ? 'bg-blue-50 text-blue-500 border border-blue-100/50' : 'bg-rose-50 text-rose-400 border border-rose-100/50'
-                              }`}>
-                                {question.hDir === 'low' ? '⬇ Gegensätze gut' : '⬆ Gleichheit gut'}
+                              <span 
+                                style={{
+                                  backgroundColor: question.hDir === 'low' ? '#93C5FD' : question.hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5',
+                                  color: question.hDir === 'low' ? '#1E3A8A' : question.hDir === 'neutral' ? '#581C87' : '#7F1D1D'
+                                }}
+                                className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
+                              >
+                                {question.hDir === 'low' ? '⬇ Gegensätze gut' : question.hDir === 'neutral' ? '⚪ Neutral' : '⬆ Gleichheit gut'}
                               </span>
                             )}
                           </div>
@@ -1632,10 +1638,14 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                         <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                           <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
                           {question?.hDir && (
-                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
-                              question.hDir === 'low' ? 'bg-blue-50 text-blue-500 border border-blue-100/50' : 'bg-rose-50 text-rose-400 border border-rose-100/50'
-                            }`}>
-                              {question.hDir === 'low' ? '⬇ Gegensätze gut' : '⬆ Gleichheit gut'}
+                            <span 
+                              style={{
+                                backgroundColor: question.hDir === 'low' ? '#93C5FD' : question.hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5',
+                                color: question.hDir === 'low' ? '#1E3A8A' : question.hDir === 'neutral' ? '#581C87' : '#7F1D1D'
+                              }}
+                              className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
+                            >
+                              {question.hDir === 'low' ? '⬇ Gegensätze gut' : question.hDir === 'neutral' ? '⚪ Neutral' : '⬆ Gleichheit gut'}
                             </span>
                           )}
                         </div>

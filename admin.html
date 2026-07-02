@@ -811,7 +811,9 @@
               <div style="display:flex;align-items:center;gap:8px">
                 ${q[t.key].hDir === 'low'
                   ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#1e3a5f;color:#93c5fd" title="Gegensätzlichkeit = harmonischer">⬇ Low = Gegensätze gut</span>`
-                  : `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#14532d;color:#86efac" title="Hohe Übereinstimmung = harmonischer">⬆ High = Gleichheit gut</span>`
+                  : q[t.key].hDir === 'neutral'
+                    ? `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#334155;color:#cbd5e1" title="Neutral = fließt nicht in den Score ein">⚪ Neutral</span>`
+                    : `<span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:#14532d;color:#86efac" title="Hohe Übereinstimmung = harmonischer">⬆ High = Gleichheit gut</span>`
                 }
                 <button class="btn ghost sm" style="font-size:11px" onclick='deleteQuestion("${row.day_key}")'>🗑 Löschen</button>
               </div>
@@ -994,7 +996,7 @@
       const wweHDir = qData.wwe?.hDir || "high";
       
       // tot
-      if (myChoice.tot && partnerChoice.tot) {
+      if (myChoice.tot && partnerChoice.tot && totHDir !== "neutral" && totHDir !== "none") {
         totCount++;
         const isMatch = myChoice.tot === partnerChoice.tot;
         if (totHDir === "low") {
@@ -1005,7 +1007,7 @@
       }
       
       // wwe
-      if (myChoice.wwe && partnerChoice.wwe) {
+      if (myChoice.wwe && partnerChoice.wwe && wweHDir !== "neutral" && wweHDir !== "none") {
         wweCount++;
         const isAgree = myChoice.wwe !== partnerChoice.wwe;
         if (wweHDir === "low") {
@@ -1018,7 +1020,7 @@
       // ranking
       const commonItems = myChoice.ranking.filter(item => partnerChoice.ranking.includes(item));
       const n = commonItems.length;
-      if (n > 1) {
+      if (n > 1 && rankingHDir !== "neutral" && rankingHDir !== "none") {
         let sumSqDiff = 0;
         commonItems.forEach(item => {
           const myPos = myChoice.ranking.indexOf(item);
@@ -1034,7 +1036,7 @@
       }
       
       // text
-      if (myChoice.text && partnerChoice.text) {
+      if (myChoice.text && partnerChoice.text && textHDir !== "neutral" && textHDir !== "none") {
         textCount++;
         const clean1 = String(myChoice.text).toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
         const clean2 = String(partnerChoice.text).toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");

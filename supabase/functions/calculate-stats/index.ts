@@ -302,7 +302,7 @@ serve(async (req) => {
           const wweHDir = qData?.wwe?.hDir || "high";
 
           // Dies-oder-Das-Frage
-          if (myP.tot && partnerP.tot) {
+          if (myP.tot && partnerP.tot && totHDir !== "neutral" && totHDir !== "none") {
             totDaysCount++;
             const isMatch = myP.tot === partnerP.tot;
             if (totHDir === "low") {
@@ -315,7 +315,7 @@ serve(async (req) => {
           // Ranking-Frage
           const commonItems = myP.ranking.filter(item => partnerP.ranking.includes(item));
           const n = commonItems.length;
-          if (n > 1) {
+          if (n > 1 && rankingHDir !== "neutral" && rankingHDir !== "none") {
             let sumSqDiff = 0;
             for (const item of commonItems) {
               const myPos = myP.ranking.indexOf(item);
@@ -332,7 +332,7 @@ serve(async (req) => {
           }
 
           // Wer-würde-eher-Frage
-          if (myP.wwe && partnerP.wwe) {
+          if (myP.wwe && partnerP.wwe && wweHDir !== "neutral" && wweHDir !== "none") {
             wweDaysCount++;
             // Note: in string representation, A saying "Ich" and B saying "Partner" is actually agreement.
             // That means strings are DIFFERENT (myP.wwe !== partnerP.wwe).
@@ -346,7 +346,7 @@ serve(async (req) => {
 
           // Freitext-Frage
           const sim = textSimilarities[ma.day_key];
-          if (sim !== undefined) {
+          if (sim !== undefined && textHDir !== "neutral" && textHDir !== "none") {
             const finalSim = textHDir === "low" ? 100 - sim : sim;
             textSum += finalSim;
             textDaysCount++;

@@ -274,10 +274,14 @@ export default function JournalModal({
                 <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                   <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{q.q}</span>
                   {q.hDir && (
-                    <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
-                      q.hDir === 'low' ? 'bg-blue-50 text-blue-500 border border-blue-100/50' : 'bg-rose-50 text-rose-400 border border-rose-100/50'
-                    }`}>
-                      {q.hDir === 'low' ? '⬇ Gegensätze gut' : '⬆ Gleichheit gut'}
+                    <span 
+                      style={{
+                        backgroundColor: q.hDir === 'low' ? '#93C5FD' : q.hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5',
+                        color: q.hDir === 'low' ? '#1E3A8A' : q.hDir === 'neutral' ? '#581C87' : '#7F1D1D'
+                      }}
+                      className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
+                    >
+                      {q.hDir === 'low' ? '⬇ Gegensätze gut' : q.hDir === 'neutral' ? '⚪ Neutral' : '⬆ Gleichheit gut'}
                     </span>
                   )}
                 </div>
