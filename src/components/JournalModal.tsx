@@ -273,20 +273,6 @@ export default function JournalModal({
               <div key={i}>
                 <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                   <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{q.q}</span>
-                  {(() => {
-                    const hDir = q.hDir || 'high';
-                    return (
-                      <span 
-                        style={{
-                          backgroundColor: hDir === 'low' ? '#93C5FD' : hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5',
-                          color: hDir === 'low' ? '#1E3A8A' : hDir === 'neutral' ? '#581C87' : '#7F1D1D'
-                        }}
-                        className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                      >
-                        {hDir === 'low' ? '⬇ Gegensätze gut' : hDir === 'neutral' ? '⚪ Neutral' : '⬆ Gleichheit gut'}
-                      </span>
-                    );
-                  })()}
                 </div>
                 <div className="grid grid-cols-2 gap-2 mb-4 px-2">
                   {/* Partner Answer */}

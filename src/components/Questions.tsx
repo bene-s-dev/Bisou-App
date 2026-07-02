@@ -1556,20 +1556,6 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                         <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
                           <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                             <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
-                            {(() => {
-                              const hDir = question?.hDir || 'high';
-                              return (
-                                <span 
-                                  style={{
-                                    backgroundColor: hDir === 'low' ? '#93C5FD' : hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5',
-                                    color: hDir === 'low' ? '#1E3A8A' : hDir === 'neutral' ? '#581C87' : '#7F1D1D'
-                                  }}
-                                  className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                                >
-                                  {hDir === 'low' ? '⬇ Gegensätze gut' : hDir === 'neutral' ? '⚪ Neutral' : '⬆ Gleichheit gut'}
-                                </span>
-                              );
-                            })()}
                           </div>
                           <div className="px-2 space-y-3">
                             {/* Two image tiles */}
@@ -1640,20 +1626,6 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
                       <div key={i} className={revealResults ? "animate-fade-in-up" : "opacity-0"} style={{ animationDelay: `${i * 80}ms` }}>
                         <div className="flex items-center mb-4 pl-4 pr-2 justify-between w-full">
                           <span className="text-[12px] font-bold text-[#2D264B] opacity-80 tracking-wider">{question?.q || "Frage"}</span>
-                          {(() => {
-                            const hDir = question?.hDir || 'high';
-                            return (
-                              <span 
-                                style={{
-                                  backgroundColor: hDir === 'low' ? '#93C5FD' : hDir === 'neutral' ? '#D8B4FE' : '#FCA5A5',
-                                  color: hDir === 'low' ? '#1E3A8A' : hDir === 'neutral' ? '#581C87' : '#7F1D1D'
-                                }}
-                                className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0"
-                              >
-                                {hDir === 'low' ? '⬇ Gegensätze gut' : hDir === 'neutral' ? '⚪ Neutral' : '⬆ Gleichheit gut'}
-                              </span>
-                            );
-                          })()}
                         </div>
                         <div className="flex items-stretch gap-2 w-full px-2">
                           {/* Partner Bubble */}
