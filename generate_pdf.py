@@ -545,8 +545,8 @@ def build_pdf(filename="Bisou_App_Systemdokumentation.pdf"):
         "oder gestern, bleibt der Streak unberührt.<br/>"
         "2. Hat der Nutzer gestern nicht geantwortet, ermittelt das System, ob ein <b>Streak-Freeze</b> angewendet werden kann. "
         "Dazu analysiert die Funktion das Array <code>freeze_history</code>. Sie zählt die verbrauchten Freezes im Kalendermonat "
-        "des Vortages. Liegt die Anzahl bei <b>unter 2</b>, wird das gestrige Datum in die <code>freeze_history</code> eingetragen "
-        "und der Streak bleibt erhalten (eingefroren).<br/>"
+        "des Vortages. Liegt die Anzahl bei <b>unter 2</b>, wird das gestrige Datum in die <code>freeze_history</code> und <code>streak_history</code> eingetragen, "
+        "der Streak-Zähler (<code>current_streak</code>) um 1 erhöht und der Streak bleibt erhalten (eingefroren).<br/>"
         "3. Sind bereits 2 Freezes für diesen Monat verbraucht, bricht der Streak ab und wird auf 0 zurückgesetzt.",
         body_style
     ))
