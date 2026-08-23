@@ -846,68 +846,53 @@ export default function App() {
   }, [fetchProfile, session?.user.id, navigate]);
 
 
-  // --- Realtime Sync Subscriptions ---
+  // --- Realtime Sync Subscriptions (Unified in 1 single channel to prevent connection leaks) ---
   useEffect(() => {
     if (!session?.user.id) return;
 
-    // 1. Subscribe to MY profile changes (name, partner_id, avatar, etc.)
-    const myProfileChannel = supabase
-      .channel(`my-profile-${session.user.id}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'profiles', 
-        filter: `id=eq.${session.user.id}` 
-      }, () => fetchProfile(session.user.id))
-      .subscribe();
+    const channelName = `app-sync-${session.user.id}-${dayKey}`;
+    const syncChannel = supabase.channel(channelName);
 
-    // 2. Subscribe to TODAY'S answers (mine and partner's)
-    const answersChannel = supabase
-      .channel(`daily-answers-${dayKey}`)
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'answers', 
-        filter: `day_key=eq.${dayKey}` 
-      }, () => fetchProfile(session.user.id))
-      .subscribe();
+    // 1. Subscribe to MY profile changes
+    syncChannel.on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'profiles', 
+      filter: `id=eq.${session.user.id}` 
+    }, () => fetchProfile(session.user.id));
 
-    // 2.5 Subscribe to TODAY'S questions (in case they are generated while user is online)
-    const questionsChannel = supabase
-      .channel(`daily-questions-${dayKey}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'daily_questions',
-        filter: `day_key=eq.${dayKey}`
-      }, () => fetchProfile(session.user.id))
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(myProfileChannel);
-      supabase.removeChannel(answersChannel);
-      supabase.removeChannel(questionsChannel);
-    };
-  }, [session?.user.id, dayKey, fetchProfile]);
-
-  // 3. Subscribe to PARTNER'S profile changes (name, avatar) - dynamic
-  useEffect(() => {
-    if (!session?.user.id || !profile?.partner_id) return;
-
-    const partnerProfileChannel = supabase
-      .channel(`partner-profile-${profile.partner_id}`)
-      .on('postgres_changes', { 
+    // 2. Subscribe to PARTNER'S profile changes (if partner exists)
+    if (profile?.partner_id) {
+      syncChannel.on('postgres_changes', { 
         event: '*', 
         schema: 'public', 
         table: 'profiles', 
         filter: `id=eq.${profile.partner_id}` 
-      }, () => fetchProfile(session.user.id))
-      .subscribe();
+      }, () => fetchProfile(session.user.id));
+    }
+
+    // 3. Subscribe to TODAY'S answers
+    syncChannel.on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'answers', 
+      filter: `day_key=eq.${dayKey}` 
+    }, () => fetchProfile(session.user.id));
+
+    // 4. Subscribe to TODAY'S questions
+    syncChannel.on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'daily_questions',
+      filter: `day_key=eq.${dayKey}`
+    }, () => fetchProfile(session.user.id));
+
+    syncChannel.subscribe();
 
     return () => {
-      supabase.removeChannel(partnerProfileChannel);
+      supabase.removeChannel(syncChannel);
     };
-  }, [session?.user.id, profile?.partner_id, fetchProfile]);
+  }, [session?.user.id, profile?.partner_id, dayKey, fetchProfile]);
 
   const handleLogout = async () => {
     try {
