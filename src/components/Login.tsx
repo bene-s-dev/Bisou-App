@@ -180,8 +180,15 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
                 <div className="flex justify-end pr-2">
                   <button type="button" onClick={() => setMode('forgot-password')} className="text-xs font-bold text-[var(--muted)] hover:text-[var(--text-main)] transition-colors">Passwort vergessen?</button>
                 </div>
-                <button type="submit" disabled={loading} className="btn-static w-full mt-2">
-                  {loading ? 'Lädt...' : 'Einloggen ✨'}
+                <button type="submit" disabled={loading} className="btn-static w-full mt-2 flex items-center justify-center gap-2">
+                  {loading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Wird angemeldet...</span>
+                    </>
+                  ) : (
+                    'Einloggen ✨'
+                  )}
                 </button>
                 <button type="button" onClick={() => navigate('/signup')} className="btn-secondary w-full">Konto erstellen</button>
               </form>
