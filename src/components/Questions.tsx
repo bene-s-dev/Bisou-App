@@ -507,18 +507,22 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
     setIsSubmitting(true);
     try {
       const { data } = await supabase.auth.getSession();
-      const session = data?.session;
-      if (!session) throw new Error("No session");
+      let session = data?.session;
+      const targetUserId = session?.user?.id || profile?.id;
+      if (!targetUserId) throw new Error("Keine aktive Benutzer-ID gefunden");
 
       const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
 
       const { error } = await supabase.from('answers').upsert([{ 
-        user_id: session.user.id, 
+        user_id: targetUserId, 
         choice: choiceStr, 
         day_key: dayKey 
       }], { onConflict: 'user_id,day_key' });
-      if (error && error.code !== '23505') throw error;
+      if (error && error.code !== '23505') {
+        console.error("Supabase upsert answer error:", error);
+        throw error;
+      }
 
       if (dashboardData?.answers) {
         const existingIdx = dashboardData.answers.findIndex((a: any) => a.user_id === session.user.id);

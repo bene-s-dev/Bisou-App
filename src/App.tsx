@@ -733,7 +733,7 @@ export default function App() {
   // Fetch profile and data whenever dayKey or session changes
   useEffect(() => {
     if (session?.user.id) {
-      fetchProfile(session.user.id);
+      fetchProfile(session.user.id, true);
     }
   }, [dayKey, session?.user.id, fetchProfile]);
 
