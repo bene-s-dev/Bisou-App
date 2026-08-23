@@ -53,16 +53,6 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      // Clear any stale/invalid token from storage before fresh login
-      try {
-        for (let i = localStorage.length - 1; i >= 0; i--) {
-          const key = localStorage.key(i);
-          if (key && (key.startsWith('sb-') || key.includes('auth-token'))) {
-            localStorage.removeItem(key);
-          }
-        }
-      } catch {}
-
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password,
