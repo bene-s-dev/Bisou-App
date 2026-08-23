@@ -285,8 +285,8 @@ export default function Profile({
   };
   
   const refreshUser = useCallback(async () => {
-    const { data } = await supabase.auth.getUser();
-    const latestUser = data?.user;
+    const { data } = await supabase.auth.getSession();
+    const latestUser = data?.session?.user;
     if (latestUser) {
       setUser(latestUser);
     }
