@@ -924,6 +924,16 @@ export default function App() {
       localStorage.removeItem('cached_dashboard_data');
       localStorage.removeItem('cached_bisou_stats_v3');
       
+      // Purge all Supabase auth tokens from storage
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('sb-') || key.includes('auth-token'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch {}
+      
       // Broadcast logout to other tabs BEFORE calling signOut (to avoid race with storage events)
       authChannel.postMessage({ type: 'SIGNED_OUT' });
 
