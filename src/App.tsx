@@ -568,13 +568,13 @@ export default function App() {
             const sig = dailyQs.slice(0, answeredCount).map(item => `[${item.q}]`).join("");
             const choiceStr = finalResults.slice(0, answeredCount).join(" | ") + " " + sig;
 
-            const { error: insertError } = await supabase.from('answers').insert([{
+            const { error: insertError } = await supabase.from('answers').upsert([{
               user_id: userId,
               choice: choiceStr,
               day_key: key
-            }]);
+            }], { onConflict: 'user_id,day_key' });
 
-            if (!insertError) {
+            if (!insertError || insertError.code === '23505') {
               console.log(`Successfully recovered answer for ${key}`);
               localStorage.removeItem(`quiz_progress_${key}`);
             } else {
