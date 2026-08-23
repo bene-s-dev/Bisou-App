@@ -208,11 +208,11 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
 
   // --- INITIAL STATE DERIVATION ---
   const [initialMyResults, initialPartnerResults, initialStep] = useMemo(() => {
-    const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
+    const my = getResultsFromData(dashboardData, profile?.id || dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
     const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
     const step = my.length >= ACTIVE_QUESTIONS ? ACTIVE_QUESTIONS : 0;
     return [my, partner, step];
-  }, [dashboardData, partnerId, ACTIVE_QUESTIONS]);
+  }, [dashboardData, profile?.id, partnerId, ACTIVE_QUESTIONS]);
 
   // --- STATE ---
   const [step, setStep] = useState<number>(initialStep);
@@ -316,26 +316,12 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
 
   useEffect(() => {
     if (dashboardData) {
-      const my = getResultsFromData(dashboardData, dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
+      const my = getResultsFromData(dashboardData, profile?.id || dashboardData?.answers?.find((a: any) => a.user_id !== partnerId)?.user_id);
       const partner = partnerId ? getResultsFromData(dashboardData, partnerId) : null;
 
       if (my.length >= ACTIVE_QUESTIONS) {
-        if (step < ACTIVE_QUESTIONS) {
-          setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
-          setStep(ACTIVE_QUESTIONS);
-        } else {
-          setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
-        }
-      } else if (step === ACTIVE_QUESTIONS) {
-        setMyResults([]);
-        setStep(0);
-        setPartnerResults(null);
-        setSelectedTot(null);
-        setSelectedWwe(null);
-        setTextVal('');
-        setRankingOptions([]);
-        setIsSubmitting(false);
-        setRevealResults(false);
+        setMyResults(prev => JSON.stringify(prev) === JSON.stringify(my) ? prev : my);
+        setStep(ACTIVE_QUESTIONS);
       }
 
       setPartnerResults(prev => JSON.stringify(prev) === JSON.stringify(partner) ? prev : partner);
@@ -350,7 +336,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       }
       setLoading(false);
     }
-  }, [dashboardData, partnerId, step, ACTIVE_QUESTIONS]);
+  }, [dashboardData, profile?.id, partnerId, step, ACTIVE_QUESTIONS]);
 
   // --- DATA LOADING ---
   const loadData = useCallback(async (forceRefresh = false) => {
@@ -527,10 +513,19 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
 
-      const { error: deleteError } = await supabase.from('answers').delete().eq('user_id', session.user.id).eq('day_key', dayKey);
-      if (deleteError) throw deleteError;
-      const { error } = await supabase.from('answers').insert([{ user_id: session.user.id, choice: choiceStr, day_key: dayKey }]);
+      const { error } = await supabase.from('answers').upsert([{ 
+        user_id: session.user.id, 
+        choice: choiceStr, 
+        day_key: dayKey 
+      }], { onConflict: 'user_id,day_key' });
       if (error && error.code !== '23505') throw error;
+
+      if (dashboardData?.answers) {
+        const existingIdx = dashboardData.answers.findIndex((a: any) => a.user_id === session.user.id);
+        const newEntry = { user_id: session.user.id, choice: choiceStr, day_key: dayKey };
+        if (existingIdx >= 0) dashboardData.answers[existingIdx] = newEntry;
+        else dashboardData.answers.push(newEntry);
+      }
 
       if (partnerId) {
         supabase.functions.invoke('send-push-notification', {
