@@ -697,9 +697,14 @@ export default function App() {
           supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey),
           supabase.from('streaks').select('*').in('user_id', userIds).in('partner_id', userIds),
           partnerPromise,
-          supabase.rpc('check_and_freeze_streak', { p_today: dayKey }).catch((rpcErr) => {
-            console.warn("Failed to run check_and_freeze_streak RPC:", rpcErr);
-          })
+          (async () => {
+            try {
+              return await supabase.rpc('check_and_freeze_streak', { p_today: dayKey });
+            } catch (rpcErr) {
+              console.warn("Failed to run check_and_freeze_streak RPC:", rpcErr);
+              return { data: null, error: rpcErr };
+            }
+          })()
         ]);
 
         const pProfile = partnerRes?.data || null;
