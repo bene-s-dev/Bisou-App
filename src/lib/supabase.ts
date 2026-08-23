@@ -16,8 +16,10 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder',
   {
     auth: {
-      flowType: 'implicit',
-      lock: async (_name, _acquireTimeout, fn) => fn()
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
   }
 );
+
