@@ -50,7 +50,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     setLoading(true);
     setMessage(null);
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       // Clear any stale/invalid token from storage before fresh login
@@ -89,7 +89,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     setLoading(true);
     setMessage(null);
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       const { error } = await supabase.auth.signUp({
@@ -120,7 +120,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     setLoading(true);
     setMessage(null);
 
-    const cleanEmail = email.trim();
+    const cleanEmail = email.trim().toLowerCase();
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
