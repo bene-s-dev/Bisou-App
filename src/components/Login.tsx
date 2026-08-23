@@ -6,7 +6,7 @@ import { translateError } from '../lib/translations';
 import { capitalizeName } from '../lib/stringUtils';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (session?: any) => void;
   initialMode?: 'login' | 'register';
 }
 
@@ -37,7 +37,7 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
         const { data } = await supabase.auth.getSession();
         const session = data?.session;
         if (session) {
-          onLogin();
+          onLogin(session);
         }
       };
       const interval = setInterval(checkSession, 3000);
@@ -50,18 +50,38 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const cleanEmail = email.trim();
 
-    if (error) {
+    try {
+      const signInPromise = supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password,
+      });
+
+      const timeoutPromise = new Promise<{ data: any; error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      );
+
+      const result = await Promise.race([signInPromise, timeoutPromise]) as any;
+      const { data, error } = result || {};
+
+      if (error) {
+        setShouldShake(true);
+        setTimeout(() => setShouldShake(false), 500);
+        setMessage({ type: 'error', text: translateError(error.message) });
+        setLoading(false);
+      } else {
+        onLogin(data?.session);
+      }
+    } catch (err: any) {
       setShouldShake(true);
       setTimeout(() => setShouldShake(false), 500);
-      setMessage({ type: 'error', text: translateError(error.message) });
+      if (err?.message === 'timeout') {
+        setMessage({ type: 'error', text: 'Die Anmeldung dauert zu lange. Bitte prüfe deine Internetverbindung.' });
+      } else {
+        setMessage({ type: 'error', text: translateError(err?.message || '') });
+      }
       setLoading(false);
-    } else {
-      onLogin();
     }
   };
 
@@ -70,22 +90,38 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          display_name: capitalizeName(displayName),
-        },
-      },
-    });
+    const cleanEmail = email.trim();
 
-    if (error) {
-      setMessage({ type: 'error', text: translateError(error.message) });
-      setLoading(false);
-    } else {
-      setMessage({ type: 'success', text: '' });
+    try {
+      const signUpPromise = supabase.auth.signUp({
+        email: cleanEmail,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            display_name: capitalizeName(displayName),
+          },
+        },
+      });
+
+      const timeoutPromise = new Promise<{ data: any; error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      );
+
+      const { error } = await Promise.race([signUpPromise, timeoutPromise]) as any;
+
+      if (error) {
+        setMessage({ type: 'error', text: translateError(error.message) });
+      } else {
+        setMessage({ type: 'success', text: '' });
+      }
+    } catch (err: any) {
+      if (err?.message === 'timeout') {
+        setMessage({ type: 'error', text: 'Die Registrierung dauert zu lange. Bitte prüfe deine Internetverbindung.' });
+      } else {
+        setMessage({ type: 'error', text: translateError(err?.message || '') });
+      }
+    } finally {
       setLoading(false);
     }
   };
@@ -95,16 +131,33 @@ export default function Login({ onLogin, initialMode = 'login' }: LoginProps) {
     setLoading(true);
     setMessage(null);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    const cleanEmail = email.trim();
 
-    if (error) {
-      setMessage({ type: 'error', text: translateError(error.message) });
-    } else {
-      setMessage({ type: 'success', text: 'Link zum Passwort-Reset wurde gesendet! ✨' });
+    try {
+      const resetPromise = supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      const timeoutPromise = new Promise<{ data: any; error: any }>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      );
+
+      const { error } = await Promise.race([resetPromise, timeoutPromise]) as any;
+
+      if (error) {
+        setMessage({ type: 'error', text: translateError(error.message) });
+      } else {
+        setMessage({ type: 'success', text: 'Link zum Passwort-Reset wurde gesendet! ✨' });
+      }
+    } catch (err: any) {
+      if (err?.message === 'timeout') {
+        setMessage({ type: 'error', text: 'Anfrage dauert zu lange. Bitte prüfe deine Internetverbindung.' });
+      } else {
+        setMessage({ type: 'error', text: translateError(err?.message || '') });
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSubmit = mode === 'login' ? handleLogin : (mode === 'register' ? handleRegister : handleForgotPassword);

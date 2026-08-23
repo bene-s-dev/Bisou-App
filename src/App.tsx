@@ -12,9 +12,10 @@ import ScalingContainer from './components/ScalingContainer';
 import LandingPage from './landingpage/LandingPage';
 import Login from './components/Login';
 
-// Lazy load modular page components for Code Splitting (saves bandwidth)
+import Dashboard from './components/Dashboard';
+
+// Lazy load secondary page components for Code Splitting (saves bandwidth)
 const Intro = React.lazy(() => import('./components/Intro'));
-const Dashboard = React.lazy(() => import('./components/Dashboard'));
 const Questions = React.lazy(() => import('./components/Questions'));
 const Profile = React.lazy(() => import('./components/Profile'));
 import ResetPassword from './components/ResetPassword';
@@ -268,8 +269,32 @@ function renderAnnouncementContent(text: string) {
 }
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(() => {
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          const item = localStorage.getItem(key);
+          if (item) {
+            const parsed = JSON.parse(item);
+            if (parsed && (parsed.session || parsed.user)) {
+              return parsed.session || parsed;
+            }
+          }
+        }
+      }
+    } catch {}
+    return null;
+  });
+  const [profile, setProfile] = useState<any>(() => {
+    try {
+      const cached = localStorage.getItem('cached_profile');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState<boolean>(() => !session || !profile);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('app_dark_mode') === 'true');
   const [announcement, setAnnouncement] = useState<{ 
     id: number; 
@@ -381,14 +406,6 @@ export default function App() {
       window.removeEventListener('storage', handleStorage);
     };
   }, []);
-  const [profile, setProfile] = useState<any>(() => {
-    try {
-      const cached = localStorage.getItem('cached_profile');
-      return cached ? JSON.parse(cached) : null;
-    } catch {
-      return null;
-    }
-  });
   const [partnerProfile, setPartnerProfile] = useState<any>(() => {
     try {
       const cached = localStorage.getItem('cached_partner_profile');
@@ -578,8 +595,9 @@ export default function App() {
     fetchLock.current = lockKey;
 
     try {
-      // Only show full loading skeleton on initial load, not on background re-fetches
-      if (!initialLoadDone.current) setLoading(true);
+      // Only show full loading skeleton on initial load if we don't have profile yet
+      if (!initialLoadDone.current && !profile) setLoading(true);
+
       // 1. Get profile and today's questions in parallel
       const [profileRes, questionsRes] = await Promise.all([
         supabase
@@ -594,34 +612,24 @@ export default function App() {
           .maybeSingle()
       ]);
 
-      if (profileRes.error) throw profileRes.error;
-      
       let profileData = profileRes.data;
       let qData = questionsRes.data?.questions;
 
-      // 2. If no questions exist for today, trigger the Edge Function (non-blocking if possible, but here we wait for data)
+      // 2. If no questions exist for today, trigger Edge Function in background without blocking UI
       if (!qData) {
-        try {
-          const genPromise = supabase.functions.invoke('generate-questions', {
-            body: { day_key: dayKey }
-          });
-          
-          // Wait up to 30 seconds — Gemini generation can take time
-          const timeoutPromise = new Promise<null>((resolve) => 
-            setTimeout(() => resolve(null), 30000)
-          );
-
-          const result: any = await Promise.race([genPromise, timeoutPromise]);
-          if (result && !result.error) {
-            qData = result.data?.questions;
-          } else if (!result) {
-            // Timed out — fire in background so next reload gets real questions
-            console.warn("Question generation timed out — running in background");
-            supabase.functions.invoke('generate-questions', { body: { day_key: dayKey } }).catch(() => {});
+        supabase.functions.invoke('generate-questions', {
+          body: { day_key: dayKey }
+        }).then((result) => {
+          if (result?.data?.questions) {
+            const newQ = result.data.questions;
+            const newCurrentQs = (newQ.tot && newQ.ranking && newQ.text) 
+              ? [newQ.tot, newQ.ranking, newQ.text, ...(newQ.wwe ? [newQ.wwe] : [])] 
+              : [FALLBACK_QUESTIONS.tot, FALLBACK_QUESTIONS.ranking, FALLBACK_QUESTIONS.text];
+            setDashboardData((prev: any) => prev ? { ...prev, questions: newCurrentQs } : prev);
           }
-        } catch (err) {
-          console.error("Failed to generate questions:", err);
-        }
+        }).catch((err) => {
+          console.warn("Background question generation error:", err);
+        });
       }
 
       if (qData) {
@@ -638,13 +646,12 @@ export default function App() {
 
       // 3. Robust Profile Handling (Handle missing profile case)
       if (!profileData) {
-        // We use the metadata from the session if profile is missing
         const { data } = await supabase.auth.getSession();
         const currentSession = data?.session;
         if (currentSession?.user) {
           const newProfile = {
             id: userId,
-            display_name: currentSession.user.user_metadata?.display_name || 'Nutzer',
+            display_name: currentSession.user.user_metadata?.display_name || currentSession.user.email?.split('@')[0] || 'Nutzer',
             partner_code: 'CB-' + userId.substring(0, 6).toUpperCase(),
             intro_completed: false
           };
@@ -658,13 +665,11 @@ export default function App() {
           if (inserted) {
             profileData = inserted;
           } else if (insertError && (insertError.code === '23505' || insertError.message.includes('unique'))) {
-            // Already exists, likely created by another tab/instance. Fetch it.
             const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
             profileData = retryData;
           } else {
-            // Last resort retry
             const { data: retryData } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
-            profileData = retryData;
+            profileData = retryData || newProfile;
           }
         }
       }
@@ -672,34 +677,36 @@ export default function App() {
       if (profileData) {
         setProfile(profileData);
         localStorage.setItem('cached_profile', JSON.stringify(profileData));
-        await recoverLocalAnswers(userId);
         
-        let pProfile = null;
-        if (profileData.partner_id) {
-          const { data: pData } = await supabase
-            .from('profiles')
-            .select('id, display_name, avatar_url, emoji_status, emoji_status_updated_at')
-            .eq('id', profileData.partner_id)
-            .maybeSingle();
-          pProfile = pData;
-        }
-        setPartnerProfile(pProfile);
-        localStorage.setItem('cached_partner_profile', JSON.stringify(pProfile));
+        // Recover local answers in the background (non-blocking)
+        recoverLocalAnswers(userId).catch((err) => console.warn("Auto-recovery error:", err));
 
         const userIds = [userId];
         if (profileData.partner_id) userIds.push(profileData.partner_id);
 
-        // Run the freeze/reset check in the database first
-        try {
-          await supabase.rpc('check_and_freeze_streak', { p_today: dayKey });
-        } catch (rpcErr) {
-          console.error("Failed to run check_and_freeze_streak RPC:", rpcErr);
-        }
+        const partnerPromise = profileData.partner_id
+          ? supabase
+              .from('profiles')
+              .select('id, display_name, avatar_url, emoji_status, emoji_status_updated_at')
+              .eq('id', profileData.partner_id)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null });
 
-        const [answersRes, streaksRes] = await Promise.all([
+        // Run data queries and streak RPC in parallel
+        const [answersRes, streaksRes, partnerRes] = await Promise.all([
           supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey),
-          supabase.from('streaks').select('*').in('user_id', userIds).in('partner_id', userIds)
+          supabase.from('streaks').select('*').in('user_id', userIds).in('partner_id', userIds),
+          partnerPromise,
+          supabase.rpc('check_and_freeze_streak', { p_today: dayKey }).catch((rpcErr) => {
+            console.warn("Failed to run check_and_freeze_streak RPC:", rpcErr);
+          })
         ]);
+
+        const pProfile = partnerRes?.data || null;
+        setPartnerProfile(pProfile);
+        if (pProfile) {
+          localStorage.setItem('cached_partner_profile', JSON.stringify(pProfile));
+        }
 
         const dashData = {
           answers: answersRes.data || [],
@@ -721,7 +728,7 @@ export default function App() {
       initialLoadDone.current = true;
       setLoading(false);
     }
-  }, [dayKey]);
+  }, [dayKey, recoverLocalAnswers, profile]);
 
   // Fetch profile and data whenever dayKey or session changes
   useEffect(() => {
@@ -951,6 +958,28 @@ export default function App() {
     }
   };
 
+  const handleLoginSuccess = (newSession?: Session) => {
+    if (newSession) {
+      setSession(newSession);
+      const cached = localStorage.getItem('cached_profile');
+      if (cached) {
+        try {
+          setProfile(JSON.parse(cached));
+        } catch {}
+      } else {
+        setProfile({
+          id: newSession.user.id,
+          display_name: newSession.user.user_metadata?.display_name || newSession.user.email?.split('@')[0] || 'Nutzer',
+          partner_code: 'CB-' + newSession.user.id.substring(0, 6).toUpperCase(),
+          intro_completed: true
+        });
+      }
+      fetchProfile(newSession.user.id, true);
+    }
+    setLoading(false);
+    navigate('/dashboard', { replace: true });
+  };
+
   const refreshData = async () => {
     if (session) await fetchProfile(session.user.id, true);
   };
@@ -969,8 +998,8 @@ export default function App() {
           {/* Public Routes with Persistent Layout */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={session && profile ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-            <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="login" />} />
-            <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={() => setLoading(true)} initialMode="register" />} />
+            <Route path="/signin" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLoginSuccess} initialMode="login" />} />
+            <Route path="/signup" element={session && profile ? <Navigate to="/dashboard" replace /> : <Login onLogin={handleLoginSuccess} initialMode="register" />} />
             <Route path="/reset-password" element={<ResetPassword onComplete={() => navigate('/signin')} />} />
           </Route>
           
