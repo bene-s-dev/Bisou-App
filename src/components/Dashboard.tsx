@@ -12,6 +12,7 @@ import { capitalizeName } from '../lib/stringUtils';
 import { translateError } from '../lib/translations';
 import { useMilestones } from './MilestoneProvider';
 import StreakModal from './StreakModal';
+import { syncPendingAnswers, EVENT_OFFLINE_ANSWERS_UPDATED, EVENT_ANSWERS_SYNCED } from '../lib/syncAnswers';
 
 interface DashboardProps {
   userName: string;
@@ -133,6 +134,31 @@ export default function Dashboard({
     } catch (e) { return null; }
   });
   const [loadingStats, setLoadingStats] = useState(false);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      try {
+        const saved = localStorage.getItem('failed_sync_answers');
+        setOfflineAnswers(saved ? JSON.parse(saved) : null);
+      } catch (e) {
+        setOfflineAnswers(null);
+      }
+    };
+
+    const handleSynced = () => {
+      setOfflineAnswers(null);
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    };
+
+    window.addEventListener(EVENT_OFFLINE_ANSWERS_UPDATED, handleUpdate);
+    window.addEventListener(EVENT_ANSWERS_SYNCED, handleSynced);
+    return () => {
+      window.removeEventListener(EVENT_OFFLINE_ANSWERS_UPDATED, handleUpdate);
+      window.removeEventListener(EVENT_ANSWERS_SYNCED, handleSynced);
+    };
+  }, [onRefreshData]);
 
   useEffect(() => {
     if (fullscreenImage) {
@@ -427,39 +453,15 @@ export default function Dashboard({
     if (isSyncing || !offlineAnswers) return;
     setIsSyncing(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      if (!session) throw new Error("Keine aktive Sitzung.");
-
-      const { error: deleteError } = await supabase
-        .from('answers')
-        .delete()
-        .eq('user_id', session.user.id)
-        .eq('day_key', offlineAnswers.dayKey);
-        
-      if (deleteError) throw deleteError;
-
-      const { error } = await supabase
-        .from('answers')
-        .insert([{ 
-          user_id: session.user.id, 
-          choice: offlineAnswers.choiceStr, 
-          day_key: offlineAnswers.dayKey 
-        }]);
-
-      if (error && error.code !== '23505') throw error;
-
-      if (partnerId) {
-        supabase.functions.invoke('send-push-notification', {
-          body: { user_id: session.user.id, partner_id: partnerId, type: 'answer_submitted' }
-        }).catch(err => console.warn('Push notification failed:', err));
-      }
-
-      localStorage.removeItem('failed_sync_answers');
-      setOfflineAnswers(null);
-      showAlert("Deine Antworten wurden erfolgreich hochgeladen! ✨", "success");
-      if (onRefreshData) {
-        await onRefreshData();
+      const success = await syncPendingAnswers(partnerId || undefined);
+      if (success) {
+        setOfflineAnswers(null);
+        showAlert("Deine Antworten wurden erfolgreich hochgeladen! ✨", "success");
+        if (onRefreshData) {
+          await onRefreshData();
+        }
+      } else {
+        showAlert("Absenden fehlgeschlagen. Du bist offline oder hast schlechtes Netz. Sobald du wieder Internet hast, werden die Antworten automatisch gesendet.", "error");
       }
     } catch (err: any) {
       console.error("Sync error:", err);

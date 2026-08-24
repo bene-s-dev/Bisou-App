@@ -23,6 +23,7 @@ import { getDailyKey, isStreakActive } from './lib/dateUtils';
 import { FALLBACK_QUESTIONS } from './constants/questions';
 import { DialogProvider, useDialog } from './components/DialogProvider';
 import { MilestoneProvider } from './components/MilestoneProvider';
+import { startAutoSyncManager, EVENT_ANSWERS_SYNCED } from './lib/syncAnswers';
 
 // Create a safe broadcast channel wrapper to prevent crashes in restricted environments (e.g. iOS in-app browsers)
 class SafeAuthChannel {
@@ -735,12 +736,22 @@ export default function App() {
     }
   }, [dayKey, recoverLocalAnswers, profile]);
 
-  // Fetch profile and data whenever dayKey or session changes
+  // Fetch profile and data whenever dayKey or session changes & auto-sync pending answers
   useEffect(() => {
     if (session?.user.id) {
       fetchProfile(session.user.id, true);
+      startAutoSyncManager(profile?.partner_id);
+
+      const handleAnswersSynced = () => {
+        fetchProfile(session.user.id, true);
+      };
+
+      window.addEventListener(EVENT_ANSWERS_SYNCED, handleAnswersSynced);
+      return () => {
+        window.removeEventListener(EVENT_ANSWERS_SYNCED, handleAnswersSynced);
+      };
     }
-  }, [dayKey, session?.user.id, fetchProfile]);
+  }, [dayKey, session?.user.id, profile?.partner_id, fetchProfile]);
 
   useEffect(() => {
     let mounted = true;

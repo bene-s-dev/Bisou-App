@@ -6,6 +6,7 @@ import Sortable from 'sortablejs';
 import { Heart, RefreshCcw, AlertCircle, ArrowRight, Send, Lock, User, Share2, Loader2, X } from 'lucide-react';
 import { useDialog } from './DialogProvider';
 import { translateError } from '../lib/translations';
+import { submitOrQueueAnswers } from '../lib/syncAnswers';
 
 interface QuestionsProps {
   profile?: any;
@@ -514,32 +515,27 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
       const choiceStr = finalResults.join(" | ") + " " + sig;
 
-      const { error } = await supabase.from('answers').upsert([{ 
-        user_id: targetUserId, 
-        choice: choiceStr, 
-        day_key: dayKey 
-      }], { onConflict: 'user_id,day_key' });
-      if (error && error.code !== '23505') {
-        console.error("Supabase upsert answer error:", error);
-        throw error;
-      }
+      const submitRes = await submitOrQueueAnswers({
+        userId: targetUserId,
+        dayKey,
+        choiceStr,
+        partnerId: partnerId || undefined
+      });
 
-      if (dashboardData?.answers) {
-        const existingIdx = dashboardData.answers.findIndex((a: any) => a.user_id === session.user.id);
-        const newEntry = { user_id: session.user.id, choice: choiceStr, day_key: dayKey };
+      if (dashboardData?.answers && targetUserId) {
+        const existingIdx = dashboardData.answers.findIndex((a: any) => a.user_id === targetUserId);
+        const newEntry = { user_id: targetUserId, choice: choiceStr, day_key: dayKey };
         if (existingIdx >= 0) dashboardData.answers[existingIdx] = newEntry;
         else dashboardData.answers.push(newEntry);
       }
 
-      if (partnerId) {
-        supabase.functions.invoke('send-push-notification', {
-          body: { user_id: session.user.id, partner_id: partnerId, type: 'answer_submitted' }
-        }).catch(err => console.warn('Push notification failed (non-critical):', err));
+      if (dashboardData?.streaks && targetUserId) {
+        const myS = dashboardData.streaks.find((s: any) => s.user_id === targetUserId);
+        if (myS) myS.current_streak = (myS.current_streak || 0) + 1;
       }
 
-      if (dashboardData?.streaks) {
-        const myS = dashboardData.streaks.find((s: any) => s.user_id === session.user.id);
-        if (myS) myS.current_streak = (myS.current_streak || 0) + 1;
+      if (!submitRes.success && submitRes.queued) {
+        showAlert("Antworten lokal gespeichert! Sie werden automatisch gesendet, sobald du wieder Internet hast. 🌐", "info");
       }
 
       setIsEncrypting(true);
@@ -554,51 +550,7 @@ export default function Questions({ profile, partnerProfile, partnerName, partne
       setTimeout(() => onComplete(), 50);
     } catch (err: any) {
       console.error("Submit error:", err);
-      try {
-        const sig = dailyQs.slice(0, ACTIVE_QUESTIONS).map(q => `[${q.q}]`).join("");
-        const choiceStr = finalResults.join(" | ") + " " + sig;
-        localStorage.setItem('failed_sync_answers', JSON.stringify({
-          dayKey,
-          choiceStr
-        }));
-        
-        // Trigger local Web Notification if supported and granted
-        if ('Notification' in window) {
-          if (Notification.permission === 'granted') {
-            if ('serviceWorker' in navigator) {
-              navigator.serviceWorker.ready.then((registration) => {
-                registration.showNotification("Du hattest schlechtes Internet 🌐", {
-                  body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden.",
-                  icon: "/store_icon.png",
-                  badge: "/store_icon.png",
-                  data: {
-                    url: '/'
-                  }
-                });
-              }).catch(() => {
-                try {
-                  new Notification("Du hattest schlechtes Internet 🌐", {
-                    body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden."
-                  });
-                } catch (e) {
-                  console.warn("Local notification construct failed:", e);
-                }
-              });
-            } else {
-              try {
-                new Notification("Du hattest schlechtes Internet 🌐", {
-                  body: "Deine heutigen Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden."
-                });
-              } catch (e) {
-                console.warn("Local notification construct failed:", e);
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Failed to cache offline answers:", e);
-      }
-      showAlert("Speichern fehlgeschlagen. Deine Antworten wurden lokal gespeichert und können auf dem Dashboard hochgeladen werden, wenn du wieder Netz hast.", "error");
+      showAlert("Speichern fehlgeschlagen: " + (err.message || err), "error");
     } finally {
       setIsSubmitting(false);
     }
