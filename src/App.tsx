@@ -693,19 +693,18 @@ export default function App() {
               .maybeSingle()
           : Promise.resolve({ data: null, error: null });
 
-        // Run data queries and streak RPC in parallel
+        // Execute streak freeze check first so streak data is up-to-date
+        try {
+          await supabase.rpc('check_and_freeze_streak', { p_today: dayKey });
+        } catch (rpcErr) {
+          console.warn("Failed to run check_and_freeze_streak RPC:", rpcErr);
+        }
+
+        // Fetch answers, streaks, and partner profile in parallel
         const [answersRes, streaksRes, partnerRes] = await Promise.all([
           supabase.from('answers').select('*').in('user_id', userIds).eq('day_key', dayKey),
           supabase.from('streaks').select('*').in('user_id', userIds).in('partner_id', userIds),
-          partnerPromise,
-          (async () => {
-            try {
-              return await supabase.rpc('check_and_freeze_streak', { p_today: dayKey });
-            } catch (rpcErr) {
-              console.warn("Failed to run check_and_freeze_streak RPC:", rpcErr);
-              return { data: null, error: rpcErr };
-            }
-          })()
+          partnerPromise
         ]);
 
         const pProfile = partnerRes?.data || null;

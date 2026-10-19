@@ -95,14 +95,19 @@ export default function StreakModal({
   const showTabs = !!(myStreakData && partnerStreakData);
 
   const freezesUsedThisMonth = useMemo(() => {
-    const freezes = activeStreakData?.freeze_history || [];
+    const freezes: string[] = activeStreakData?.freeze_history || [];
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
-    return freezes.filter((dateStr: string) => {
-      const d = new Date(dateStr);
-      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-    }).length;
+    const uniqueThisMonth = new Set(
+      freezes.filter((dateStr: string) => {
+        if (!dateStr) return false;
+        const parts = dateStr.split('-');
+        if (parts.length < 2) return false;
+        return parseInt(parts[0], 10) === currentYear && (parseInt(parts[1], 10) - 1) === currentMonth;
+      })
+    );
+    return uniqueThisMonth.size;
   }, [activeStreakData]);
 
   if (!isOpen) return null;
